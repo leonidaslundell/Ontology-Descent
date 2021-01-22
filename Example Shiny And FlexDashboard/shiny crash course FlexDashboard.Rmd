@@ -1,0 +1,63 @@
+---
+title: "Super visualizer of data"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+    
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(shiny)
+library(DT)
+
+dat <- data.frame(ensmbl = paste0("ENSMUSG", seq(10000,
+                                                 19999,
+                                                 1)[sample(9999, 
+                                                           1000, 
+                                                           replace = F)]),
+                  FC = rnorm(1000,0,4),
+                  pVal = seq(0,1,0.000001)[sample(1000001,1000,replace = T)])
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Data input
+
+Input your wonderfull data here
+
+```{r}
+textInput("gene", "Type the ensmb gene", value = "ENSMUSG13286")
+
+actionButton("press", "plot")
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Plot
+
+```{r}
+plotOutput("plot")
+observeEvent(input$press, {
+  
+  x <- dat[dat$ensmbl == input$gene,]
+  
+  output$plot <- renderPlot(plot(x[,"FC"], 
+                                 ylim = c(-12,12)))
+  
+})
+```
+
+### Chart C
+
+```{r}
+output$table <- renderDataTable(dat)
+dataTableOutput("table")
+
+```
+
