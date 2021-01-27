@@ -1,9 +1,13 @@
 library(shiny)
+library(DT)
+library(tidyverse)
 
 ui <- fluidPage(
   titlePanel(
     "Ontology Descent: A data visualization tool for Gene Ontology Enrichment data"
   ),
+  tabsetPanel(type = "tabs",
+              tabPanel("Data Entry",
   fluidRow(
     column(
       2,
@@ -64,12 +68,33 @@ ui <- fluidPage(
     choices = c("Yes!", "Hell no!")
   )
   )
-  ))
+  ),
+  dataTableOutput(outputId = "GO_table")),
+  tabPanel("Data Trimming", ""),
+  tabPanel("Data Visualization", "")))
 
 
 
 
-server <- function(input,output){}
+server <- function(input,output){
+  data <- reactiveValues(GO_terms = NA,
+                         Enrichment = NA,
+                         P_values = NA,
+                         Direction = NA)
+
+     observeEvent(input$Setting1, {
+       data$GO_terms <- strsplit(input$Terms, "\n")
+       data$Enrichment <- strsplit(input$Enrichment, "\n")
+       data$P_values <- strsplit(input$P_values, "\n")
+       data$Direction <- strsplit(input$Direction, "\n")
+       data_matrix<-data.frame(data$GO_terms, data$Enrichment, data$P_values, data$Direction)
+       colnames(data_matrix) <- c("GO Terms", "Enrichment", "P-values", "Direction")
+       output$GO_table <- renderDataTable(data_matrix)
+       #add function that returns error if uneven length of our four factors are returned
+       })
+
+
+}
 
 
 shinyApp(ui = ui, server = server)
