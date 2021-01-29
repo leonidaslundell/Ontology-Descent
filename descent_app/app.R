@@ -87,9 +87,14 @@ server <- function(input,output){
        data$Enrichment <- strsplit(input$Enrichment, "\n")
        data$P_values <- strsplit(input$P_values, "\n")
        data$Direction <- strsplit(input$Direction, "\n")
-       data_matrix<-data.frame(data$GO_terms, data$Enrichment, data$P_values, data$Direction)
+       #if(length(data$GO_terms)!=length(data$Enrichment)){
+       #  showNotification("Warning! Uneven number of parameters entered!")
+       #}
+       #else{
+         data_matrix<-data.frame(data$GO_terms, data$Enrichment, data$P_values, data$Direction)
        colnames(data_matrix) <- c("GO Terms", "Enrichment", "P-values", "Direction")
        output$GO_table <- renderDataTable(data_matrix)
+       #}
        #add function that returns error if uneven length of our four factors are returned
        })
 
