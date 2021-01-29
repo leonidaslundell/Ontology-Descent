@@ -9,7 +9,7 @@ ui <- shinyUI(fluidPage(
 ))
 
 server <- shinyServer(function(input, output){
-  
+
   descent_data <- shiny::reactiveValues(inputData = data.frame(ontoID = c("GO:0022900",
                                                                           "GO:0042773",
                                                                           "GO:0042775",
@@ -26,7 +26,7 @@ server <- shinyServer(function(input, output){
                                                                           2.5000E-7,
                                                                           1.85887E-2,
                                                                           1.85887E-1),
-                                                               direction = factor(c("Up", "Up", "Down", "Up"), 
+                                                               direction = factor(c("Up", "Up", "Down", "Up"),
                                                                                   levels = c("Up", "Down"))
                                                                ),
                                         clusterData = data.frame(ontoID = c("GO:0022900",
@@ -45,14 +45,14 @@ server <- shinyServer(function(input, output){
                                                                             2.5000E-7,
                                                                             1.85887E-2,
                                                                             1.85887E-1),
-                                                                 direction = factor(c("Up", "Up", "Down", "Up"), 
+                                                                 direction = factor(c("Up", "Up", "Down", "Up"),
                                                                                     levels = c("Up", "Down")),
                                                                  clusterNumber = c(1,1,2,3),
                                                                  clusterName = c("Energy","Energy","Muscle","Bone")
                                                                  )
                                         )
-                                        
-                                        shiny::callModule(data_entry_page, "data_entry", descent_data)
+
+  shiny::callModule(data_entry_page, "data_entry", descent_data)
   shiny::callModule(clustering_page, "clustering", descent_data)
   shiny::callModule(plotting_page, "plotting", descent_data)
 })
