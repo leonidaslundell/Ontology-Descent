@@ -42,7 +42,6 @@ clustering_page_ui <- function(id)
 #' @export
 clustering_page <- function(input, output, session, descent_data)
 {
-  browser()
   output$textDisplay <- renderText({ # mark function as reactive
     # and assign to output$textDisplay for passing to ui.R
 
