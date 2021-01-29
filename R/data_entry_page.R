@@ -102,8 +102,8 @@ data_entry_page_ui <- function(id)
 #' @export
 data_entry_page <- function(input, output, session, descent_data)
 {
-   data <- descent_data$inputData
-   output$GO_table <- renderDataTable(data)
+   data <- descent_data
+   output$GO_table <- renderDataTable(data$inputData)
    observeEvent(input$Setting1, {
      data_matrix<- data.frame(unlist(strsplit(input$OntoID, "\n")),
                               unlist(strsplit(input$Terms, "\n")),
@@ -111,10 +111,9 @@ data_entry_page <- function(input, output, session, descent_data)
                               unlist(strsplit(input$pValues, "\n")),
                               unlist(strsplit(input$Direction, "\n")))
      colnames(data_matrix) <- c("ontoID", "ontoTerm", "Enrichment", "P-values", "Direction")
-     data<- data_matrix
-     descent_data$inputData <- data
-     output$GO_table <- renderDataTable(data)
-    #}
-    #add function that returns error if uneven length of our four factors are returned
+     data$inputData<- data_matrix
+     descent_data$inputData <- data$inputData
+     output$GO_table <- renderDataTable(data$inputData)
+
   })
 }
