@@ -10,7 +10,7 @@ distanceR <- function(ontoGraph, ontoTargets){
   ontoMiss <- ontoTargets[!ontoTargets %in% V(ontoGraph)$name]
   ontoTargets <- ontoTargets[ontoTargets %in% V(ontoGraph)$name]
   
-  ontoDist <- distances(ontoGraph, v = ontoTargets, to = ontoTargets)
+  ontoDist <- distances(ontoGraph, v = ontoTargets, to = ontoTargets, mode = "all")
   
   #a sligtlhy arbitrary operation: missing pathway gets scored as 3X longest pathway
   ontoDist[is.infinite(ontoDist)] <- max(ontoDist[!is.infinite(ontoDist)])*3
