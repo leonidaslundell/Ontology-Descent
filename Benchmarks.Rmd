@@ -1,0 +1,111 @@
+---
+title: "Benchmarking various ontological packages, distances and clustering method "
+output: 
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float: true
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Introduction & aims
+
+There are three distinct components in this project: 
+1. Ontological distance metric (eg Wang Resnik etc).
+2. Clustering component (have not found anything specific).
+3. Overall, final result (package component, eg Revigo).
+
+Moreover the GO input terms should be checked systematically for size (ranging from large to small) and diversity (similar go terms vs dissimilar go terms). Another consideration (further down the line) is clustering behavior with MF&BP combined or separate
+
+Outline of approach: 
+* Test various distances on my clustering method.
+* Test various distances and use automatic simplifyGO to analyze distances.
+* Compare all the provided clustering methods using same distance metric.
+
+# Data
+
+Simplifyenrichment package has a random GO generator with size. Pterostilbene experiment from Jonas group has load of real GO hits. 
+
+```{r, setup}
+library(simplifyEnrichment)
+library(openxlsx)
+
+# goBench <- list(SmallRand = random_GO(50),
+#                 BigRand = random_GO(300),
+#                 SmallReal = read.xlsx("data/TestData.xlsx", sheet = 1),
+#                 BigReal = read.xlsx("data/TestData.xlsx", sheet = 2))
+# goBench$SmallReal <- goBench$SmallReal[goBench$SmallReal$FDR<0.01, "ID"]
+# goBench$BigReal <- goBench$BigReal[goBench$BigReal$FDR<0.05, "ID"]
+# goOnt <- as.list(GOTERM)
+# 
+# goBench$BigReal <- goBench$BigReal[!sapply(goOnt[goBench$BigReal ], function(x) is.null(x))]
+# 
+# print("Are all BP?")
+# all(sapply(goOnt[goBench$SmallReal], function(x) Ontology(x)) == "BP")
+# all(sapply(goOnt[goBench$BigReal], function(x) Ontology(x)) == "BP")
+##Yes and yes
+
+# save(file = "data/testData.Rdata", list = c("goBench", "goOnt"))
+load("data/testData.Rdata")
+
+source("Functions/distanceR.R")
+source("Functions/networkGeneratoR.R")
+source("Functions/clustereR.R")
+net <- networkeR(ont = "BP")
+
+
+library(org.Mm.eg.db)
+
+GOgenes <- as.list(org.Mm.egGO2ALLEGS)
+GOlength <- sapply(GOgenes, length)
+
+```
+
+# Test different distances
+
+## Distance
+
+simplifyEnrichment easily calculates the standard "Wang", "Resnik", "Rel", "Jiang", and "Lin" distance methods. It also provides an automatic clusterig method. Use this to investigate how good the simple step distance metric is.
+
+```{r}
+
+goDist <- lapply(goBench, function(dat){
+  goDistInt <- lapply(c("Wang", "Resnik", "Rel", "Jiang","Lin"), function(mea){
+    GO_similarity(dat, ont = "BP", measure = mea)
+  })
+  names(goDistInt) <- c("Wang", "Resnik", "Rel", "Jiang","Lin")
+  
+  goDistInt$Descent <- distanceR(ontoGraph = net, ontoTargets = dat)$ontoDist
+  goDistInt
+})
+```
+
+## Clustering
+
+Default of simplifyEnrichment is binary cut, but lets do all.
+
+```{r}
+library(ggplot2)
+
+compare_clustering_methods(goDist$SmallRand$Descent, all_clustering_methods()[-c(10,4)])
+
+goClust <- lapply(all_clustering_methods(), function(meth){
+  lapply(goDist, function(dist){
+    simplifyGO(mat = dist, plot = F, method = meth)
+  })
+})
+names(goClust) <- all_clustering_methods()
+
+print("Number of clusters per distance metric")
+sapply(goClust, function(dist) length(unique(dist$cluster)))
+print("Size of cluster per distance metric")
+sapply(goClust, function(dist) table(dist$cluster))
+```
+
+Many small cluster with both Rel and Jiang. Dumb distance metric gives only 1 cluster.
+
