@@ -13,8 +13,8 @@ ui <- fluidPage(
       2,
       textAreaInput(
         "Terms",
-        h4("GO-terms"),
-        value = "Enter a list of GO-terms (ex. GO:0051004)",
+        h4("Ontology Terms"),
+        value = "Enter a list of ontology terms (ex. GO:0051004)",
         height = "100%",
         rows = 10,
         resize = "both"
@@ -35,7 +35,7 @@ ui <- fluidPage(
     column(
       2,
       textAreaInput(
-        "P_values",
+        "pValues",
         h4("Point Size"),
         value = "Enter matching P-values",
         height = "100%",
@@ -77,23 +77,22 @@ ui <- fluidPage(
 
 
 server <- function(input,output){
-  data <- reactiveValues(GO_terms = NA,
-                         Enrichment = NA,
-                         P_values = NA,
-                         Direction = NA)
+  data <- reactiveValues(InputData = data.frame(
+    GO_terms = NA,
+    Enrichment = NA,
+    pValues = NA,
+    Direction = NA
+  ))
+  #change pValue to Leo's stupid annotation
 
      observeEvent(input$Setting1, {
-       data$GO_terms <- strsplit(input$Terms, "\n")
-       data$Enrichment <- strsplit(input$Enrichment, "\n")
-       data$P_values <- strsplit(input$P_values, "\n")
-       data$Direction <- strsplit(input$Direction, "\n")
-       #if(length(data$GO_terms)!=length(data$Enrichment)){
-       #  showNotification("Warning! Uneven number of parameters entered!")
-       #}
-       #else{
-         data_matrix<-data.frame(data$GO_terms, data$Enrichment, data$P_values, data$Direction)
+       data_matrix<- data.frame(unlist(strsplit(input$Terms, "\n")),
+                                unlist(strsplit(input$Enrichment, "\n")),
+                                unlist(strsplit(input$pValues, "\n")),
+                                unlist(strsplit(input$Direction, "\n")))
        colnames(data_matrix) <- c("GO Terms", "Enrichment", "P-values", "Direction")
-       output$GO_table <- renderDataTable(data_matrix)
+       data$InputData<- data_matrix
+       output$GO_table <- renderDataTable(data$InputData)
        #}
        #add function that returns error if uneven length of our four factors are returned
        })
