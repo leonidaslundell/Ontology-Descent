@@ -6,6 +6,3 @@
 #' @return
 #' @export
 #'
-fancy_function <- function(x, par){
-  x
-}

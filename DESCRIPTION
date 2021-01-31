@@ -16,4 +16,7 @@ RoxygenNote: 7.1.1
 Imports: 
     shiny,
     dplyr,
-    ggplot2
+    ggplot2,
+    here
+Depends: 
+    R (>= 2.10)
