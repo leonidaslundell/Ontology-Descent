@@ -135,7 +135,7 @@ clusterGraph <- function(ontoID, ontoTerm, pValue, clusterNumber, clusterName, e
                            ggplot2::aes(x = -log10(pValue), y = clusterName,
                             fill = clusterName, color = clusterName,
                             label = ontoID, label2 = ontoTerm, label3 = enrichmentScore))+
-        ggplot2::geom_point(pch = 21, size = 3)+
+        ggplot2::geom_point(pch = 21, size = 3, position = "jitter")+
         ggplot2::scale_x_continuous("-log10 P Value", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
         ggplot2::scale_fill_manual(values = col, name = "Cluster")+
         ggplot2::scale_color_manual(values = col, name = "Cluster")+
@@ -147,7 +147,7 @@ clusterGraph <- function(ontoID, ontoTerm, pValue, clusterNumber, clusterName, e
                            ggplot2::aes(x = -log10(pValue), y = direction,
                             fill = clusterName, color = clusterName,
                             label = ontoID, label2 = ontoTerm, label3 = enrichmentScore))+
-        ggplot2::geom_point(size = 3)+
+        ggplot2::geom_point(size = 3, position = "jitter")+
         ggplot2::facet_wrap(~clusterName, ncol = 1, strip.position = "left")+
         ggplot2::scale_shape_manual(values = c(25,24), name = "Direction")+
         ggplot2::scale_fill_manual(values = col, name = "Cluster")+
@@ -173,7 +173,7 @@ clusterGraph <- function(ontoID, ontoTerm, pValue, clusterNumber, clusterName, e
                           fill = clusterName, color = clusterName,
                           label = ontoID, label2 = ontoTerm, label3 = pValue))+
       ggplot2::geom_vline(xintercept = 0, lty = "dashed")+
-      ggplot2::geom_point(pch = 21, size = 3)+
+      ggplot2::geom_point(pch = 21, size = 3, position = "jitter")+
       ggplot2::scale_x_continuous("Enrichment Score", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
       ggplot2::scale_fill_manual(values = col, name = "Cluster")+
       ggplot2::scale_color_manual(values = col, name = "Cluster")+
@@ -184,4 +184,3 @@ clusterGraph <- function(ontoID, ontoTerm, pValue, clusterNumber, clusterName, e
 
   if (!isTRUE(interactive)){return(p)} else if (isTRUE(interactive)){return(int)}
 }
-
