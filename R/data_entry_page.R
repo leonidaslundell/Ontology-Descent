@@ -23,7 +23,8 @@ data_entry_page_ui <- function(id)
           rows = 10,
           resize = "both"
         ),
-        actionButton(ns("Setting1"), label = "Submit!")
+        actionButton(ns("Setting1"), label = "Submit!"),
+        actionButton(ns("dummy"), label = "Load dummy data")
       ),
       column(
         2,
@@ -51,7 +52,7 @@ data_entry_page_ui <- function(id)
         textAreaInput(
           ns("pValues"),
           h4("Point Size"),
-          value = "Direction",
+          value = "pValue",
           height = "100%",
           rows = 10,
           resize = "both"
@@ -102,18 +103,42 @@ data_entry_page_ui <- function(id)
 #' @export
 data_entry_page <- function(input, output, session, descent_data)
 {
-   data <- descent_data
-   output$GO_table <- renderDataTable(data$inputData)
-   observeEvent(input$Setting1, {
-     data_matrix<- data.frame(unlist(strsplit(input$OntoID, "\n")),
-                              unlist(strsplit(input$Terms, "\n")),
-                              unlist(strsplit(input$Enrichment, "\n")),
-                              unlist(strsplit(input$pValues, "\n")),
-                              unlist(strsplit(input$Direction, "\n")))
-     colnames(data_matrix) <- c("ontoID", "ontoTerm", "Enrichment", "P-values", "Direction")
-     data$inputData<- data_matrix
-     descent_data$inputData <- data$inputData
-     output$GO_table <- renderDataTable(data$inputData)
+  data <- descent_data
+  dummy_ref <- descent_data
 
-  })
+  observeEvent(
+    input$Setting1,
+    {
+      data_matrix <- data.frame(
+        unlist(strsplit(input$OntoID, "\n")),
+        unlist(strsplit(input$Terms, "\n")),
+        unlist(strsplit(input$Enrichment, "\n")),
+        unlist(strsplit(input$pValues, "\n")),
+        unlist(strsplit(input$Direction, "\n"))
+      )
+      colnames(data_matrix) <-
+        c("ontoID", "ontoTerm", "Enrichment", "P-values", "Direction")
+      data$inputData <- data_matrix
+      descent_data$inputData <- data$inputData
+      output$GO_table <- renderDataTable(descent_data$inputData)})
+
+      observeEvent(
+        input$dummy,
+        {
+          dummy_data <- dummy_ref$inputData
+          data_matrix <-
+            data.frame(
+              dummy_data$ontoID,
+              dummy_data$ontoTerm,
+              dummy_data$enrichmentScore,
+              dummy_data$pValue,
+              dummy_data$direction
+            )
+          colnames(data_matrix) <-
+            c("ontoID", "ontoTerm", "Enrichment", "P-values", "Direction")
+          descent_data$inputData <- data_matrix
+          output$GO_table <- renderDataTable(descent_data$inputData)
+     })
+
+
 }
