@@ -30,6 +30,7 @@ Outline of approach:
 # Data
 
 simplifyEnrichment package has a random GO generator with size. Pterostilbene experiment from Jonas group has load of real GO hits. 
+Generating 2 small datsets from this and 2 large datasets.
 
 ```{r, setup}
 # library(openxlsx)
@@ -51,21 +52,22 @@ simplifyEnrichment package has a random GO generator with size. Pterostilbene ex
 
 # save(file = "data/testData.Rdata", list = c("goBench", "goOnt"))
 load("data/testData.Rdata")
-
-source("R/distanceR.R")
-source("R/networkGeneratoR.R")
-source("R/clustereR.R")
-net <- networkeR(ont = "BP")
-
-
-library(org.Mm.eg.db)
-
-GOgenes <- as.list(org.Mm.egGO2ALLEGS)
-GOlength <- sapply(GOgenes, length)
-
 ```
 
 # Test different distances
+
+## Ontology Descent approach simple outline
+
+Ontology Descent has 4 steps:
+
+* Get the graph distance (Lars suggests to add the Jackard index to edge)
+* Cluster the graph and cut the graph (right now simple tree cutting at discrete intervals)
+* Some kind of metric for the clustering at each discrete interval cut
+* User decides, based on the metric provided, the number of clusters.
+
+The main challenge for benchmarking is that currently the method is subjective, and its impossible to compare to the automatic methods.
+
+Applying current itteration of method to the data.
 
 ## Distance
 
