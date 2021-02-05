@@ -7,27 +7,87 @@
 data_entry_page_ui <- function(id)
 {
   ns <- shiny::NS(id)
-  fluidPage( # flexible layout function
+  fluidPage(
+    titlePanel(
+      "Ontology Descent: A data visualization tool for Gene Ontology Enrichment data"
+    ),
 
-    # Title
-    titlePanel("Minimal application"),
-
-    sidebarLayout(  # standard inputs on sidebar, outputs in main area layout
-      sidebarPanel( # sidebar configuration
-        textInput(inputId = ns("comment"),      # this is the name of the
-                  # variable- this will be passed to server.R
-                  label = "Say something?", # display label for the variable
-                  value = ""                # initial value
-
+    fluidRow(
+      column(
+        2,
+        textAreaInput(
+          ns("OntoID"),
+          h4("Ontology ID"),
+          value = "Ontology ID",
+          height = "100%",
+          rows = 10,
+          resize = "both"
+        ),
+        actionButton(ns("Setting1"), label = "Submit!")
+      ),
+      column(
+        2,
+        textAreaInput(
+          ns("Terms"),
+          h4("Ontology Terms"),
+          value = "Ontology Terms",
+          height = "100%",
+          rows = 10,
+          resize = "both"
         )),
-
-      # Show a plot of the generated distribution
-      mainPanel( # main output configuration
-        h3("This is you saying it"), # title with HTML helper
-        textOutput(ns("textDisplay"))    # this is the name of the output
-        # element as defined in server.R
+      column(
+        2,
+        textAreaInput(
+          ns("Enrichment"),
+          h4("Enrichment Scores"),
+          value = "Enrichment Scores",
+          height = "100%",
+          rows = 10,
+          resize = "both"
+        )
+      ),
+      column(
+        2,
+        textAreaInput(
+          ns("pValues"),
+          h4("Point Size"),
+          value = "Direction",
+          height = "100%",
+          rows = 10,
+          resize = "both"
+        )
+      ),
+      column(
+        2,
+        textAreaInput(
+          ns("Direction"),
+          h4("Enrichment Direction"),
+          value = "Enrichment direction (up or down)",
+          height = "100%",
+          rows = 10,
+          resize = "both"
+        )
+      ),
+      column(
+        2,
+        selectInput(
+          ns("dummy"),
+          label = "Enable P-hacking?",
+          choices = c("Yes!", "Hell no!")
+        ),
+        selectInput(
+          ns("dummy_2"),
+          label = "Bless with Leo's beard??",
+          choices = c("Yes!", "Hell no!")
+        ),
+        selectInput(
+          ns("dummy_3"),
+          label = "Do you want a banana?",
+          choices = c("Yes!", "Hell no!")
+        )
       )
-    )
+    ),
+    dataTableOutput(outputId = ns("GO_table"))
   )
 }
 
@@ -42,12 +102,18 @@ data_entry_page_ui <- function(id)
 #' @export
 data_entry_page <- function(input, output, session, descent_data)
 {
-  output$textDisplay <- renderText({ # mark function as reactive
-    # and assign to output$textDisplay for passing to ui.R
-
-    paste0("You said '", input$comment,           # from the text
-           "'. There are ", nchar(input$comment), # input control as
-           " characters in this.")                # defined in ui.R
+   data <- descent_data
+   output$GO_table <- renderDataTable(data$inputData)
+   observeEvent(input$Setting1, {
+     data_matrix<- data.frame(unlist(strsplit(input$OntoID, "\n")),
+                              unlist(strsplit(input$Terms, "\n")),
+                              unlist(strsplit(input$Enrichment, "\n")),
+                              unlist(strsplit(input$pValues, "\n")),
+                              unlist(strsplit(input$Direction, "\n")))
+     colnames(data_matrix) <- c("ontoID", "ontoTerm", "Enrichment", "P-values", "Direction")
+     data$inputData<- data_matrix
+     descent_data$inputData <- data$inputData
+     output$GO_table <- renderDataTable(data$inputData)
 
   })
 }
