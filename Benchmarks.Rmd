@@ -15,12 +15,12 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Introduction & aims
 
-There are three distinct components in this project: 
+There are three distinct components in this project (existing methods): 
 1. Ontological distance metric (eg Wang Resnik etc).
-2. Clustering component (have not found anything specific).
+2. Clustering component (simplifyEnrichment).
 3. Overall, final result (package component, eg Revigo).
 
-Moreover the GO input terms should be checked systematically for size (ranging from large to small) and diversity (similar go terms vs dissimilar go terms). Another consideration (further down the line) is clustering behavior with MF&BP combined or separate
+GO input terms benchmarking should be consider size (ranging from large to small) and diversity (similar go terms vs dissimilar go terms). Another consideration (further down the line) is clustering behavior with MF & BP & CC combined or separate.
 
 Outline of approach: 
 * Test various distances on my clustering method.
@@ -29,12 +29,11 @@ Outline of approach:
 
 # Data
 
-Simplifyenrichment package has a random GO generator with size. Pterostilbene experiment from Jonas group has load of real GO hits. 
+simplifyEnrichment package has a random GO generator with size. Pterostilbene experiment from Jonas group has load of real GO hits. 
 
 ```{r, setup}
-library(simplifyEnrichment)
-library(openxlsx)
-
+# library(openxlsx)
+# 
 # goBench <- list(SmallRand = random_GO(50),
 #                 BigRand = random_GO(300),
 #                 SmallReal = read.xlsx("data/TestData.xlsx", sheet = 1),
@@ -53,9 +52,9 @@ library(openxlsx)
 # save(file = "data/testData.Rdata", list = c("goBench", "goOnt"))
 load("data/testData.Rdata")
 
-source("Functions/distanceR.R")
-source("Functions/networkGeneratoR.R")
-source("Functions/clustereR.R")
+source("R/distanceR.R")
+source("R/networkGeneratoR.R")
+source("R/clustereR.R")
 net <- networkeR(ont = "BP")
 
 
@@ -73,6 +72,7 @@ GOlength <- sapply(GOgenes, length)
 simplifyEnrichment easily calculates the standard "Wang", "Resnik", "Rel", "Jiang", and "Lin" distance methods. It also provides an automatic clusterig method. Use this to investigate how good the simple step distance metric is.
 
 ```{r}
+library(simplifyEnrichment)
 
 goDist <- lapply(goBench, function(dat){
   goDistInt <- lapply(c("Wang", "Resnik", "Rel", "Jiang","Lin"), function(mea){
