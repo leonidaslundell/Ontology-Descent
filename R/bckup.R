@@ -2,7 +2,8 @@
 #'
 #' @param id unique id for this module
 #'
-#' @import shiny ggplot2 ggiraph RColorBrewer ggsci
+#' @import shiny
+#' @import ggplot2 plotly RColorBrewer ggsci
 #' @export
 plotting_page_ui <- function(id)
 {
@@ -21,7 +22,11 @@ plotting_page_ui <- function(id)
 
         checkboxInput(inputId = ns("coordFlip"), label = "Flip X and Y axis", value = FALSE),
 
+        br(),
+
         actionButton(inputId = ns("actPlot"), label = "Show plot"),
+
+        br(),
 
         tabsetPanel(id = "Graphical Options",
 
@@ -31,7 +36,7 @@ plotting_page_ui <- function(id)
                                           value = 15, step = .5),
 
                              numericInput(inputId = ns("plotWd"), label = "Width", min = 2, max = 50,
-                                          value = 20, step = .5),
+                                          value = 15, step = .5),
 
                              selectInput(inputId = ns("plotUnit"), label = "Units",
                                          choices = c("cm", "in", "mm"),
@@ -92,7 +97,7 @@ plotting_page_ui <- function(id)
       ),
 
       mainPanel(
-        ggiraph::girafeOutput(outputId = ns("testPlot"), height = 750),
+        plotOutput(outputId = ns("plotOut"), inline = TRUE),
 
         textOutput(outputId = ns("pathWarning"))
 
@@ -129,6 +134,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           direction = dat()$direction,
                                                           plotEnrichment = input$axisType,
                                                           coordFlip = input$coordFlip,
+                                                          interactive = FALSE,
                                                           themeSet = input$themeSet,
                                                           colorSet = input$colorSet,
                                                           lgdPosition = input$lgdPosition,
@@ -152,6 +158,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           direction = dat()$direction,
                                                           plotEnrichment = input$axisType,
                                                           coordFlip = input$coordFlip,
+                                                          interactive = FALSE,
                                                           themeSet = input$themeSet,
                                                           colorSet = input$colorSet,
                                                           lgdPosition = input$lgdPosition,
@@ -165,28 +172,38 @@ plotting_page <- function(input, output, session, descent_data)
                                            )
                                     )
 
-  ### Display Plot - as ggiraph svg ###
-  observeEvent(input$actPlot, {
-      h <- eventReactive(input$actPlot,{
-        switch(input$plotUnit,
-               "cm" = {input$plotHt * 0.393701},
-               "in" = {input$plotHt},
-               "mm" = {input$plotHt * 0.0393701})
-        })
-
-      w <- eventReactive(input$actPlot,{
-        switch(input$plotUnit,
-               "cm" = {input$plotWd * 0.393701},
-               "in" = {input$plotWd},
-               "mm" = {input$plotWd * 0.0393701})
+  ### Display Plot ###
+  observeEvent(input$actPlot,{
+    h <- eventReactive(input$actPlot,{
+      switch(input$plotUnit,
+             "cm" = {input$plotHt * 37.795275591},
+             "in" = {input$plotHt * 96},
+             "mm" = {input$plotHt * 3.7795275591})
       })
 
-    output$testPlot <- ggiraph::renderGirafe(ggiraph::girafe(ggobj = reacVals$plotOut(),
-                                                             width_svg = w(),
-                                                             height_svg = h()))
+    w <- eventReactive(input$actPlot,{
+      switch(input$plotUnit,
+             "cm" = {input$plotWd * 37.795275591},
+             "in" = {input$plotWd * 96},
+             "mm" = {input$plotWd * 3.7795275591})
     })
 
+    output$plotOut <- renderImage({
 
+      outfile <- tempfile(fileext = ".png")
+
+      png(outfile, width = w(), height = h())
+      print(reacVals$plotOut())
+      dev.off()
+
+      list(src = outfile,
+           contentType = "image/png",
+           width = w(),
+           height = h(),
+           alt = "Plot PNG")
+      }, deleteFile = TRUE)
+  }
+  )
 
   ### Download Plot ###
   reacVals$plotDwnld <- reactive(reacVals$plotOut())
