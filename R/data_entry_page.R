@@ -35,12 +35,13 @@ data_entry_page_ui <- function(id)
           height = "100%",
           rows = 10,
           resize = "both"
-        )),
+        )
+      ),
       column(
         2,
         textAreaInput(
           ns("Enrichment"),
-          h4("Enrichment Scores"),
+          h4("Enrichment"),
           value = "Enrichment Scores",
           height = "100%",
           rows = 10,
@@ -62,7 +63,7 @@ data_entry_page_ui <- function(id)
         2,
         textAreaInput(
           ns("Direction"),
-          h4("Enrichment Direction"),
+          h4("Direction"),
           value = "Enrichment direction (up or down)",
           height = "100%",
           rows = 10,
@@ -71,21 +72,27 @@ data_entry_page_ui <- function(id)
       ),
       column(
         2,
-        selectInput(
-          ns("dummy"),
-          label = "Enable P-hacking?",
-          choices = c("Yes!", "Hell no!")
+        fileInput(
+          inputId = ns("file"),
+          label = "Upload a csv file",
+          buttonLabel = "Upload",
+          multiple = F,
+          accept = ".csv"
         ),
-        selectInput(
-          ns("dummy_2"),
-          label = "Bless with Leo's beard??",
-          choices = c("Yes!", "Hell no!")
+        radioButtons(
+          inputId = ns("sep"),
+          label = "Seperator",
+          choices = c(
+            Auto = "auto",
+            Comma = ",",
+            Semicolon = ":",
+            Tab = "\t"
+          )
         ),
-        selectInput(
-          ns("dummy_3"),
-          label = "Do you want a banana?",
-          choices = c("Yes!", "Hell no!")
+        helpText(
+          "A csv file should contain ontology ID, ontology term, enrichment value, p.value and direction"
         )
+
       )
     ),
     dataTableOutput(outputId = ns("GO_table"))
@@ -105,40 +112,75 @@ data_entry_page <- function(input, output, session, descent_data)
 {
   data <- descent_data
   dummy_ref <- descent_data
-
+  imported_values <- NULL
   observeEvent(
-    input$Setting1,
+    input$file,
     {
-      data_matrix <- data.frame(
-        unlist(strsplit(input$OntoID, "\n")),
-        unlist(strsplit(input$Terms, "\n")),
-        unlist(strsplit(input$Enrichment, "\n")),
-        unlist(strsplit(input$pValues, "\n")),
-        unlist(strsplit(input$Direction, "\n"))
-      )
-      colnames(data_matrix) <-
-        c("ontoID", "ontoTerm", "Enrichment", "P-values", "Direction")
-      data$inputData <- data_matrix
-      descent_data$inputData <- data$inputData
-      output$GO_table <- renderDataTable(descent_data$inputData)})
+      imported_values <-
+        data.table::fread(input$file$datapath, sep = input$sep)
+      col_names <- c("ontoID",
+                     "ontoTerm",
+                     "Enrichment",
+                     "P-values",
+                     "Direction")
+    for(i in 1:5){
+      colnames(imported_values)[i] <- col_names[i]
+    }
+    values <-
+      reactive({
+        validate(need(
+          length(imported_values) == 5,
+          "Your uploaded file is not the correct format"
+        ))
+        imported_values
+      })
+    output$GO_table <- renderDataTable(values())
+    descent_data$inputData <- values()
 
-      observeEvent(
-        input$dummy,
-        {
-          dummy_data <- dummy_ref$inputData
-          data_matrix <-
-            data.frame(
-              dummy_data$ontoID,
-              dummy_data$ontoTerm,
-              dummy_data$enrichmentScore,
-              dummy_data$pValue,
-              dummy_data$direction
-            )
-          colnames(data_matrix) <-
-            c("ontoID", "ontoTerm", "Enrichment", "P-values", "Direction")
-          descent_data$inputData <- data_matrix
-          output$GO_table <- renderDataTable(descent_data$inputData)
-     })
+
+  })
+
+  observeEvent(input$Setting1,
+               {
+                 data_matrix <- data.frame(
+                   unlist(strsplit(input$OntoID, "\n")),
+                   unlist(strsplit(input$Terms, "\n")),
+                   unlist(strsplit(input$Enrichment, "\n")),
+                   unlist(strsplit(input$pValues, "\n")),
+                   unlist(strsplit(input$Direction, "\n"))
+                 )
+                 colnames(data_matrix) <-
+                   c("ontoID",
+                     "ontoTerm",
+                     "Enrichment",
+                     "P-values",
+                     "Direction")
+                 data$inputData <- data_matrix
+                 descent_data$inputData <- data$inputData
+                 output$GO_table <- renderDataTable(descent_data$inputData)
+               })
+
+  observeEvent(input$dummy,
+               {
+                 dummy_ref <- get_test_data()
+                 dummy_data <- dummy_ref$inputData
+                 data_matrix <-
+                   data.frame(
+                     dummy_data$ontoID,
+                     dummy_data$ontoTerm,
+                     dummy_data$enrichmentScore,
+                     dummy_data$pValue,
+                     dummy_data$direction
+                   )
+                 colnames(data_matrix) <-
+                   c("ontoID",
+                     "ontoTerm",
+                     "Enrichment",
+                     "P-values",
+                     "Direction")
+                 descent_data$inputData <- data_matrix
+                 output$GO_table <- renderDataTable(descent_data$inputData)
+               })
 
 
 }
