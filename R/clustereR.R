@@ -1,12 +1,14 @@
 #clustering in two flavors: hierachichal and topological (kmeans or igraph cluster optimal)
 
-clustereR <- function(ontoNet, ontoNames, target, ontoLength){
+clustereR <- function(ontoNet, ontoNames, ontoLength, target){
 
   #############
   #network based clustering
   ontoNetSubgraph <- induced_subgraph(ontoNet, target)
+  # ontoClust <- cluster_walktrap(ontoNetSubgraph)
+  # ontoClust <- cluster_infomap(as.undirected(ontoNetSubgraph))
   ontoClust <- cluster_fast_greedy(as.undirected(ontoNetSubgraph))
-  table(ontoClust$membership)
+  # table(ontoClust$membership)
 
   ontoClust <- data.frame(cluster = ontoClust$membership,
                           ontoID = ontoClust$names,
@@ -19,23 +21,21 @@ clustereR <- function(ontoNet, ontoNames, target, ontoLength){
   ontoClust <- merge(ontoClust, x, by = "cluster")
   colnames(ontoClust)[5] <- "clusterTerm"
 
-  #############
-  #make a dendrogram for the order
-  x <- distances(ontoNet,
-                 v = ontoClust$ontoID[ontoClust$ontoTerm %in% ontoClust$clusterTerm],
-                 to = ontoClust$ontoID[ontoClust$ontoTerm %in% ontoClust$clusterTerm],
-                 mode = "all")
-  x[is.infinite(x)] <- max(x[!is.infinite(x)])*5
-  ontoOrder <- hclust(as.dist(x))
+  # #############
+  # #make a dendrogram for the order
+  # #some stupid bug here...
+  # x <- distances(ontoNet,
+  #                v = ontoClust$ontoID[ontoClust$ontoTerm %in% ontoClust$clusterTerm],
+  #                to = ontoClust$ontoID[ontoClust$ontoTerm %in% ontoClust$clusterTerm],
+  #                mode = "all")
+  # x[is.infinite(x)] <- max(x[!is.infinite(x)])*5
+  # ontoOrder <- hclust(as.dist(x))
+  #
+  # ontoClust$clusterID <- ontoClust$ontoID[match(ontoClust$clusterTerm, ontoClust$ontoTerm)]
+  #
+  # ontoClust$clusterOrder <- ontoOrder$order[match(ontoClust$clusterID, ontoOrder$labels)]
 
-  ontoClust$clusterID <- ontoClust$ontoID[match(ontoClust$clusterTerm, ontoClust$ontoTerm)]
-
-  ontoClust$clusterOrder <- ontoOrder$order[match(ontoClust$clusterID, ontoOrder$labels)]
-
-  # ontoClust$order <- ontoOrder$order[match(ontoOrder$labels)]
-  merge(data.frame(order = ontoOrder$order, ontoID = ontoOrder$labels), ontoClust,
-        by = "ontoID", all = T, no.dups = T)
-
+  ontoClust
 }
 
 
