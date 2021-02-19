@@ -74,10 +74,10 @@ data_entry_page_ui <- function(id)
         2,
         fileInput(
           inputId = ns("file"),
-          label = "Upload a csv file",
+          label = "Upload a csv or xlsx file",
           buttonLabel = "Upload",
           multiple = F,
-          accept = ".csv"
+          accept = c(".csv", ".xlsx")
         ),
         radioButtons(
           inputId = ns("sep"),
@@ -90,7 +90,7 @@ data_entry_page_ui <- function(id)
           )
         ),
         helpText(
-          "A csv file should contain ontology ID, ontology term, enrichment value, p.value and direction"
+          "A csv file should contain ontology ID, ontology term, enrichment value, p.value and direction, in that order"
         )
 
       )
@@ -113,9 +113,10 @@ data_entry_page <- function(input, output, session, descent_data)
   data <- descent_data
   dummy_ref <- descent_data
   imported_values <- NULL
+  #Load data input from file upload
   observeEvent(
     input$file,
-    {
+    { if(stringr::str_ends(input$file$datapath, "\\.csv")){
       imported_values <-
         data.table::fread(input$file$datapath, sep = input$sep)
       col_names <- c("ontoID",
@@ -137,29 +138,45 @@ data_entry_page <- function(input, output, session, descent_data)
     output$GO_table <- renderDataTable(values())
     descent_data$inputData <- values()
 
-
+    }
+      else if(stringr::str_ends(input$file$datapath, "\\.xlsx")){
+       imported_values <- openxlsx::read.xlsx(input$file$datapath)
+       col_names <- c("ontoID",
+                      "ontoTerm",
+                      "Enrichment",
+                      "P-values",
+                      "Direction")
+       for(i in 1:5){
+         colnames(imported_values)[i] <- col_names[i]
+       }
+       values <-
+         reactive({
+           validate(need(
+             length(imported_values) == 5,
+             "Your uploaded file is not the correct format"
+           ))
+           imported_values
+         })
+       output$GO_table <- renderDataTable(values())
+       descent_data$inputData <- values()
+      }
+      else{
+        showNotification("Your data is not the right file type")
+      }
   })
-
+#input from input columns
   observeEvent(input$Setting1,
-               {
-                 data_matrix <- data.frame(
-                   unlist(strsplit(input$OntoID, "\n")),
-                   unlist(strsplit(input$Terms, "\n")),
-                   unlist(strsplit(input$Enrichment, "\n")),
-                   unlist(strsplit(input$pValues, "\n")),
-                   unlist(strsplit(input$Direction, "\n"))
-                 )
-                 colnames(data_matrix) <-
-                   c("ontoID",
-                     "ontoTerm",
-                     "Enrichment",
-                     "P-values",
-                     "Direction")
+               {data_matrix <- data.frame("ontoID"= unlist(strsplit(input$OntoID, "\n")),
+                                          "ontoTerm"= unlist(strsplit(input$Terms, "\n")),
+                                          "Enrichment" = unlist(strsplit(input$Enrichment, "\n")),
+                                          "P-values" = unlist(strsplit(input$pValues, "\n")),
+                                          "Direction" = unlist(strsplit(input$Direction, "\n")))
+
                  data$inputData <- data_matrix
                  descent_data$inputData <- data$inputData
                  output$GO_table <- renderDataTable(descent_data$inputData)
                })
-
+#load dummy data
   observeEvent(input$dummy,
                {
                  dummy_ref <- get_test_data()
