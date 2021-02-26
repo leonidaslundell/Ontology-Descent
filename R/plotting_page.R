@@ -2,7 +2,7 @@
 #'
 #' @param id unique id for this module
 #'
-#' @import shiny ggplot2 ggiraph RColorBrewer ggsci
+#' @import shiny
 #' @export
 plotting_page_ui <- function(id)
 {
@@ -13,17 +13,61 @@ plotting_page_ui <- function(id)
 
     sidebarLayout(
       sidebarPanel(
-        radioButtons(inputId = ns("plotType"), label = "Plot Type",
-                     choices = c("By Cluster" = "clust", "By Pathway" = "pth"),
-                     selected = "clust"),
+        ### For Modifying the Test Data ###
+        ### DELETE IN FINAL VERSION ###
+        numericInput(inputId = ns("clustN"), label = "Cluster Number", value = 50, min = 5, max = 1000, step = 5),
+        numericInput(inputId = ns("pathN"), label = "Pathway Number", value = 500, min = 5, max = 10000, step = 5),
+        ####################################
+
+        selectInput(inputId = ns("plotType"), label = "Plot Type:", choices = NULL, selected = NULL, multiple = FALSE),
 
         checkboxInput(inputId = ns("axisType"), label = "Plot enrichmentScore (replaces pValue)", value = FALSE),
 
-        checkboxInput(inputId = ns("coordFlip"), label = "Flip X and Y axis", value = FALSE),
+        checkboxInput(inputId = ns("coordFlip"), label = "Flip X and Y axes", value = FALSE),
 
         actionButton(inputId = ns("actPlot"), label = "Show plot"),
 
         tabsetPanel(id = "Graphical Options",
+
+                    tabPanel(title = "Style:",
+                             selectInput(inputId = ns("themeSet"), label = "Plot Theme",
+                                         choices = c("bw", "classic", "grey", "minimal", "dark"),
+                                         selected = "minimal", multiple = FALSE),
+
+                             selectInput(inputId = ns("colorSet"), label = "Color Palette",
+                                         choices = c("Brewer", "AAAS", "D3", "Futurama", "IGV",
+                                                     "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM",
+                                                     "NPG", "RickAndMorty", "Simpsons", "StarTrek",
+                                                     "Tron", "UChicago", "UCSCGB"),
+                                         selected = "IGV", multiple = FALSE),
+
+                             selectInput(inputId = ns("lgdPosition"), label = "Legend Position",
+                                         choices = c("right", "left", "top", "bottom"),
+                                         selected = "right"),
+                             ),
+
+                    tabPanel(title = "Text:",
+                             numericInput(ns("nameSize"), label = "Pathway (size)",
+                                          value = 7, min = 4, max = 96, step = 1),
+
+                             numericInput(ns("axTxtSize"), label = "Axis text (size)",
+                                          value = 7, min = 4, max = 96, step = 1),
+
+                             numericInput(ns("axTitleSize"), label = "Axis title (size)",
+                                          value = 9, min = 4, max = 96, step = 1),
+
+                             numericInput(ns("lgTxtSize"), label = "Legend text (size)",
+                                          value = 7, min = 4, max = 96, step = 1),
+
+                             numericInput(ns("lgTitleSize"), label = "Legend title (size)",
+                                          value = 9, min = 4, max = 96, step = 1),
+
+                             selectInput(ns("fontFam"), label = "Font Family",
+                                         choices = c("Sans (Arial)" = "sans",
+                                                     "Serif (Times New Roman)" = "serif",
+                                                     "Mono (Courier New)" = "mono"),
+                                         selected = "sans", multiple = FALSE)
+                    ),
 
                     tabPanel(title = "Download:",
 
@@ -31,7 +75,7 @@ plotting_page_ui <- function(id)
                                           value = 15, step = .5),
 
                              numericInput(inputId = ns("plotWd"), label = "Width", min = 2, max = 50,
-                                          value = 20, step = .5),
+                                          value = 15, step = .5),
 
                              selectInput(inputId = ns("plotUnit"), label = "Units",
                                          choices = c("cm", "in", "mm"),
@@ -46,45 +90,6 @@ plotting_page_ui <- function(id)
                                          selected = "tiff", multiple = FALSE),
 
                              downloadButton(outputId = ns("plotDwnld"), label = "Download Plot"),
-                             ),
-
-                    tabPanel(title = "Style:",
-                             selectInput(inputId = ns("themeSet"), label = "Plot Theme",
-                                         choices = c("bw", "classic", "grey", "minimal", "dark"),
-                                         selected = "bw", multiple = FALSE),
-
-                             selectInput(inputId = ns("colorSet"), label = "Color Palette",
-                                         choices = c("Set1", "NPG", "AAAS", "NEJM", "Lancet", "JCO",
-                                                     "UCSCGB", "D3", "IGV", "UChicago", "Futurama",
-                                                     "RickAndMorty", "TheSimpsons"),
-                                         selected = "Set1", multiple = FALSE),
-
-                             selectInput(inputId = ns("lgdPosition"), label = "Legend Position",
-                                         choices = c("right", "left", "top", "bottom"),
-                                         selected = "right"),
-                             ),
-
-                    tabPanel(title = "Text:",
-                             numericInput(ns("nameSize"), label = "Pathway (size)",
-                                          value = 10, min = 4, max = 96, step = 1),
-
-                             numericInput(ns("axTxtSize"), label = "Axis text (size)",
-                                          value = 10, min = 4, max = 96, step = 1),
-
-                             numericInput(ns("axTitleSize"), label = "Axis title (size)",
-                                          value = 12, min = 4, max = 96, step = 1),
-
-                             numericInput(ns("lgTxtSize"), label = "Legend text (size)",
-                                          value = 10, min = 4, max = 96, step = 1),
-
-                             numericInput(ns("lgTitleSize"), label = "Legend title (size)",
-                                          value = 12, min = 4, max = 96, step = 1),
-
-                             selectInput(ns("fontFam"), label = "Font Family",
-                                         choices = c("Sans (Arial)" = "sans",
-                                                     "Serif (Times New Roman)" = "serif",
-                                                     "Mono (Courier New)" = "mono"),
-                                         selected = "sans", multiple = FALSE)
                     )
         )
 
@@ -92,10 +97,9 @@ plotting_page_ui <- function(id)
       ),
 
       mainPanel(
-        ggiraph::girafeOutput(outputId = ns("testPlot"), height = 750),
+        textOutput(outputId = ns("warTest")),
 
-        textOutput(outputId = ns("pathWarning"))
-
+        ggiraph::girafeOutput(outputId = ns("testPlot"), height = 750)
         )
     )
   )
@@ -108,17 +112,38 @@ plotting_page_ui <- function(id)
 #' @param session shiny parameter
 #' @param descent_data reactiveValues, contains gene ontology data
 #'
-#' @import shiny
+#' @import shiny; ggplot2; ggiraph
 #' @export
 plotting_page <- function(input, output, session, descent_data)
 {
   reacVals <- reactiveValues()
 
-  ### Get Plot ###
+  # reacVals$data <- reactive(example_data)
+
+
+  ### Modify Data for Cluster Names ###
+  ### DELETE THIS FROM FINAL CODE ###
+  reacVals$data <- reactive(modData(example_data, input$pathN, input$clustN))
+
+  ### Update plotType Based on Data Size ###
+  observe({
+
+    n <- nrow(reacVals$data())
+
+    if (n <= 50) {
+      updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway" = "pth"), selected = "clust")
+
+      } else if (n > 50){
+        updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway (Unavailable)" = "long"), selected = "clust")
+
+        }
+  })
+
+  ### Create Plot ###
   reacVals$plotOut <- eventReactive(input$actPlot,
                                     switch(input$plotType,
                                            "pth" = {
-                                             dat <- reactive({example_data[order(example_data$pValue)[1:50],]})
+                                             dat <- reactive(reacVals$data())
 
                                              pathwayGraph(ontoID = dat()$ontoID,
                                                           ontoTerm = dat()$ontoTerm,
@@ -141,7 +166,7 @@ plotting_page <- function(input, output, session, descent_data)
                                              },
 
                                            "clust" = {
-                                             dat <- reactive({example_data})
+                                             dat <- reactive(reacVals$data())
 
                                              clusterGraph(ontoID = dat()$ontoID,
                                                           ontoTerm = dat()$ontoTerm,
@@ -154,14 +179,13 @@ plotting_page <- function(input, output, session, descent_data)
                                                           coordFlip = input$coordFlip,
                                                           themeSet = input$themeSet,
                                                           colorSet = input$colorSet,
-                                                          lgdPosition = input$lgdPosition,
                                                           nameSize = input$nameSize,
                                                           axTxtSize = input$axTxtSize,
                                                           axTitleSize = input$axTitleSize,
-                                                          lgTxtSize = input$lgTxtSize,
-                                                          lgTitleSize = input$lgTitleSize,
                                                           fontFam = input$fontFam)
-                                             }
+                                           },
+
+                                           "long" = {NULL}
                                            )
                                     )
 
@@ -186,6 +210,18 @@ plotting_page <- function(input, output, session, descent_data)
                                                              height_svg = h()))
     })
 
+  ### Create Warning Message ###
+  observeEvent(input$actPlot,
+               switch(input$plotType,
+                      "pth" = {output$warTest <- NULL},
+                      "clust" = {output$warTest <- NULL},
+                      "long" = {
+                        output$warTest <- renderText(
+                          "Plotting enrichment by pathway is restricted to 50 or less significant pathways.\nPlease use plot By Cluster to visualize all significant pathways."
+                        )
+                      }
+                      ))
+
 
 
   ### Download Plot ###
@@ -204,4 +240,9 @@ plotting_page <- function(input, output, session, descent_data)
                       units = reacVals$plotUnit(), dpi = reacVals$plotDPI())
     }
   )
+
+  ### Stop App on Session End ###
+  session$onSessionEnded(function() {
+    stopApp()
+  })
 }
