@@ -97,9 +97,9 @@ plotting_page_ui <- function(id)
       ),
 
       mainPanel(
-        textOutput(outputId = ns("warTest")),
+        textOutput(outputId = ns("warText")),
 
-        ggiraph::girafeOutput(outputId = ns("testPlot"), height = 750)
+        ggiraph::girafeOutput(outputId = ns("plotOut"), height = 750)
         )
     )
   )
@@ -205,7 +205,7 @@ plotting_page <- function(input, output, session, descent_data)
                "mm" = {input$plotWd * 0.0393701})
       })
 
-    output$testPlot <- ggiraph::renderGirafe(ggiraph::girafe(ggobj = reacVals$plotOut(),
+    output$plotOut <- ggiraph::renderGirafe(ggiraph::girafe(ggobj = reacVals$plotOut(),
                                                              width_svg = w(),
                                                              height_svg = h()))
     })
@@ -216,7 +216,7 @@ plotting_page <- function(input, output, session, descent_data)
                       "pth" = {output$warTest <- NULL},
                       "clust" = {output$warTest <- NULL},
                       "long" = {
-                        output$warTest <- renderText(
+                        output$warText <- renderText(
                           "Plotting enrichment by pathway is restricted to 50 or less significant pathways.\nPlease use plot By Cluster to visualize all significant pathways."
                         )
                       }
