@@ -2,16 +2,63 @@
 % Please edit documentation in R/plotMS.R
 \name{clusterGraph}
 \alias{clusterGraph}
-\title{Title}
+\title{Plot Enrichment By Cluster}
 \usage{
-clusterGraph(xval, yval)
+clusterGraph(
+  ontoID = NULL,
+  ontoTerm = NULL,
+  pValue,
+  clusterNumber = NULL,
+  clusterName,
+  enrichmentScore = NULL,
+  direction = NULL,
+  plotEnrichment = FALSE,
+  coordFlip = FALSE,
+  themeSet = "minimal",
+  colorSet = "IGV",
+  nameSize = 8,
+  axTxtSize = 8,
+  axTitleSize = 10,
+  fontFam = "sans"
+)
 }
 \arguments{
-\item{yval}{}
+\item{ontoID}{Optional. A character vector of Gene Ontology IDs.}
+
+\item{ontoTerm}{Optional. A character vector of Terms associated with Gene Ontology IDs.}
+
+\item{pValue}{A numeric vectors of enrichment p Values for each Gene Ontology pathway.}
+
+\item{clusterNumber}{Optional. A numeric vector showing which cluster the Gene Ontologies belong to.}
+
+\item{clusterName}{A character vector showing terms associated with the Cluster IDs.}
+
+\item{enrichmentScore}{Optional. A numeric vector of enrichment scores for each Gene Ontology.}
+
+\item{direction}{Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.}
+
+\item{plotEnrichment}{Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.}
+
+\item{coordFlip}{Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.}
+
+\item{themeSet}{Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "minimal"}
+
+\item{colorSet}{Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"}
+
+\item{nameSize}{Optional. A numeric value setting font size for cluster names. Default == 7.}
+
+\item{axTxtSize}{Optional. A numeric value setting font size for the axis text. Defualt == 7.}
+
+\item{axTitleSize}{Optional. A numeric value setting font size for the axis title. Default = 9.}
+
+\item{fontFam}{Optional. A character string to select the text font family for the plot. One of "serif", "sans" or "mono". Default == "sans".}
 }
 \value{
-
+A ggplot object.
 }
 \description{
-Title
+Plot Enrichment By Cluster
+}
+\examples{
+
 }
