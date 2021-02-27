@@ -70,6 +70,7 @@ library(patchwork)
 # clustNet <- hclust(as.dist(distNet))
 # 
 # GOlength <- sapply(as.list(org.Hs.egGO2ALLEGS), length)
+# GOlength <- c(GOlength, sapply(as.list(org.Mm.egGO2ALLEGS), length))
 # GOnames <- as.list(GO.db::GOTERM)
 # GOnames <- sapply(GOnames, Term)
 # 
