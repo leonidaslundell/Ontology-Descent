@@ -19,22 +19,24 @@ modData <- function(data, pathN, clustN){
 #' @param direction Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.
 #' @param plotEnrichment Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.
 #' @param coordFlip Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.
-#' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "bw"
-#' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "Brewer"
+#' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "minimal"
+#' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"
 #' @param nameSize Optional. A numeric value setting font size for cluster names. Default == 7.
 #' @param axTxtSize Optional. A numeric value setting font size for the axis text. Defualt == 7.
 #' @param axTitleSize Optional. A numeric value setting font size for the axis title. Default = 9.
 #' @param fontFam Optional. A character string to select the text font family for the plot. One of "serif", "sans" or "mono". Default == "sans".
 #'
 #' @return A ggplot object.
-#' @import ggplot2; RColorBrewer; ggsci
+#' @import ggplot2
+#' @import RColorBrewer
+#' @import ggsci
 #' @export
 #'
 #' @examples
 #'
 clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber = NULL, clusterName,
                          enrichmentScore = NULL, direction = NULL, plotEnrichment = FALSE, coordFlip = FALSE,
-                         themeSet = "bw", colorSet = "Brewer",
+                         themeSet = "minimal", colorSet = "IGV",
                          nameSize = 8, axTxtSize = 8, axTitleSize = 10, fontFam = "sans"){
 
   ### Create plotting Data Frame ###
@@ -152,8 +154,8 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
 #' @param direction Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.
 #' @param plotEnrichment Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.
 #' @param coordFlip Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.
-#' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "bw"
-#' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "Brewer"
+#' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "minimal"
+#' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"
 #' @param lgdPosition Optional. A character string setting the legend position: one of "right", "left", "top" or "bottom". Default == "right".
 #' @param nameSize Optional. A numeric value setting font size for cluster names. Default == 7.
 #' @param axTxtSize Optional. A numeric value setting font size for the axis text. Defualt == 7.
@@ -163,13 +165,15 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
 #' @param fontFam Optional. A character string to select the text font family for the plot. One of "serif", "sans" or "mono". Default == "sans".
 #'
 #' @return A ggplot object.
-#' @import ggplot2; RColorBrewer; ggsci
+#' @import ggplot2
+#' @import RColorBrewer
+#' @import ggsci
 #' @export
 #'
 #' @examples
 pathwayGraph <- function(ontoID = NULL, ontoTerm, pValue, clusterNumber = NULL, clusterName,
                          enrichmentScore = NULL, direction = NULL, plotEnrichment = FALSE, coordFlip = FALSE,
-                         themeSet = "bw", colorSet = "Brewer", lgdPosition = "right",
+                         themeSet = "minimal", colorSet = "IGV", lgdPosition = "right",
                          nameSize = 7, axTxtSize = 7, axTitleSize = 9, lgTxtSize = 7, lgTitleSize = 9, fontFam = "sans"){
 
   ### Create plotting Data Frame ###
@@ -267,10 +271,17 @@ pathwayGraph <- function(ontoID = NULL, ontoTerm, pValue, clusterNumber = NULL, 
 
   ### Other Theme Options + Coord Flip + Legend Position ###
   p <- p + ggplot2::theme(text = ggplot2::element_text(family = fontFam),
-                          legend.position = lgdPosition,
+                          legend.position = lgdPosition, legend.justification = "left",
+                          legend.margin = ggplot2::margin(1, 1, 1, 0, unit = "pt"),
+                          legend.spacing.x = ggplot2::unit(1, "pt"),
+                          legend.spacing.y = ggplot2::unit(1, "pt"),
+                          legend.key.height = ggplot2::unit(lgTxtSize, "pt"),
+                          legend.key.width = ggplot2::unit(lgTxtSize, "pt"),
                           legend.title = ggplot2::element_text(size = lgTitleSize),
-                          legend.text = ggplot2::element_text(size = lgTxtSize),
-                          legend.spacing.y = ggplot2::unit(0.1, "cm"))
+                          legend.text = ggplot2::element_text(size = lgTxtSize))+
+    ggplot2::guides("shape" = ggplot2::guide_legend(order = 1, title.position = "top"),
+                    "color" = ggplot2::guide_legend(ncol = 1, title.position = "top", order = 0),
+                    "fill" = ggplot2::guide_legend(ncol = 1, title.position = "top", order = 0))
 
   if (!isTRUE(coordFlip)){
 
@@ -289,6 +300,6 @@ pathwayGraph <- function(ontoID = NULL, ontoTerm, pValue, clusterNumber = NULL, 
   }
 
   return(p)
-
 }
+
 
