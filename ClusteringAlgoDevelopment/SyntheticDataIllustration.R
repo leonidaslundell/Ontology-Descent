@@ -1,7 +1,7 @@
 library(dendextend)
 library(magrittr)
 
-pdf("figures/schematic.pdf", height = 5, width = 5 )
+pdf("ClusteringAlgoDevelopment/figures/schematic.pdf", height = 5, width = 5 )
 
 set.seed(42)
 g <- make_tree(20, 8)
@@ -58,6 +58,28 @@ dend %>% set("branches_k_color", c("red", "gray","gray","gray","gray"), k = 5) %
   set("leaves_cex", 1) %>%
   set("leaves_col", c("NA","purple")[dendCut]) %>%
   plot(axes = F, main = "Sample branch: \n Get a proportion of leaves")
+
+#############
+#another sample
+
+
+dendCut <- cutree(dendOrder, k = 5)
+dendCut <- sample(names(dendCut[dendCut == 3]), size = 6, replace = F)
+
+dendCut <- dendOrder$labels[dendOrder$order] %in% dendCut
+dendCut <- as.numeric(dendCut) +1
+
+dend %>% set("branches_k_color", c("gray", "gray","red","gray","gray"), k = 5) %>%  set("labels", NULL) %>%
+  plot(axes = F, main = "Sample the tree: \n Get a random branch")
+
+dend %>% set("branches_k_color", c("gray", "gray","red","gray","gray"), k = 5) %>%  set("labels", NULL) %>%
+  set("leaves_pch", 19) %>%  # node point type
+  set("leaves_cex", 1) %>%
+  set("leaves_col", c("NA","orange")[dendCut]) %>%
+  plot(axes = F, main = "Sample branch: \n Get a proportion of leaves")
+
+#############
+#result
 
 #4 purple
 #8 blue
