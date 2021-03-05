@@ -166,11 +166,18 @@ data_entry_page <- function(input, output, session, descent_data)
   })
 #input from input columns
   observeEvent(input$Setting1,
-               {data_matrix <- data.frame("ontoID"= ifelse(is.na(input$OntoID), " ", unlist(strsplit(input$OntoID, "\n"))),
-                                          "ontoTerm"= ifelse(is.na(input$Terms), " ", unlist(strsplit(input$Terms, "\n"))),
-                                          "Enrichment" = ifelse(is.na(input$Enrichment), " ",unlist(strsplit(input$Enrichment, "\n"))),
-                                          "P-values" = ifelse(is.na(input$pValues), " ",unlist(strsplit(input$pValues, "\n"))),
-                                          "Direction" = ifelse(is.na(input$Direction), " ",unlist(strsplit(input$Direction, "\n"))))
+               {data_matrix <-
+                 data.frame(
+                   "ontoID" = if(is.na(input$OntoID)) " " else unlist(strsplit(input$OntoID, "\n")),
+                   "ontoTerm" = if(is.na(input$Terms)) " " else unlist(strsplit(input$Terms, "\n")),
+                   "Enrichment" = if(is.na(input$Enrichment)) " " else unlist(strsplit(
+                     input$Enrichment, "\n"
+                   )),
+                   "P-values" = if(is.na(input$pValues)) " " else unlist(strsplit(input$pValues, "\n")),
+                   "Direction" = if(is.na(input$Direction)) " " else unlist(strsplit(
+                     input$Direction, "\n"
+                   ))
+                 )
 
                  data$inputData <- data_matrix
                  descent_data$inputData <- data$inputData
