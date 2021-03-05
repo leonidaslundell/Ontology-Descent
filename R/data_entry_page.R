@@ -182,6 +182,14 @@ data_entry_page <- function(input, output, session, descent_data)
                  data$inputData <- data_matrix
                  descent_data$inputData <- data$inputData
                  output$GO_table <- renderDataTable(descent_data$inputData)
+
+                 #### Adding the clustereR function now, but at some point need to add an evaluator before running clustereR.
+                 #### otherwise its gonna be an ugly crash
+                 temp <- clustereR(net, GOnames, GOlength, descent_data$inputData)
+
+                 descent_data <- reactiveValues(inputData = merge(descent_data$inputData[,c("ontoID", "enrichmentScore", "pValue", "direction")],
+                                                                  temp$res, by = "ontoID", all.y = T),
+                                                netPlot = temp$plot)
                })
 #load dummy data
   observeEvent(input$dummy,
