@@ -36,7 +36,7 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target){
   #############
   #prepare result table
 
-  ontoClust <- data.frame(cluster = ontoClust$membership,
+  ontoClust <- data.frame(clusterNumber = ontoClust$membership,
                           clusterTerm = clusterTerm[membership(ontoClust)],
                           ontoID = ontoClust$names,
                           ontoTerm = GOnames[ontoClust$names],
@@ -45,9 +45,9 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target){
   #############
   #prepare network plot
 
-  cols <- colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(max(ontoClust$cluster))
-  cols <- sample(cols, max(ontoClust$cluster), replace = F)
-  cols <- cols[ontoClust$cluster]
+  cols <- colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(max(ontoClust$clusterNumber))
+  cols <- sample(cols, max(ontoClust$clusterNumber), replace = F)
+  cols <- cols[ontoClust$clusterNumber]
   ontoClust$color <- cols
   ontoClust[!ontoClust$ontoID %in% target, "color"] <- "#808080"
 
