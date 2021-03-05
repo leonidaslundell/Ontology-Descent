@@ -104,3 +104,43 @@ plot(clusters[,-3] * abs(rnorm(38, mean = 1, sd = 0.04)),
      xlab = "", ylab = "")
 
 dev.off()
+
+pdf("ClusteringAlgoDevelopment/figures/accuracyRecallPression.pdf")
+
+set.seed(42)
+clusters <- temp <- data.frame(x = c(rep(4:5, 2),
+                                     rep(5:7, 2),
+                                     rep(1:3, 3)),
+                               y = c(sort(rep(1:2, 2)),
+                                     sort(rep(4:6, 2)),
+                                     sort(rep(4:6, 3))),
+                               col = c(rep("purple", 4),
+                                       rep("orange", 6),
+                                       rep("blue", 9)))
+
+plot(clusters[,-3] * abs(rnorm(38, mean = 1, sd = 0.04)),
+     main = "Specificity - TPR\nTrue positive/(true positive + false positive)\n ie. trust when yes",
+     sub = "TPR=1/(1+1)=0.5",
+     col = clusters$col,
+     pch = c(rep(17,10), rep(15,9)),
+     cex = 3,
+     axes = F,
+     xlab = "", ylab = "")
+legend(0.7, 2.5, c("Predicted cluster 1", "Predicted cluster 2",
+                   c("True cluster A", "True cluster B", "True clustert C")),
+       pch = c(17, 15, 16,16, 16),
+       cex = 1, bty = "n", col = c("black", "black", "purple", "orange", "blue"))
+
+plot(clusters[,-3] * abs(rnorm(38, mean = 1, sd = 0.04)),
+     main = "Specificity - TPR\nTrue positive/(true positive + false positive)\n ie. trust when yes",
+     sub = "TPR=1/(1+1)=0.5",
+     col = clusters$col,
+     pch = c(rep(17,10), rep(15,9)),
+     cex = 3,
+     axes = F,
+     xlab = "", ylab = "")
+legend(0.7, 2.5, c("Predicted cluster 1", "Predicted cluster 2",
+                   c("True cluster A", "True cluster B", "True clustert C")),
+       pch = c(17, 15, 16,16, 16),
+       cex = 1, bty = "n", col = c("black", "black", "purple", "orange", "blue"))
+dev.off()
