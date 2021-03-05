@@ -15,8 +15,13 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target){
   #############
   #network based clustering
   connectedSubgraph <- shortest_paths(ontoNet, from = target, to = target, mode = "all")
-  connectedSubgraph <- unique(names(unlist(connectedSubgraph$vpath)))
+  ##commented out parts are for removing too distant connections
+  # connectedSubgraph <- connectedSubgraph$vpath[sapply(connectedSubgraph$vpath, length)<8]
+  connectedSubgraph <- connectedSubgraph$vpath
+  connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
+  # connectedSubgraph <- c(connectedSubgraph, target)
   ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
+  # ontoClust <- igraph::cluster_spinglass(as.undirected(ontoNetSubgraph))
   ontoClust <- igraph::cluster_edge_betweenness(as.undirected(ontoNetSubgraph))
 
   #############
@@ -40,23 +45,30 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target){
   #############
   #prepare network plot
 
-  cols <- colorRampPalette(brewer.pal(12, "Set3"))(max(ontoClust$cluster))
+  cols <- colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(max(ontoClust$cluster))
   cols <- sample(cols, max(ontoClust$cluster), replace = F)
-  ontoClust$color <- cols[ontoClust$cluster]
+  cols <- cols[ontoClust$cluster]
+  ontoClust$color <- cols
+  ontoClust[!ontoClust$ontoID %in% target, "color"] <- "#808080"
 
-  V(ontoNetSubgraph)$color <- "black"
-  V(ontoNetSubgraph)$color[match(ontoClust$ontoID, V(ontoNetSubgraph)$name)] <- cols[ontoClust$cluster]
-  V(ontoNetSubgraph)$color[match(ontoClust$ontoID, V(ontoNetSubgraph)$name)] <- cols[ontoClust$cluster]
-  #V(ontoNetSubgraph)$name == ontoClust$ontoID
-  V(ontoNetSubgraph)$clusterTerm <- ontoClust$clusterTerm
+  #cluster name
 
+  ontoClust$nodeLabel <- ""
+  ontoClust$nodeLabel[which(ontoClust$ontoTerm == ontoClust$clusterTerm)] <-
+    ontoClust$clusterTerm[which(ontoClust$ontoTerm == ontoClust$clusterTerm)]
+
+  if(!all(V(ontoNetSubgraph)$name == ontoClust$ontoID)){stop("wrong order")}
+
+  vertex_attr(ontoNetSubgraph) <- list(name = ontoClust$ontoID,
+                                       color = ontoClust$color,
+                                       clusterTerm = ontoClust$clusterTerm,
+                                       label.color = ontoClust$color,
+                                       ontoTerm = ontoClust$ontoTerm,
+                                       nodeLabel = ontoClust$nodeLabel)
   V(ontoNetSubgraph)$size <- 0
-  V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$name %in% x] <- 3
+  V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$name %in% target] <- 2
 
   E(ontoNetSubgraph)$arrow.size <- 0
-
-
-  ontoNetSubgraph
 
   #remove the "stepping stones"
   ontoClust <- ontoClust[ontoClust$ontoID %in% target,]
@@ -64,7 +76,6 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target){
   return(list(res = ontoClust, plot = ontoNetSubgraph))
 
 }
-
 
 networkeR <- function(ont = "MF", species = "HSA"){
   library(GO.db)
@@ -107,4 +118,35 @@ networkeR <- function(ont = "MF", species = "HSA"){
 
   return(graphNet)
 }
+
+sampleR <- function(ontoHclust,
+                    maxClusterSize = 300,
+                    n = 50,
+                    minClusters = 75,
+                    maxClusters = 1250){
+
+  x <- NULL
+
+  for(n in 1:n){
+
+    #cut at a random height
+    treeCut <- cutree(ontoHclust,
+                      k = sample(minClusters:maxClusters,1))
+
+    #take a random branch
+    treeCutSample <- names(treeCut[treeCut == sample(unique(treeCut), 1)])
+
+    #from a branch, take a random amount
+    treeCutSample <- treeCutSample[sample(1:length(treeCutSample),
+                                          sample(1:length(treeCutSample), 1))]
+    x[[n]] <- treeCutSample
+  }
+
+  #this generates some gigantic trees some times since the low k numbers give you very big clusters.
+  #removing clusters with more than 250 GO terms (so arbitrary)
+
+  x[sapply(x, length)<maxClusterSize]
+
+}
+
 
