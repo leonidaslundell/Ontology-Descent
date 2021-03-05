@@ -23,7 +23,7 @@ data_entry_page_ui <- function(id)
           rows = 10,
           resize = "both"
         ),
-        actionButton(ns("Setting1"), label = "Submit!"),
+        actionButton(ns("submitButton"), label = "Submit!"),
         actionButton(ns("dummy"), label = "Load dummy data")
       ),
       column(
@@ -165,7 +165,7 @@ data_entry_page <- function(input, output, session, descent_data)
       }
   })
 #input from input columns
-  observeEvent(input$Setting1,
+  observeEvent(input$submitButton,
                {data_matrix <-
                  data.frame(
                    "ontoID" = if(is.na(input$OntoID)) " " else unlist(strsplit(input$OntoID, "\n")),
