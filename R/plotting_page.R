@@ -2,7 +2,7 @@
 #'
 #' @param id unique id for this module
 #'
-#' @import shiny
+#' @import shiny ggiraph
 #' @export
 plotting_page_ui <- function(id)
 {
@@ -15,8 +15,8 @@ plotting_page_ui <- function(id)
       sidebarPanel(
         ### For Modifying the Test Data ###
         ### DELETE IN FINAL VERSION ###
-        numericInput(inputId = ns("clustN"), label = "Cluster Number", value = 50, min = 5, max = 1000, step = 5),
-        numericInput(inputId = ns("pathN"), label = "Pathway Number", value = 500, min = 5, max = 10000, step = 5),
+        numericInput(inputId = ns("clustN"), label = "Cluster Number", value = 10, min = 5, max = 1000, step = 5),
+        numericInput(inputId = ns("pathN"), label = "Pathway Number", value = 50, min = 5, max = 10000, step = 5),
         ####################################
 
         selectInput(inputId = ns("plotType"), label = "Plot Type:", choices = NULL, selected = NULL, multiple = FALSE),
@@ -42,8 +42,7 @@ plotting_page_ui <- function(id)
                                          selected = "IGV", multiple = FALSE),
 
                              selectInput(inputId = ns("lgdPosition"), label = "Legend Position",
-                                         choices = c("right", "left", "top", "bottom"),
-                                         selected = "right"),
+                                         choices = NULL, selected = NULL, multiple = FALSE),
                              ),
 
                     tabPanel(title = "Text:",
@@ -97,9 +96,9 @@ plotting_page_ui <- function(id)
       ),
 
       mainPanel(
-        textOutput(outputId = ns("warTest")),
+        textOutput(outputId = ns("warText")),
 
-        ggiraph::girafeOutput(outputId = ns("testPlot"), height = 750)
+        ggiraph::girafeOutput(outputId = ns("plotOut"), height = 750)
         )
     )
   )
@@ -112,7 +111,11 @@ plotting_page_ui <- function(id)
 #' @param session shiny parameter
 #' @param descent_data reactiveValues, contains gene ontology data
 #'
+<<<<<<< HEAD
 #' @import shiny ggplot2 ggiraph
+=======
+#' @import shiny ggiraph
+>>>>>>> master
 #' @export
 plotting_page <- function(input, output, session, descent_data)
 {
@@ -127,16 +130,25 @@ plotting_page <- function(input, output, session, descent_data)
 
   ### Update plotType Based on Data Size ###
   observe({
+    pn <- nrow(reacVals$data())
+    cn <- length(unique(reacVals$data()$clusterName))
 
-    n <- nrow(reacVals$data())
-
-    if (n <= 50) {
+    if (pn <= 50 & cn <= 10) {
       updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway" = "pth"), selected = "clust")
 
-      } else if (n > 50){
+      } else if (pn > 50 | cn > 10){
         updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway (Unavailable)" = "long"), selected = "clust")
 
         }
+  })
+
+  ### Update lgdPosition based on coordFlip ###
+  observe({
+    if (!isTRUE(input$coordFlip)){
+      updateSelectInput(session, "lgdPosition", choices = c("top", "bottom"), selected = "bottom")
+    } else if (isTRUE(input$coordFlip)){
+      updateSelectInput(session, "lgdPosition", choices = c("left", "right", "top", "bottom"), selected = "bottom")
+    }
   })
 
   ### Create Plot ###
@@ -205,7 +217,7 @@ plotting_page <- function(input, output, session, descent_data)
                "mm" = {input$plotWd * 0.0393701})
       })
 
-    output$testPlot <- ggiraph::renderGirafe(ggiraph::girafe(ggobj = reacVals$plotOut(),
+    output$plotOut <- ggiraph::renderGirafe(ggiraph::girafe(ggobj = reacVals$plotOut(),
                                                              width_svg = w(),
                                                              height_svg = h()))
     })
@@ -216,8 +228,9 @@ plotting_page <- function(input, output, session, descent_data)
                       "pth" = {output$warTest <- NULL},
                       "clust" = {output$warTest <- NULL},
                       "long" = {
-                        output$warTest <- renderText(
-                          "Plotting enrichment by pathway is restricted to 50 or less significant pathways.\nPlease use plot By Cluster to visualize all significant pathways."
+                        output$warText <- renderText(
+                          "Plotting enrichment by pathway is restricted to 50 or less pathways and 10 or less clusters.
+                          Please use plot By Cluster to visualize a larger number of pathways and clusters."
                         )
                       }
                       ))

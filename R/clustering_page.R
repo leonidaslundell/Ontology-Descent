@@ -10,16 +10,15 @@ clustering_page_ui <- function(id)
   fluidPage( # flexible layout function
 
     # Title
-    titlePanel("Minimal application"),
+    titlePanel("Clustering"),
 
     sidebarLayout(  # standard inputs on sidebar, outputs in main area layout
       sidebarPanel( # sidebar configuration
-        textInput(inputId = ns("comment"),      # this is the name of the
-                  # variable- this will be passed to server.R
-                  label = "Say something?", # display label for the variable
-                  value = ""                # initial value
+        actionButton( ns("clusterButton"),      # this is the name of the
+                      # variable- this will be passed to server.R
+                      label = "Cluster!")
 
-        )),
+        ),
 
       # Show a plot of the generated distribution
       mainPanel( # main output configuration
@@ -42,12 +41,24 @@ clustering_page_ui <- function(id)
 #' @export
 clustering_page <- function(input, output, session, descent_data)
 {
-  output$textDisplay <- renderText({ # mark function as reactive
-    # and assign to output$textDisplay for passing to ui.R
+  load(here::here("R/dataClustereR.rda"))
 
-    paste0("You said '", input$comment,           # from the text
-           "'. There are ", nchar(input$comment), # input control as
-           " characters in this.")                # defined in ui.R
+  observeEvent(input$clusterButton,{
+    x <- clustereR(ontoNet = net,
+                   ontoNames = GOnames,
+                   ontoLength = GOlength,
+                   target = descent_data$inputData$ontoID)
+
+    x <- x[match(descent_data$inputData$ontoID, x$ontoID),]
+
+    descent_data$inputData$clusterNumber <- x$cluster
+    descent_data$inputData$clusterName <- x$clusterTerm
 
   })
+
+  # load("data/dataClustereR.Rdata")
+  # descent_data$inputData
+  #write some kind of function that identifies whether the GO terms are MF/BP/CC
+
+
 }
