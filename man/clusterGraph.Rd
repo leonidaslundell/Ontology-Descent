@@ -14,8 +14,13 @@ clusterGraph(
   direction = NULL,
   plotEnrichment = FALSE,
   coordFlip = FALSE,
+<<<<<<< HEAD
   themeSet = "bw",
   colorSet = "Brewer",
+=======
+  themeSet = "minimal",
+  colorSet = "IGV",
+>>>>>>> master
   nameSize = 8,
   axTxtSize = 8,
   axTitleSize = 10,
@@ -41,9 +46,15 @@ clusterGraph(
 
 \item{coordFlip}{Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.}
 
+<<<<<<< HEAD
 \item{themeSet}{Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "bw"}
 
 \item{colorSet}{Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "Brewer"}
+=======
+\item{themeSet}{Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "minimal"}
+
+\item{colorSet}{Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"}
+>>>>>>> master
 
 \item{nameSize}{Optional. A numeric value setting font size for cluster names. Default == 7.}
 
