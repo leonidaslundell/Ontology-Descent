@@ -111,11 +111,8 @@ plotting_page_ui <- function(id)
 #' @param session shiny parameter
 #' @param descent_data reactiveValues, contains gene ontology data
 #'
-<<<<<<< HEAD
 #' @import shiny ggplot2 ggiraph
-=======
 #' @import shiny ggiraph
->>>>>>> master
 #' @export
 plotting_page <- function(input, output, session, descent_data)
 {

@@ -27,13 +27,10 @@ modData <- function(data, pathN, clustN){
 #' @param fontFam Optional. A character string to select the text font family for the plot. One of "serif", "sans" or "mono". Default == "sans".
 #'
 #' @return A ggplot object.
-<<<<<<< HEAD
 #' @import ggplot2 RColorBrewer ggsci
-=======
 #' @import ggplot2
 #' @import RColorBrewer
 #' @import ggsci
->>>>>>> master
 #' @export
 #'
 #' @examples
@@ -169,13 +166,10 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
 #' @param fontFam Optional. A character string to select the text font family for the plot. One of "serif", "sans" or "mono". Default == "sans".
 #'
 #' @return A ggplot object.
-<<<<<<< HEAD
 #' @import ggplot2 RColorBrewer ggsci
-=======
 #' @import ggplot2
 #' @import RColorBrewer
 #' @import ggsci
->>>>>>> master
 #' @export
 #'
 #' @examples
