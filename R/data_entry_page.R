@@ -7,6 +7,8 @@
 data_entry_page_ui <- function(id)
 {
   ns <- shiny::NS(id)
+  shinyWidgets::useSweetAlert()
+
   fluidPage(
     titlePanel(
       "Ontology Descent: A data visualization tool for Gene Ontology Enrichment data"
@@ -46,7 +48,7 @@ data_entry_page_ui <- function(id)
           )
         ),
         helpText(
-          "A csv file should contain ontology ID, ontology term, enrichment value, p.value and direction, in that order"
+          "Your entry file needs to have a first column named 'ontoID' (ex. GO:00010) and a second column called 'pValue' (ex. 3E-5). Beware of case in names! "
         ),
         img(src = "logo.png", heigth = 120, width = 200)
 
@@ -75,50 +77,43 @@ data_entry_page <- function(input, output, session, descent_data)
     input$file,
     { if(stringr::str_ends(input$file$datapath, "\\.csv")){
       imported_values <-
-        data.table::fread(input$file$datapath, sep = input$sep)
-      col_names <- c("ontoID",
-                     "ontoTerm",
-                     "Enrichment",
-                     "P-values",
-                     "Direction")
-    for(i in 1:5){
-      colnames(imported_values)[i] <- col_names[i]
-    }
-    values <-
-      reactive({
-        validate(need(
-          length(imported_values) == 5,
-          "Your uploaded file is not the correct format"
-        ))
-        imported_values
-      })
-    output$GO_table <- renderDataTable(values())
-    descent_data$inputData <- values()
-
-    }
-      else if(stringr::str_ends(input$file$datapath, "\\.xlsx")){
-       imported_values <- openxlsx::read.xlsx(input$file$datapath)
-       col_names <- c("ontoID",
-                      "ontoTerm",
-                      "Enrichment",
-                      "P-values",
-                      "Direction")
-       for(i in 1:5){
-         colnames(imported_values)[i] <- col_names[i]
-       }
-       values <-
-         reactive({
-           validate(need(
-             length(imported_values) == 5,
-             "Your uploaded file is not the correct format"
-           ))
-           imported_values
-         })
-       output$GO_table <- renderDataTable(values())
-       descent_data$inputData <- values()
+        data.table::fread(input$file$datapath, sep = "auto")
+      if(colnames(imported_values)[1] == "ontoID" & colnames(imported_values)[2] == "pValue"){
+        output$GO_table <- renderDataTable(imported_values)
+        descent_data$inputData <- imported_values
       }
       else{
-        showNotification("Your data is not the right file type")
+        shinyWidgets::sendSweetAlert(session = session,
+                                     title = "Input Error",
+                                     text = "Your table is not the correct format. \n
+                                     please name the first column 'ontoID' and the second column 'pValue'",
+                                     type = "error")
+      }}
+
+
+
+
+
+
+      else if(stringr::str_ends(input$file$datapath, "\\.xlsx")){
+       imported_values <- openxlsx::read.xlsx(input$file$datapath)
+
+       if(colnames(imported_values)[1] == "ontoID" & colnames(imported_values)[2] == "pValue"){
+         output$GO_table <- renderDataTable(imported_values)
+         descent_data$inputData <- imported_values
+       }
+       else{
+         shinyWidgets::sendSweetAlert(session = session,
+                                      title = "Input Error",
+                                      text = "Your table is not the correct format. \n
+                                     please name the first column 'ontoID' and the second column 'pValue'",
+                                     type = "error")
+       }}
+      else{
+        shinyWidgets::sendSweetAlert(session = session,
+                                     title = "Input Error",
+                                     text = "Your file is not the right format. \n Supported formats are xlsx and csv",
+                                     type = "error")
       }
   })
 #input from input columns
@@ -130,11 +125,20 @@ data_entry_page <- function(input, output, session, descent_data)
                data_matrix <- data.frame(do.call("rbind", strsplit(data_matrix$data, input$sep, fixed = T)))
                colnames(data_matrix) <- data_matrix[1,]
                data_matrix <- data_matrix[-1,]
+               if(colnames(data_matrix)[1] == "ontoID" & colnames(data_matrix)[2] == "pValue"){
+                 output$GO_table <- renderDataTable(data_matrix)
+                 descent_data$inputData <- data_matrix
 
-                 data$inputData <- data_matrix
-                 descent_data$inputData <- data$inputData
-                 output$GO_table <- renderDataTable(descent_data$inputData)
-               })
+               }
+               else{
+                 shinyWidgets::sendSweetAlert(session = session,
+                                              title = "Input Error",
+                                              text = "Your table is not the correct format. \n
+                                     please name the first column 'ontoID' and the second column 'pValue'. \n
+                                     Alternatively, check you have selected the correct seperator",
+                                     type = "error")}
+
+                                })
 #load dummy data
   observeEvent(input$dummy,
                {
