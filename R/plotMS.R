@@ -7,7 +7,7 @@ modData <- function(data, pathN, clustN){
   return(data)
 }
 
-
+a
 #' Plot Enrichment By Cluster
 #'
 #' @param ontoID Optional. A character vector of Gene Ontology IDs.
@@ -40,9 +40,10 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
                          nameSize = 8, axTxtSize = 8, axTitleSize = 10, fontFam = "sans"){
 
   ### Create plotting Data Frame ###
-  plot <- data.frame(ontoTerm, pValue, clusterName)
+  plot <- data.frame(pValue, clusterName)
 
   if (!is.null(ontoID)){plot$ontoID <- ontoID}
+  if (!is.null(ontoTerm)){plot$ontoTerm <- ontoTerm}
   if (!is.null(clusterNumber)){plot$clusterNumber <- clusterNumber}
   if (!is.null(enrichmentScore)){plot$enrichmentScore <- enrichmentScore}
   if (!is.null(direction)){plot$direction <- direction}
@@ -76,8 +77,6 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
 
     ### 1. Plot P Values (plotEnrichement == FALSE) ###
     plot <- plot[order(plot$clusterName, -log10(plot$pValue)),]
-    plot$ontoID <- factor(plot$ontoID, levels = unique(plot$ontoID))
-    plot$ontoTerm <- factor(plot$ontoTerm, levels = unique(plot$ontoTerm))
     plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName))
 
     xlim <- c(floor(min(-log10(plot$pValue))), ceiling(max(-log10(plot$pValue))))
@@ -93,8 +92,6 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
 
     ### 2. Plot Enrichment Score (plotEnrichement == TRUE) ###
     plot <- plot[order(plot$clusterName, plot$enrichmentScore),]
-    plot$ontoID <- factor(plot$ontoID, levels = unique(plot$ontoID))
-    plot$ontoTerm <- factor(plot$ontoTerm, levels = unique(plot$ontoTerm))
     plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName))
 
     xlim <- c(-ceiling(max(abs(plot$enrichmentScore))),ceiling(max(abs(plot$enrichmentScore))))
