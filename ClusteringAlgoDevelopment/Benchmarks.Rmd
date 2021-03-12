@@ -5,12 +5,15 @@ output:
     toc: true
     toc_depth: 2
     toc_float: true
+    code_folding: show
+
 editor_options: 
   chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = '../')
 ```
 
 # Introduction & aims
@@ -51,15 +54,14 @@ Another major consideration: am i shooting an arrow on the wall and painting a b
 ## Generating tree data
 
 ```{r, message=FALSE}
-source("R/networkGeneratoR.R")
-source("R/sampleR.R")
-source("R/clustereR.R")
+source("../Ontology-Descent/R/clustering_functions.R")
 library(org.Hs.eg.db)
 library(simplifyEnrichment)
 library(igraph)
 library(ggplot2)
 library(data.table)
 library(patchwork)
+library(fossil)
 ```
 
 
@@ -70,78 +72,103 @@ library(patchwork)
 # clustNet <- hclust(as.dist(distNet))
 # 
 # GOlength <- sapply(as.list(org.Hs.egGO2ALLEGS), length)
+# GOlength <- c(GOlength, sapply(as.list(org.Mm.egGO2ALLEGS), length))
 # GOnames <- as.list(GO.db::GOTERM)
 # GOnames <- sapply(GOnames, Term)
 # 
 # save(list = c("net", "distNet", "clustNet", "GOlength", "GOnames", "GOnames"), 
 #      file = "data/dataClustereR.Rdata")
-
 load("data/dataClustereR.Rdata")
 ```
 
-<!-- Generate 1000 different samples and test various summary statistics of it. -->
-
-<!-- ```{r} -->
-<!-- test <- lapply(1:50, sampleR, ontoHclust = clustNet) -->
-<!-- test <- test[sapply(test, length)>0] -->
-<!-- test2 <- sapply(test, function(x){ -->
-<!--   sapply(x, length) -->
-<!-- }) -->
-
-<!-- test2 <- reshape2::melt(test2) -->
-<!-- colnames(test2) <- c("clusterSize", "sample") -->
-
-<!-- test2 <- as.data.table(test2) -->
-
-<!-- ggplot(test2, aes(x = clusterSize, group = sample, color = as.character(sample))) + -->
-<!--   geom_density() + -->
-<!--   xlab("Cluster sizes in each sample")+ -->
-<!--   theme(legend.position = "none") -->
-
-<!-- par(mfrow=c(2,2)) -->
-<!-- hist(sapply(test, length), main = "Number of clusters in each sample", xlab = "") -->
-
-<!-- hist(test2[,median(clusterSize), by = "sample"]$V1, -->
-<!--      main = "Median size of cluster \nin each generated sample", -->
-<!--      xlab = "" -->
-<!-- ) -->
-
-<!-- hist(test2[,max(clusterSize), by = "sample"]$V1, -->
-<!--   main = "Max size of cluster \nin each generated sample", -->
-<!--   xlab = "", -->
-<!--   breaks = 7 -->
-<!-- ) -->
-
-<!-- test <- sapply(test, function(x){ -->
-<!--   unique(unlist(x)) -->
-<!-- }) -->
-
-<!-- hist(sapply(test, length), main = "Number of unique GO terms\nin each sample", breaks = 20) -->
-
-<!-- # UpSetR::upset(UpSetR::fromList(test[3:5])) -->
-
-<!-- ``` -->
-
-<!-- Do they look sufficiently different? Yeah think so... -->
-
-<!-- Overall plausible: many small clusters (one offs, and fewer big clusters). -->
-
-## Generating 1000 samples of synthetic data
+## Generating 1000 samples of synthetic IC data
 
 ```{r}
-# test <- lapply(1:1000, function(n){
-#   print(n)
-#   sampleR(ontoHclust = clustNet, n = sample(5:50,1))
-# })
-# save(test, file = "data/1000sampleR.Rdata")
-# test <- test[sapply(test, length)>0]
+# library(parallel)
+# 
+# clustNet2 <- GO_similarity(V(net)$name, ont = "MF")
+# clustNet2 <- hclust(as.dist(clustNet2))
+# 
+# datRel <- mclapply(1:1000, function(n){
+#   # print(n)
+#   sampleR(ontoHclust = clustNet2, n = sample(5:50,1), maxClusterSize = 250, minClusters = 15, maxClusters = 1000)
+# }, mc.cores = 16)
+# datRel <- datRel[sapply(datRel, length)>0]
+# hist(sapply(datRel, function(x) length(unique(unlist(x)))))
+# beepr::beep()
+# save(datRel, file = "data/1000sampleRrel.Rdata")
+load("data/1000sampleRrel.Rdata")
 
-load("data/1000sampleR.Rdata")
+# GOnames[unlist(datRel[[1]][sapply(datRel[[1]], length)>10][[1]])]
 
 ```
 
-Have not investigated the effect of number of k taken for sampleR function. Current implementation is:
-sample(20:1000,1), but maybe we can make more realistic data with different parameters?
+Manually inspecting random GO term clusters is pretty worrisome actually. They do not seem homogenous at all.
+
+## Generating 1000 samples of synthetic jackard data
+
+This calculation is pretty slow, running it on a thinnod in computerome instead, and loadingb the cluster object here instead:
+
+```{r}
+# #all these were run on computerome
+# library(org.Hs.eg.db)
+# library(GO.db)
+# 
+# jackardIndex <- function(c1, c2){
+#   length(intersect(c1, c2))/length(unique(c(c1, c2)))
+# }
+# 
+# x <- as.list(org.Hs.egGO2EG)
+# 
+# y <- AnnotationDbi::select(GO.db, keys = V(net)$name, columns = "ONTOLOGY")
+# y <- y[y$ONTOLOGY == "MF", "GOID"]
+# 
+# x <- x[y]
+# 
+# xRes <- matrix(NA, length(x), length(x))
+# colnames(xRes) <- rownames(xRes) <- names(x)
+# 
+# for(i in rownames(xRes)[1:3]){
+#   print(i)
+#   for(ii in colnames(xRes)){
+#     xRes[i,ii] <- jackardIndex(x[[i]], x[[ii]])
+#   }
+# }
+# 
+# xDist <- hclust(as.dist(xRes))
+# save(file = "~/projects/ontologyDescent/jackardMFdistance.Rdata", xDist)
+# save(file = "~/projects/ontologyDescent/jackardMFval.Rdata", xRest)
+# load("data/jackardMFdistance.Rdata")
+# 
+# library(parallel)
+# datJack <- mclapply(1:100, function(n){
+#   sampleR(ontoHclust = xDist, n = sample(5:50,1),minClusters = 15, maxClusterSize = 250, maxClusters = 1000)
+# }, mc.cores = 16)
+# datJack <- datRel[sapply(datJack, length)>0]
+# hist(sapply(datRel, function(x) length(unique(unlist(x)))))
+# beepr::beep()
+# 
+# GOnames[unlist(datJack[[1]][25])]
+# save(file = "data/1000sampleRjack.Rdata", datJack)
+load("data/1000sampleRjack.Rdata")
+```
+
+Investigating single generated clusters is not really encouraging...
+Also this data is comprising of ~4000 GO terms, both the org.Hs.eg.db and biomart only contain so many GO terms with associated go terms.
+
+## Generating 1000 samples of synthetic distance data
+
+```{r}
+# library(parallel)
+# datClust <- mclapply(1:1000, function(n){
+#   # print(n)
+#   sampleR(ontoHclust = clustNet, n = sample(5:50,1))
+# }, mc.cores = 16)
+# datClust <- datClust[sapply(datClust, length)>0]
+# save(datClust, file = "data/1000sampleRdistance.Rdata")
+
+load("data/1000sampleRdistance.Rdata")
+```
 
 ## Generating real GO data
 
@@ -175,7 +202,7 @@ sample(20:1000,1), but maybe we can make more realistic data with different para
 # mysets <- c(data(package="KEGGandMetacoreDzPathwaysGEO")$results[,"Item"],
 #             data(package="KEGGdzPathwaysGEO")$results[,"Item"])
 # 
-# resCamera <- NULL
+# datGSE <- NULL
 # 
 # for(gse in mysets){
 #   print(gse)
@@ -184,18 +211,32 @@ sample(20:1000,1), but maybe we can make more realistic data with different para
 #   eval(parse(text = paste0("dat <- ", gse)))
 #   eval(parse(text = paste0("rm(", gse, ")")))
 #   
-#   resCamera[[gse]] <- "NA"
+#   datGSE[[gse]] <- "NA"
 #   
 #   if(annotation(dat) == "hgu133plus2")
-#     resCamera[[gse]] <- camera(exprs(dat), plus2, model.matrix(~0 + Group, dat))
+#     datGSE[[gse]] <- camera(exprs(dat), plus2, model.matrix(~0 + Group, dat))
 # 
 #   if(annotation(dat) == "hgu133a")
-#     resCamera[[gse]] <- camera(exprs(dat), a, model.matrix(~0 + Group, dat))
+#     datGSE[[gse]] <- camera(exprs(dat), a, model.matrix(~0 + Group, dat))
 # 
 # }
-
-# save(resCamera, file = "data/PublicGSEdata_GOcamera.Rdata")
+# datGSE <- datGSE
+# save(datGSE, file = "data/PublicGSEdata_GOcamera.Rdata")
 load("data/PublicGSEdata_GOcamera.Rdata")
+```
+
+## Generating 1000 completely random GO sets with variable size
+
+```{r}
+# x <- sapply(datGSE, length)
+# # x <- rnorm(1000, mean = mean(x), sd = sd(x))
+# x <- rpois(1000, x)
+# 
+# datRand <- mclapply(x, function(size){
+#   random_GO(n = size, ont = "MF")
+# })
+# save(datRand, file = "data/1000sampleRandom.Rdata")
+load("data/1000sampleRandom.Rdata")
 ```
 
 ## Comparing the shape and properties of the real GO data and the synthetic data
@@ -203,7 +244,7 @@ load("data/PublicGSEdata_GOcamera.Rdata")
 ### Summary statistics of real GO terms
 
 ```{r}
-resCamera <- lapply(resCamera, function(x){
+datGSE <- lapply(datGSE, function(x){
   x <- rownames(x[x$FDR<0.05,])
   x[x %in% V(net)$name] #keeping only MF
 })
@@ -212,98 +253,97 @@ resCamera <- lapply(resCamera, function(x){
 Remove maps without any results.
 
 ```{r}
-resCamera <- resCamera[sapply(resCamera, length)>1]
+datGSE <- datGSE[sapply(datGSE, length)>1]
 ```
 
-### Distances of GO - GO terms
+### Are the synthetic and real data comparable?
 
 ```{r}
-resCameraDist <- lapply(resCamera, function(x){
-  temp <- distances(net, x, x)
-  temp <- reshape2::melt(temp[upper.tri(temp)])
-  temp$value
-})
-
-resCameraDist <- reshape2::melt(resCameraDist)
-resCameraDist <- as.data.table(resCameraDist)
-
-testDist <- lapply(test[sample(1:length(test), 200, replace = F)], function(x){
-  x <- unique(unlist(x))
-  temp <- distances(net, x, x)
-  temp <- reshape2::melt(temp[upper.tri(temp)])
-  temp$value
-})
-testDist <- reshape2::melt(testDist)
-testDist <- as.data.table(testDist)
-```
-
-This is actually quite a difference at 9 (ie synthetic data seems to have a slightly larger distance between its terms?)
-
-### Are the graph parameters different between the synthetic and the real data?
-
-```{r}
-suppressWarnings({
-  resCameraParameters <- sapply(resCamera, function(n){
-  indNet <- induced_subgraph(net, vids = unique(unlist(n)))
-  c(degree = centr_degree(indNet)$centralization,
-    betw = centr_betw(indNet)$centralization,
-    clo = centr_clo(indNet)$centralization,
-    eig = centr_eigen(indNet)$centralization,
-    componenets = count_components(indNet),
-    diameters = diameter(indNet))
-})
 #warning suppresed is that closseness is not well defined for disconnected graphs
 
-testParamerters <- sapply(test, function(n){
-  indNet <- induced_subgraph(net, vids = unique(unlist(n)))
-  c(degree = centr_degree(indNet)$centralization,
-    betweenness = centr_betw(indNet)$centralization,
-    closeness = centr_clo(indNet)$centralization,
-    eigen = centr_eigen(indNet)$centralization,
-    componenets = count_components(indNet),
-    diameters = diameter(indNet))
-})
-})
+allParameters <- lapply(c("datGSE", "datClust", "datJack", "datRand", "datRel"),
+                        function(truth){
+                          datTruth <- get(truth)
+                          sapply(datTruth, function(n){
+                            indNet <- induced_subgraph(net, vids = unique(unlist(n)))
+                            c(degree = centr_degree(indNet)$centralization,
+                              betweenness = centr_betw(indNet)$centralization,
+                              # closeness = centr_clo(indNet)$centralization, #doesnt work well with disconnected graphs
+                              eigen = centr_eigen(indNet)$centralization,
+                              componenets = count_components(indNet),
+                              diameters = diameter(indNet))
+                          })
+                        })
 
-
-resCameraParameters <- reshape2::melt(resCameraParameters)
-resCameraParameters$Var2 <- as.numeric(resCameraParameters$Var2)
-
-testParamerters <- reshape2::melt(testParamerters)
-testParamerters <- rbind(cbind(resCameraParameters, data = "real"),
-                         cbind(testParamerters, data = "synthetic"))
-testParamerters <- as.data.table(testParamerters)
-
+names(allParameters) <- c("Public data\nGO enrichment", "Topology distance", "Jackard distance", "Random GO", "Rel distance")
+  
+allParameters <- reshape2::melt(allParameters)
+colnames(allParameters)[4] <- "data"
+allParameters <- as.data.table(allParameters)
 ```
 
 ### Comparing the synthetic data and real data structures and large scale properties
 
 ```{r}
+resGOnumbers <- lapply(c("datGSE", "datRand", "datClust", "datJack", "datRel"), function(dat){
+  dat <- get(dat)
+  
+  sapply(dat, function(clust){
+    length(unique(unlist(clust)))
+    })
+  
+})
 
+names(resGOnumbers) <- c("Public data\nGO enrichment", 
+                         "Random GO", 
+                         "Topology distance", 
+                         "Jackard distance", 
+                         "Rel distance")
+
+resGOnumbers <- reshape2::melt(resGOnumbers)
+colnames(resGOnumbers) <- c("value", "Benchmark")
+resGOnumbers$Benchmark <- as.factor(resGOnumbers$Benchmark)
+
+theme_all <- theme_minimal() +
+  theme(panel.border = element_rect(fill = NA),
+        axis.ticks = element_line())
+orderBenchmark <- c("Public data\nGO enrichment", 
+                    "Random GO", 
+                    "Topology distance", 
+                    "Jackard distance", 
+                    "Rel distance")
+
+resGOnumbersPlot <- ggplot(resGOnumbers, aes(y = Benchmark, x = value)) +
+  geom_boxplot() +
+  xlab("Number of GO terms") +
+  ylab("Benchmark type") +
+  theme_all +
+  scale_y_discrete(limits = rev(orderBenchmark))
+resGOnumbersPlot
+ggsave("ClusteringAlgoDevelopment/figures/number.go.terms.pdf", width = 5, height = 5)
+```
+
+
+```{r}
 #number of unique terms
-par(mfrow=c(2,1))
-hist(sapply(resCamera, function(GO) length(GO)), main = "Real data", xlab = "Number of GO terms", xlim = c(0, 1200))
-hist(sapply(test, function(GO) length(unique(unlist(GO)))), main = "Synthetic data", xlab = "Number of GO terms", xlim = c(0, 1200))
+levels(allParameters$Var1) <- c("Degree\nCentrality", "Betweenness\nCentralitity", "Eigen\nCentralitity", "Components", "Diameter")
+allParameters$Benchmark <- factor(allParameters$data, levels = orderBenchmark)
+levels(allParameters$Benchmark) <- c("GSE data\nGO enrich.", "Random\nGO", "Topology\ndistance", "Jackard\ndistance", "Rel\ndistance")
 
-#distance of all to all
-
-resCameraDist <- rbind(cbind(resCameraDist, data = "Real"),
-                       cbind(testDist, data = "Synthetic"))
-
-ggplot(resCameraDist[,median(value), by = c("L1", "data")], aes(x = V1, color = data, group = data)) +
-  geom_density(show.legend = T) +
-  xlab("Distance of all to all in sample") +
-  ggtitle("Median") +
-ggplot(resCameraDist[,max(value), by = c("L1", "data")], aes(x = V1, color = data, group = data)) +
-  geom_density(show.legend = T) +
-  xlab("Distance of all to all in sample") +
-  ggtitle("Max") +
-  plot_layout(guides = "collect")
-
-#graph structure
-ggplot(testParamerters, aes(x = value, group = Var2)) +
+allParametersPlot <- ggplot(allParameters, aes(x = value, group = Var2, fill = Benchmark)) +
   geom_histogram() +
-  facet_grid(data~Var1, scales = "free")
+  facet_grid(Benchmark~Var1, scales = "free") +
+  theme(legend.position = "none") +
+  xlab("") +
+  theme_minimal() +
+  theme(strip.text.y = element_text(size = 11),
+        strip.text.x = element_text(size = 14),
+        panel.border = element_rect(fill = NA),
+        axis.ticks = element_line(),
+        legend.position = "bottom",
+        axis.text.x.bottom = element_text(size = 8))
+allParametersPlot
+ggsave("ClusteringAlgoDevelopment/figures/network.parameters.pdf", width = 10, height = 6.2)
 
 ```
 
@@ -311,221 +351,743 @@ What do the different graph measures mean?
 
 * Degree score for a node - simplest score, how many nodes do you connect to.
 * Betweenness score for a node - how many shortest paths between all pairs of vertices pass through a given vertex.
-* Closenes score for a node - 1/sum(length to all vertices from a node). Calculates how close you are to everything.
+* Closenes score for a node - 1/sum(length to all vertices from a node). Calculates how close you are to everything. **closseness is undefined for disconnected graphs**
 * Eigenvector score for a node - linear algebra mathemagic that tells you whether a node connects to other well connected nodes. Gangster nodes basically.
 * Diameter of a graph - what is the biggest shortest path in the graph
 * Components of a graph - how many isolated islands does a graph have. Counts single isolated vertices as well.
 
 And a nice wikipedia figure:
 
-
 ```{r, echo=FALSE, fig.cap="Examples of A) Betweenness centrality, B) Closeness centrality, C) Eigenvector centrality, D) Degree centrality, E) Harmonic centrality and F) Katz centrality of the same graph", out.width = '100%'}
 knitr::include_graphics("https://upload.wikimedia.org/wikipedia/commons/1/11/6_centrality_measures.png")
 ```
 
-<!-- # Testing clusterer vs simplifyEnrichment -->
+### GO title diversity
 
-<!-- The following code is trying to figure out which metrics are *meassurable/good* for one cluster, preferably in one simple quantifiable number in order to be able to objectively compare the performance of various clustering and distance algorithms. -->
+How diverse are the GO term titles? quantify the number of words mentioned 1 vs mentioned more than once in all titles of a single cluster, and take the median of each sample for the each benchmark.
 
-<!-- Using the sampler funcion to compare simplifyEnrichment and clutereR -->
+Also, look at this property only in groups bigger than 5 so that terms are bigger.
 
-<!-- ```{r} -->
+```{r}
+clusterDiversity <- function(x){
+  x <- unique(GOnames[x])
+  x <- unlist(strsplit(x, " "))
+  x <- gsub("\\,|\\)|\\(|\\.", "", x)
+  sort(table(x), decreasing = T)
+}
 
-<!-- test <- sampleR(clustNet) -->
-<!-- summary(sapply(test, length)) -->
+resTermDiversity <- lapply(c("datClust", "datJack", "datRel"), function(dat){
+  dat <- get(dat)
+  
+  sapply(dat, function(clust){
+    clusterSize <- sapply(clust[sapply(clust, length)>4], function(x){
+      x <- clusterDiversity(x)
+      sum(x>1)/sum(x)
+    })
+    median(clusterSize)
+  })
+  
+})
+names(resTermDiversity) <- c("Topology\ndistance", "Jackard\ndistance", "Rel\ndistance")
 
-<!-- resClust <- clustereR(net, GOnames, GOlength, unique(unlist(test))) -->
-<!-- resSimpl <- simplifyEnrichment(GO_similarity(unique(unlist(test)), ont = "MF"), plot = F) -->
+resTermDiversityRand <- lapply(c("datClust", "datJack", "datRel"), function(dat){
+  dat <- get(dat)
+  
+  sapply(dat, function(clust){
+    clust <- clust[sapply(clust, length)>4]
+    clust <- reshape2::melt(clust)
+    
+    clust <- structure(sample(clust$L1),
+                       names = clust$value)
+    
+    clusterSize <- sapply(unique(clust), function(i){
+      x <- clusterDiversity(names(clust[clust == i]))
+      sum(x>1)/sum(x)
+    })
+    median(clusterSize)
+  })
+})
+names(resTermDiversityRand) <- c("Topology\ndistance", "Jackard\ndistance", "Rel\ndistance")
 
-<!-- plot(density(table(resClust$cluster)), col = "red", main = "cluster size") -->
-<!-- lines(density(table(resSimpl$cluster))) -->
-<!-- ``` -->
+resTermDiversityRand <- reshape2::melt(lapply(resTermDiversityRand, function(x) unlist(x)))
+resTermDiversity <- reshape2::melt(lapply(resTermDiversity, function(x) unlist(x)))
 
-<!-- Seems to be higher diveristy in the graph based. Simplify enrichmnet gives you fewer bigger clusters, and a ton of non clustered. Graph based clustering gives you bigger number but smaller... Compare this to the known distribution from the originating data. -->
+resTermDiversityPlot <- ggplot(resTermDiversity, aes(x = value, y = L1)) +
+  geom_boxplot() +
+  stat_summary(data = resTermDiversityRand,geom = "crossbar", fun = median, color = "red", lty = 2) +
+  xlab("Cluster GO term diversity\n(Words present > 1 / Total number of words in cluster)") +
+  ylab("Benchmark type") +
+  theme_all
+ggsave("ClusteringAlgoDevelopment/figures/GO.term.title.diversity.pdf",width = 5,height = 2)
 
-<!-- ```{r} -->
-<!-- resSimpl <- lapply(unique(resSimpl$cluster), function(i){ -->
-<!--   resSimpl$id[resSimpl$cluster == i] -->
-<!-- }) -->
-<!-- resSimpl <- resSimpl[order(sapply(resSimpl, length), decreasing = T)] -->
+```
 
-<!-- resClust <- lapply(unique(resClust$cluster), function(i){ -->
-<!--   resClust$ontoID[resClust$cluster == i] -->
-<!-- }) -->
-<!-- resClust <- resClust[order(sapply(resClust, length), decreasing = T)] -->
+Making figure 1 with patchwork
 
-<!-- plot(density(table(sapply(test, length))), col = "blue", ylim = c(0,1), main = "Cluster size") -->
-<!-- lines(density(table(sapply(resClust, length))), col = "red") -->
-<!-- lines(density(table(sapply(resSimpl, length)))) -->
+```{r}
 
-<!-- ``` -->
+g <- (ggplot() + theme_void() + resGOnumbersPlot) / allParametersPlot / ( resTermDiversityPlot + plot_spacer()) +
+  plot_layout(heights = c(0.25,.51,.25)) +
+  plot_annotation(tag_levels = "A")
 
-<!-- Neither seem to follow the size of the ground truth particular well. -->
+ggsave(filename = "ClusteringAlgoDevelopment/figures/F1.pdf",g,width = 8.25,height = 11.75)
 
-<!-- Its hard to connect the cluster generated with the originating cluster. Best i can come up with is jackard index of all generated clusters to all original clusters and taking the maximal value as the "match". -->
-
-<!-- ```{r} -->
-<!-- resSimplJackInd <- sapply(test, function(yy){ -->
-<!--   sapply(resSimpl, function(xx){ -->
-<!--     length(intersect(xx, yy))/length(unique(c(xx, yy))) -->
-<!--   }) -->
-<!-- }) -->
-
-<!-- resClustJackInd <- sapply(test, function(yy){ -->
-<!--   sapply(resClust, function(xx){ -->
-<!--     length(intersect(xx, yy))/length(unique(c(xx, yy))) -->
-<!--   }) -->
-<!-- }) -->
-
-<!-- ``` -->
-
-<!-- Taking also the absolute sum. -->
-
-<!-- ```{r} -->
-<!-- resSimplSum <- sapply(test, function(yy){ -->
-<!--   sapply(resSimpl, function(xx){ -->
-<!--     length(intersect(xx, yy)) -->
-<!--   }) -->
-<!-- }) -->
-
-<!-- resClustSum <- sapply(test, function(yy){ -->
-<!--   sapply(resClust, function(xx){ -->
-<!--     length(intersect(xx, yy)) -->
-<!--   }) -->
-<!-- }) -->
-
-<!-- ``` -->
-
-<!-- Rows give the predictions, columns the original cluster. How many different resulting clusters point to the same ground truth cluster? -->
-
-<!-- ```{r} -->
-<!-- hist(sort(table(apply(resClustJackInd, 1, which.max))),  -->
-<!--      main = "How many different clusters generated\npoint to the same original", -->
-<!--      xlab = "ClusereR") -->
-<!-- hist(sort(table(apply(resSimplJackInd, 1, which.max))), -->
-<!--      main = "How many different clusters generated\npoint to the same original", -->
-<!--      xlab = "simplifyEnrichment") -->
-<!-- ``` -->
-
-<!-- Allot different clusters point to the same cluster for simplify enrichment. -->
-
-<!-- Check how many hits have a good Jackard Index fit (for n > 2 in length) -->
-
-<!-- ```{r} -->
-<!-- apply(resSimplJackInd[sapply(resSimpl, length)>2,], 1, max) -->
-<!-- apply(resClustJackInd[sapply(resClust, length)>2,], 1, max) -->
-
-<!-- ``` -->
-
-<!-- What is the relationship between cluster size and jackard index? -->
-
-<!-- ```{r} -->
-<!-- par(mfrow=c(1,2)) -->
-<!-- plot(sapply(resSimpl, length)[sapply(resSimpl, length)>2], -->
-<!--      apply(resSimplJackInd[sapply(resSimpl, length)>2,], 1, max), type = "b",  -->
-<!--      xlab = "Cluster size", ylab = "Jackard Index of cluster", -->
-<!--      main = "SimplifyEnrichment size ~ jackard", cex =.4) -->
-
-<!-- plot(sapply(resClust, length)[sapply(resClust, length)>2], -->
-<!--      apply(resClustJackInd[sapply(resClust, length)>2,], 1, max), type = "b",  -->
-<!--      xlab = "Cluster size", ylab = "Jackard Index of cluster", -->
-<!--      main = "ClustereR size ~ jackard", cex =.4) -->
-
-<!-- ``` -->
-
-<!-- <!-- How many GO terms are covered by good quality clusters? --> -->
-
-<!-- <!-- ```{r} --> -->
-<!-- <!-- resClustJackIndWhich <- apply(resClustJackInd[sapply(resClust, length)>2,], 1, max) --> -->
-<!-- <!-- resClustJackIndWhich <- resClustJackIndWhich>.5 --> -->
-
-<!-- <!-- resSimplJackIndWhich <- apply(resSimplJackInd[sapply(resSimpl, length)>2,], 1, max) --> -->
-<!-- <!-- resSimplJackIndWhich <- resSimplJackIndWhich>.5 --> -->
-
-<!-- <!-- #this is wrong... --> -->
-<!-- <!-- sum(resSimplSum[sapply(resSimpl, length)>2, resSimplJackIndWhich]) --> -->
-<!-- <!-- sum(resClustSum[sapply(resClust, length)>2, resClustJackIndWhich]) --> -->
-
-<!-- <!-- ``` --> -->
+```
 
 
-<!-- <!-- # Test different distances --> -->
+# Comparing network clustering to classical methods
 
-<!-- <!-- ## Ontology Descent approach simple outline --> -->
+Intend to Rand index meassures accuracy for clustering results. Very interesting statistical [algorithm](https://en.wikipedia.org/wiki/Rand_index). The rand index is a specialized form of **accuracy**
 
-<!-- <!-- Ontology Descent has 4 steps: --> -->
+## optimum clustering method of the topological distance algorithm
 
-<!-- <!-- * Get the graph distance (Lars suggests to add the Jackard index to edge) --> -->
-<!-- <!-- * Cluster the graph and cut the graph (right now simple tree cutting at discrete intervals) --> -->
-<!-- <!-- * Some kind of metric for the clustering at each discrete interval cut --> -->
-<!-- <!-- * User decides, based on the metric provided, the number of clusters. --> -->
+```{r}
+#"leading_eigen" and optimal crashes apparently "optimal".
+#spinglass is impractically slow
+resOptimization <- NULL
 
-<!-- <!-- The main challenge for benchmarking is that currently the method is subjective, and its impossible to compare to the automatic methods. --> -->
+for(meth in c("edge_betweenness", "fast_greedy", "infomap", "label_prop", "louvain", "walktrap")){
+  print(meth)
+  resOptimization[[meth]]<- lapply(datClust, function(n){
+    targets <- unique(unlist(n))
+    test <- clustereR(net, GOnames, GOlength, targets, method = meth)$res
+    test <- structure(test$clusterNumber, names = test$ontoID)
+    test})
+}
 
-<!-- <!-- Applying current itteration of method to the data. --> -->
+truth <- lapply(1:length(datClust), function(i){
+    x <- reshape2::melt(datClust[[i]])
+    structure(x$L1, names = x$value)
+  })
 
-<!-- <!-- Loading function and setting up the data: --> -->
+for(meth in c("edge_betweenness", "fast_greedy", "infomap", "label_prop", "louvain", "walktrap")){
+  resOptimization[[meth]] <- sapply(1:100, function(i){
+      print(i)
+      t <- truth[[i]]
+      r <- resOptimization[[meth]][[i]]
+      
+      if(class(r) != "try-error"){
+        if(length(t) == length(r)){
+          if(!all(names(t) == names(r))){
+            t <- t[names(r)]#clusterer will not have the same order of GO terms as simplifyenrich
+            return(fossil::adj.rand.index(t, r)) 
+          }else{
+            return(fossil::adj.rand.index(t, r)) 
+          }
+        }else{
+          ids <- names(t)[duplicated(names(t))]
+          keep <- names(t)
+          keep <- keep[!keep %in% ids]
+          
+          t <- t[keep]
+          r <- r[keep]
+          if(!all(names(t) == names(r))){
+            stop("QWE")
+          }else{
+            return(fossil::adj.rand.index(t, r)) 
+          }
+        } 
+      }
+    })
+}
+ 
+resOptimization <- reshape2::melt(resOptimization)
+colnames(resOptimization) <- c("value", "Method")
 
-<!-- <!-- ```{r} --> -->
-<!-- <!-- source("R/clustereR.R") --> -->
-<!-- <!-- source("R/networkGeneratoR.R") --> -->
-<!-- <!-- library(org.Mm.eg.db) --> -->
+ggplot(resOptimization, aes(x = value, color = Method)) +
+  stat_ecdf() + 
+  ylab("Proportion") +
+  xlab("Adjusted rand index") +
+  theme_all
 
-<!-- <!-- GOlength <- sapply(as.list(org.Mm.egGO2ALLEGS), length) --> -->
-<!-- <!-- GOnames <- as.list(GO.db::GOTERM) --> -->
-<!-- <!-- GOnames <- sapply(GOnames, Term) --> -->
+ggsave("ClusteringAlgoDevelopment/figures/selecting.clustering.method.ClustereR.pdf",width = 6,height = 5)
+```
 
-<!-- <!-- net <- networkeR(ont = "BP") --> -->
+Walktrap is optimal!
 
-<!-- <!-- ``` --> -->
+## Running tests on both synthetic datasets
 
-<!-- <!-- Run the latest version of the clusterer --> -->
+The binary cut algorithm seems to work very well. Its main drawback is that *it doesnt always work*. Suspiciously, it doesnt seem to fail with random data, only synthetic clustered and real data?!?
 
-<!-- <!-- ```{r} --> -->
-<!-- <!-- goClust <- clustereR(net, ontoNames = GOnames, ontoLength = GOlength, goBench$SmallReal) --> -->
+```{r}
+# sapply(resRand[1:50], function(x){
+#   R.utils::withTimeout(simplifyGO(GO_similarity(unique(unlist(x), ont = "MF")), plot = F), timeout = 120, onTimeout= "error")
+# })
+# sapply(datGSE, function(x){
+#   R.utils::withTimeout(simplifyGO(GO_similarity(unique(unlist(x), ont = "MF")), plot = F), timeout = 1, onTimeout= "warning")
+# })
+# #does not progress past 120 on first (happens on many other)
+# sapply(datClust, function(x){
+#   R.utils::withTimeout(simplifyGO(GO_similarity(unique(unlist(x), ont = "MF")), plot = F), timeout = 120, onTimeout= "error")
+# })
+# #does not progress past 120 on 8th
 
-<!-- <!-- ``` --> -->
+```
+
+Applying the algorithms on the synthetic data Commented-out since it takes long...
+
+mcclust does not scale linearly... 100 takes 30 sec, 1000 takes >10 min. 
+
+```{r}
+# allRes <- lapply(c("datClust", "datJack", "datRel"), function(truth){
+#                           datTruth <- get(truth)
+#                           lapply(datTruth, function(n){
+#                             targets <- unique(unlist(n))
+#                             test <- clustereR(net, GOnames, GOlength, targets, method = "walktrap")$res
+#                             test <- structure(test$clusterNumber, names = test$ontoID)
+#                             test
+#                           })
+#                         })
+# 
+# 
+# names(allRes) <- c("ClustereR", "Jackard", "Rel")
+# 
+# save(file = "data/resultsGroundTruthClustereR.rdata", allRes)
+# 
+# resClassic <- NULL
+# for(meth in all_clustering_methods()[-c(1,4,11)]){
+#   print(meth)
+#   
+#   resClassic[[meth]] <- lapply(c("datClust", "datJack", "datRel"),
+#                                function(truth){
+#                                  datTruth <- get(truth)
+#                                  lapply(datTruth, function(n){
+#                                    targets <- unique(unlist(n))
+#                                    test <- cluster_terms(GO_similarity(targets, "MF"), method = meth, catch_error = T)
+#                                    test <- try(structure(as.numeric(test), names = targets))
+#                                    test
+#                                  })
+#                                })
+#   names(resClassic[[meth]]) <- c("ClustereR", "Jackard", "Rel")
+# }
+# save(file = "data/resultsGroundTruthOtherMethods.rdata", resClassic)
+# resClassic$clustereR <- allRes
+# 
+# allRes <- resClassic
+# save(file = "data/benchMarkResults.Rdata", allRes)
+
+load("data/benchMarkResults.Rdata")
+```
+
+## Comparing the results
+
+Melt grund truth and resorder results have same order as ground truth
+
+```{r}
+allTruth <- lapply(c("datClust", "datJack", "datRel"), function(truth){
+  datTruth <- get(truth)
+  lapply(1:length(datTruth), function(i){
+    x <- reshape2::melt(datTruth[[i]])
+    structure(x$L1, names = x$value)
+  })
+})
+names(allTruth) <- names(allRes$kmeans)
+```
+
+Some housekeeping with names and variables
+
+```{r}
+names(allTruth)[1] <- "TopologicalDistance"
+
+allRes <- lapply(allRes, function(x){
+  names(x)[1] <- "TopologicalDistance"
+  x
+})
+
+# rm(list = ls()[!ls() %in% c("allRes", "allTruth", "net", "GOlength", "GOnames", "clustereR")])
+```
+
+There are duplicated values in the ground truth... Remove the ALL the duplicates from both ground truth and from results
+
+```{r}
+finalRes <- NULL
+
+for(groundTruth in names(allTruth)){
+  print(groundTruth)
+  finalRes[[groundTruth]] <- NULL
+  for(meth in names(allRes)[-2]){
+    print(meth)
+    x <- lapply(1:1000, function(i){
+      print(i)
+      t <- allTruth[[groundTruth]][[i]]
+      r <- allRes[[meth]][[groundTruth]][[i]]
+      
+      if(class(r) != "try-error"){
+        if(length(t) == length(r)){
+          if(!all(names(t) == names(r))){
+            t <- t[names(r)]#clusterer will not have the same order of GO terms as simplifyenrich
+            return(fossil::adj.rand.index(t, r)) 
+          }else{
+            return(fossil::adj.rand.index(t, r)) 
+          }
+        }else{
+          ids <- names(t)[duplicated(names(t))]
+          keep <- names(t)
+          keep <- keep[!keep %in% ids]
+          
+          t <- t[keep]
+          r <- r[keep]
+          if(!all(names(t) == names(r))){
+            stop("QWE")
+          }else{
+            return(fossil::adj.rand.index(t, r)) 
+          }
+        } 
+      }
+    })
+    print(paste0("done with ", meth))
+    x <- Reduce(cbind, x)
+    colnames(x) <- 1:ncol(x)
+    finalRes[[groundTruth]][[meth]] <- x  
+  }
+}
+
+finalRes <- reshape2::melt(finalRes)
+
+colnames(finalRes) <- c("Metric", "i", "value", "Method", "Benchmark")
+finalRes <- as.data.table(finalRes)
+save(file = "data/benchMarkResultsFinal.Rdata", finalRes)
+```
+
+```{r}
+finalResRandom <- NULL
+
+for(groundTruth in names(allTruth)){
+  print(groundTruth)
+  finalResRandom[[groundTruth]] <- NULL
+  for(meth in names(allRes)[-2]){
+    print(meth)
+    x <- lapply(1:1000, function(i){
+      print(i)
+      t <- allTruth[[groundTruth]][[i]]
+      r <- allRes[[meth]][[groundTruth]][[i]]
+      
+      if(class(r) != "try-error"){
+        if(length(t) == length(r)){
+          if(!all(names(t) == names(r))){
+            t <- t[names(r)]#clusterer will not have the same order of GO terms as simplifyenrich
+            return(fossil::adj.rand.index(sample(t, length(t), replace = F), r)) 
+          }else{
+            return(fossil::adj.rand.index(sample(t, length(t), replace = F), r)) 
+          }
+        }else{
+          ids <- names(t)[duplicated(names(t))]
+          keep <- names(t)
+          keep <- keep[!keep %in% ids]
+          
+          t <- t[keep]
+          r <- r[keep]
+          if(!all(names(t) == names(r))){
+            stop("QWE")
+          }else{
+            return(fossil::adj.rand.index(sample(t, length(t), replace = F), r)) 
+          }
+        } 
+      }
+    })
+    print(paste0("done with ", meth))
+    x <- Reduce(cbind, x)
+    colnames(x) <- 1:ncol(x)
+    finalResRandom[[groundTruth]][[meth]] <- x  
+  }
+}
+
+finalResRandom <- reshape2::melt(finalResRandom)
+
+colnames(finalResRandom) <- c("Metric", "i", "value", "Method", "Benchmark")
+finalResRandom <- as.data.table(finalResRandom)
+
+finalResRandom$Method <- gsub("clustereR", "OntoDesc",  finalResRandom$Method)
+finalRes$Method <- gsub("clustereR", "OntoDesc",  finalRes$Method)
+
+```
+
+Plot with the random clusters
+
+```{r}
+finalResPlot <- lapply(unique(finalRes$Benchmark), function(bench){
+  ggplot() +
+    # stat_ecdf(aes(x = value, color = Method, lty = "real"), finalRes[Benchmark == bench]) +
+    stat_ecdf(aes(x = value, color = Method, lty = "random"), finalResRandom[Benchmark == bench], 
+              alpha = .8) +
+    scale_linetype_manual(name = "Bechmark",values = c(2,1)) +
+  ylab("Proportion") +
+  xlab("Adjusted rand index")
+
+})
+names(finalResPlot) <- unique(finalRes$Benchmark)
+
+#Dont ever again put \n in the names of a fucking list...
+finalResPlot[1] + ggtitle("Topology Distance") +
+finalResPlot$Jackard + ggtitle("Jackard Index") +
+finalResPlot$Rel + ggtitle("Rel IC") +
+  plot_layout(guides = "collect") & theme_all & theme(legend.position = "bottom") + plot_annotation(tag_levels = 'A')
+ggsave("ClusteringAlgoDevelopment/figures/accuracy.full.xaxis.pdf", width = 8, height = 3.5)
+
+g[[1]] + ggtitle("Topology Distance") +
+g$Jackard + ggtitle("Jackard Index") + scale_x_continuous(breaks = c(0,0.125,0.25)) + coord_cartesian(xlim = c(0,.25)) +
+g$Rel + ggtitle("Rel IC") + scale_x_continuous(breaks = c(0,0.125,0.25)) +coord_cartesian(xlim = c(0,.25)) +
+  plot_layout(guides = "collect")
+ggsave("ClusteringAlgoDevelopment/figures/accuracy.zoom.xaxis.pdf", width = 8, height = 4)
+```
+
+The topological distance benchmarks looks excelent. The rel and jackard distance metric do not seem great. Lets do a negative control where we jumble up the clusters and compare the methods to that
+
+# Analyzing real data
+
+## How robust are the different clustering methods? Take one of the bigger real GSE data, and progressively remove samples.    
+
+```{r}
+# library(limma)
+# library(KEGGandMetacoreDzPathwaysGEO)
+# library(KEGGdzPathwaysGEO)
+# library(Biobase)
+# library(hgu133plus2.db)
+# library(hgu133a.db)
+# library(annotate)
+# 
+# data("GSE19188")
+# 
+# plus2 <- as.list(hgu133plus2ENTREZID)
+# sum(!rownames(GSE19188) == names(plus2))
+# names(plus2)[!rownames(GSE19188) == names(plus2)]
+# plus2 <- ids2indices(gene.sets =  as.list(org.Hs.egGO2ALLEGS), identifiers = unlist(plus2))
+# 
+# des <- GSE19188$Group
+# GSE19188 <- exprs(GSE19188)
+# 
+# datRobust <- NULL
+# for(sample in seq(0.2,0.8,0.2)){
+#   print(sample)
+#   
+#   datRobust[[which(seq(0.2,0.8,0.2) %in% sample)]] <- mclapply(1:100, function(i){
+#     y <- sample(1:ncol(GSE19188), ceiling(ncol(GSE19188) * sample))
+#     x <- camera(GSE19188[,y], plus2, model.matrix(~0 + des[y]))
+#     rownames(x[x$FDR<0.05,])
+#   }, mc.cores = 4)
+#   
+# }
+# 
+# names(datRobust) <- paste0("proportion_", seq(0.2,0.8,0.2))
+# 
+# x <- camera(GSE19188, plus2, model.matrix(~0 + des))
+# datRobust$truth <- rownames(x[x$FDR<0.05,])
+# save(file = "data/dataGSErobustness.Rdata", datRobust)
+load("data/dataGSErobustness.Rdata")
+
+jackardIndex <- function(c1, c2){
+  length(intersect(c1, c2))/length(unique(c(c1, c2)))
+}
+
+datRobustPlot <- lapply(datRobust[-5], function(prop){
+  sapply(prop, function(x){
+    jackardIndex(x,datRobust$truth)
+  })
+})
+
+datRobustPlot <- as.data.table(reshape2::melt(datRobustPlot))
+datRobustPlot$proportion <- gsub("proportion_0\\.","",datRobustPlot$L1)
+datRobustPlot$proportion <- paste0(datRobustPlot$proportion, "0%")
+
+datRobustPlot <- ggplot(datRobustPlot, aes(y = value, x = proportion)) +
+  geom_boxplot() +
+  ylab("Jackard index") +
+  xlab("Proportion of samples retained retained")+
+  theme_all
+
+datRobustPlot + theme_all
+
+datRobustPlot2 <- lapply(datRobust[-5], function(prop){
+  sapply(prop, length)
+})
+datRobustPlot2 <- as.data.table(reshape2::melt(datRobustPlot2))
+datRobustPlot2$proportion <- gsub("proportion_0\\.","",datRobustPlot2$L1)
+datRobustPlot2$proportion <- paste0(datRobustPlot2$proportion, "0%")
+
+datRobustPlot2 <- ggplot(datRobustPlot2, aes(y = value, x = proportion)) +
+  geom_boxplot() +
+  ylab("Number of GO terms") +
+  xlab("Proportion of samples retained retained") +
+  theme_all
+
+datRobustPlot + datRobustPlot2
+ggsave("ClusteringAlgoDevelopment/figures/removing.samples.go.terms.pdf", width = 8, height = 5)
+```
 
 
-<!-- <!-- ## Distance --> -->
+```{r}
+resRobust <- NULL
 
-<!-- <!-- simplifyEnrichment easily calculates the standard "Wang", "Resnik", "Rel", "Jiang", and "Lin" distance methods. It also provides an automatic clusterig method. Use this to investigate how good the simple step distance metric is. --> -->
+resRobust$clustereR <- lapply(datRobust[-5], function(robust){
+  lapply(robust, function(targets){
+    targets <- targets[targets %in% V(net)$name]
+    test <- clustereR(net, GOnames, GOlength, targets, method = "walktrap")$res
+    test <- structure(test$clusterNumber, names = test$ontoID)
+    test
+  })
+})
 
-<!-- <!-- ```{r} --> -->
-<!-- <!-- library(simplifyEnrichment) --> -->
+targets <- datRobust$truth[datRobust$truth %in% V(net)$name]
+resRobust$clustereR$truth <- clustereR(net, GOnames, GOlength, targets)$res
+resRobust$clustereR$truth <- structure(resRobust$clustereR$truth$clusterNumber,
+                                       names = resRobust$clustereR$truth$ontoID)
 
-<!-- <!-- goDist <- lapply(goBench, function(dat){ --> -->
-<!-- <!--   goDistInt <- lapply(c("Wang", "Resnik", "Rel", "Jiang","Lin"), function(mea){ --> -->
-<!-- <!--     GO_similarity(dat, ont = "BP", measure = mea) --> -->
-<!-- <!--   }) --> -->
-<!-- <!--   names(goDistInt) <- c("Wang", "Resnik", "Rel", "Jiang","Lin") --> -->
+#############
+#walktrap only as its the best other performting clustering
 
-<!-- <!--   goDistInt --> -->
-<!-- <!-- }) --> -->
-<!-- <!-- ``` --> -->
+resRobust$walktrap <- lapply(datRobust[-5], function(robust){
+  lapply(robust, function(targets){
+    targets <- targets[targets %in% V(net)$name]
+    test <- cluster_terms(GO_similarity(targets, "MF"), method = "walktrap", catch_error = T)
+    test <- try(structure(as.numeric(test), names = targets))
+    test
+  })
+})
 
-<!-- <!-- ## Clustering --> -->
+targets <- datRobust$truth[datRobust$truth %in% V(net)$name]
+resRobust$walktrap$truth <- cluster_terms(GO_similarity(targets, "MF"), method = "walktrap", catch_error = T)
+resRobust$walktrap$truth <- structure(resRobust$walktrap$truth,
+                                       names = targets)
 
-<!-- <!-- Default of simplifyEnrichment is binary cut, but lets do all. --> -->
+#############
+#number of terms
 
-<!-- <!-- ```{r} --> -->
-<!-- <!-- library(ggplot2) --> -->
+resRobustCount <- lapply(resRobust, function(meth){
+  lapply(meth[-5], function(prop){
+    sapply(prop, function(x){
+      length(unique(x))
+    })
+  })
+})
 
-<!-- <!-- compare_clustering_methods(goDist$SmallRand$Descent,  --> -->
-<!-- <!--                            all_clustering_methods()[-c(10,4)]) --> -->
+resRobustCount <- reshape2::melt(resRobustCount)
+colnames(resRobustCount) <- c("counts", "proportion", "Method")
+resRobustCount$proportion <- as.factor(resRobustCount$proportion)
+levels(resRobustCount$proportion) <- c("20%","40%","60%","80%")
 
-<!-- <!-- goClust <- lapply(all_clustering_methods(), function(meth){ --> -->
-<!-- <!--   lapply(goDist, function(dist){ --> -->
-<!-- <!--     simplifyGO(mat = dist, plot = F, method = meth) --> -->
-<!-- <!--   }) --> -->
-<!-- <!-- }) --> -->
-<!-- <!-- names(goClust) <- all_clustering_methods() --> -->
+resRobustCount$Method <- as.factor(resRobustCount$Method)
+levels(resRobustCount$Method) <- c("Topology\nDistance", "Rel")
+resRobustCount$Distance <- resRobustCount$Method
 
-<!-- <!-- print("Number of clusters per distance metric") --> -->
-<!-- <!-- sapply(goClust, function(dist) length(unique(dist$cluster))) --> -->
-<!-- <!-- print("Size of cluster per distance metric") --> -->
-<!-- <!-- sapply(goClust, function(dist) table(dist$cluster)) --> -->
-<!-- <!-- ``` --> -->
+resRobustCountPlot <- ggplot(resRobustCount, aes(y = counts, x = proportion, color = Distance)) +
+  geom_boxplot() +
+  ylab("Number of clusters") +
+  xlab("Proportion of samples retained retained") +
+  theme_all +
+  theme(legend.position = "bottom")
+resRobustCountPlot
+ggsave("ClusteringAlgoDevelopment/figures/removing.samples.number.clusers.pdf", width = 5, height = 5)
 
-<!-- <!-- Many small cluster with both Rel and Jiang. Dumb distance metric gives only 1 cluster. --> -->
+#############
+#rand index
+
+resRobustJackardIndex <- lapply(resRobust, function(meth){
+  lapply(meth[-5], function(rob){
+    sapply(rob, function(r){
+      t <- meth$truth
+      t <- t[names(r)]
+      fossil::adj.rand.index(t, r)
+    })
+  })
+})
+
+resRobustJackardIndex <- reshape2::melt(resRobustJackardIndex)
+resRobustJackardIndex$ProportionSamples <- as.factor(resRobustJackardIndex$ProportionSamples)
+levels(resRobustJackardIndex$ProportionSamples) <- c("20%","40%","60%","80%")
+  
+resRobustJackardIndex$Method <- as.factor(resRobustJackardIndex$Method)
+levels(resRobustJackardIndex$Method) <- c("Topology\nDistance", "Rel")
+resRobustJackardIndex$Distance <- resRobustJackardIndex$Method
+# colnames(resRobustJackardIndex) <- c("value","ProportionSamples", "Method")
+
+resRobustJackardIndexPlot <- ggplot(resRobustJackardIndex, 
+                                    aes(x = value, color = ProportionSamples, lty = Distance)) +
+  stat_ecdf() + 
+  scale_color_viridis_d(direction = -1, name = "Proportion of\nsamples removed") + 
+  xlab("Adjusted rand index") +
+  theme_all +
+  theme(legend.position = "bottom")
+resRobustJackardIndexPlot
+
+ggsave("ClusteringAlgoDevelopment/figures/removing.samples.rand.index.pdf", width = 5, height = 5)
+```
+
+Make figure 4 with patchwork
+
+```{r}
+datRobustPlot2 +
+datRobustPlot + 
+resRobustCountPlot + theme(legend.position = "right") +
+resRobustJackardIndexPlot + ylab("Proportion")+ theme(legend.position = "right") + plot_annotation(tag_levels = 'A')
+
+ggsave("ClusteringAlgoDevelopment/figures/F4.pdf", width = 8.25, height = 7)
+```
+
+
+# Applying this to a dataset
+
+```{r}
+load("data/PublicGSEdata_GOcamera.Rdata")
+targets <- rownames(datGSE$GSE3585[datGSE$GSE3585$FDR<0.05,])
+
+targets <- targets[targets %in% V(net)$name]
+results <- clustereR(net, GOnames, GOlength, targets, filterTerms = c("RNA binding",
+                                                                      "binding",
+                                                                      "molecular function",
+                                                                      "protein binding"))
+
+plot(results$plot,
+     vertex.label = V(results$plot)$nodeLabel,
+     vertex.label.cex = 1.3,
+     vertex.label.cex = 0.5,
+     asp = 0,
+     axes = F)
+
+results$res
+```
+
+
+#other stuff
+############################
+
+
+Is the Rel data clustered? Lets inspect.
+
+```{r}
+plotClust <- function(targets, tit = NULL){
+  localNet <- shortest_paths(net, from = names(targets), to = names(targets), mode = "all")
+  localNet <- localNet$vpath
+  localNet <- unique(c(names(targets), names(unlist(localNet))))
+  localNet <- igraph::induced_subgraph(net, localNet)
+  
+  V(localNet)$name
+  
+  #color by generated cluster
+  cols <- colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(max(targets))
+  # cols <- sample(cols, max(targets), replace = F)
+  cols <- cols[targets]
+  names(cols) <- names(targets)
+  
+  V(localNet)$frame.color <- NA
+  V(localNet)$frame.width <- 0.0001
+  V(localNet)$color <- "gray"
+  # all(V(localNet)$name[match(names(cols), V(localNet)$name)] == names(cols))
+  V(localNet)$color[match(names(cols), V(localNet)$name)] <- cols
+  V(localNet)$size[V(localNet)$color == "gray"] <- 1
+  V(localNet)$size[V(localNet)$color != "gray"] <- 6
+  
+  E(localNet)$arrow.size <- .0001
+  return(plot(localNet, vertex.label = NA, main = tit))
+}
+
+pdf("ClusteringAlgoDevelopment/figures/clusters.rel.vs.distance.pdf", width = 6, height = 6)
+
+plotClust(datRel[[4]], tit = "rel 1")
+plotClust(datRel[[5]], tit = "rel 2")
+plotClust(datRel[[6]], tit = "rel 3")
+plotClust(datRel[[7]], tit = "rel 4")
+
+plotClust(datClust[[4]], tit = "dist 1")
+plotClust(datClust[[7]], tit = "dist 2")
+plotClust(datClust[[8]], tit = "dist 3")
+plotClust(datClust[[9]], tit = "dist 4")
+
+dev.off()
+```
+
+There seems to be something fundamentaly wrong with the IC based clustering...
+
+```{r}
+set.seed(42)
+targets <- sample(V(net)$name, 1000)
+
+x <- lapply(c("Wang", "Resnik", "Rel", "Jiang", "Lin"), function(i){
+  GO_similarity(targets, ont = "MF", measure = i)
+})
+
+names(x) <- c("Wang", "Resnik", "Rel", "Jiang", "Lin")
+
+localNet <- shortest_paths(net, from = targets, to = targets, mode = "all")
+localNet <- localNet$vpath
+localNet <- unique(c(targets, names(unlist(localNet))))
+localNet <- igraph::induced_subgraph(net, localNet)
+
+x$topologicalDist <- distances(localNet)
+x$topologicalDist <- x$topologicalDist[targets, targets]
+
+pdf("ClusteringAlgoDevelopment/figures/dendro.IC.methods.pdf", 5,7)
+par(mfrow = c(3,2))
+sapply(names(x), function(i){
+  library(dendextend)
+  print({
+    y <- as.dendrogram(hclust(as.dist(x[[i]])))
+    y <- dendextend::color_branches(y,k=6)
+    suppressWarnings(plot(y %>% set("labels", NULL), main = i, labels = F))
+  })
+})
+dev.off()
+
+x <- lapply(x, function(i){
+  cutree(hclust(as.dist(i)), k = 6)
+})
+
+pdf("ClusteringAlgoDevelopment/figures/igraph.IC.methods.pdf", 5,7)
+par(mfrow = c(3,2), 
+    mar = c(1.5,1.5,1.5,1.5))
+sapply(names(x), function(tit){
+  set.seed(42)
+  print(plotClust(x[[tit]], tit))
+})
+dev.off()
+
+```
+
+So the IC distance does not comply at all with the hierachical topological clustering...
+
+Lets just visualize the terms in one topological cluster
+
+```{r}
+print("Group 5, 16 members")
+as.character(GOnames[names(x$topologicalDist[x$topologicalDist == 5])])
+print("Group 3, 31 members")
+as.character(GOnames[names(x$topologicalDist[x$topologicalDist == 3])])
+print("Group 4, 81 members")
+GOnames[names(x$topologicalDist[x$topologicalDist == 4])]
+```
+
+Lets just visualize the terms in one of the IC clusters. Cant pick any particular that stands out as better...
+
+```{r}
+print("Group 6, 42 members")
+as.character(GOnames[names(x$Rel[x$Rel == 6])])
+print("Group 2, 51 members")
+as.character(GOnames[names(x$Rel[x$Rel == 2])])
+```
+
+Yeah gibberish...
+
+That makes me wonder, what is the scale of the word cloud on the simplify enrichment?
+
+```{r}
+set.seed(42)
+test <- simplifyEnrichment(GO_similarity(sample(targets, 1000)))
+
+sort(table(test$cluster))
+
+terms <- GOnames[test[test$cluster == 6,"id"]] 
+terms <- as.character(terms)
+
+terms <- unlist(strsplit(terms, " "))
+terms <- gsub("\\.|\\,", "", terms)
+
+wordcloud::wordcloud(names(table(terms)),
+                     table(terms), rot.per = 0)
+
+```
+
+Is there reactome pathway enrichment in any of the clusters of the data?
+
+```{r}
+allTruth$TopologyDist[[1]]
+```
 
