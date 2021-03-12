@@ -1,0 +1,59 @@
+---
+title: "Ontology Descent quickstart"
+author: "Leonidas Lundell"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Quickstart of ontology descent method}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+knitr::opts_knit$set(root.dir = "../")
+```
+
+Quickstast for us. Will grow this into a proper vigete.
+
+```{r}
+library(ontologyDescent)
+library(igraph)
+load("data/dataClustereR.Rdata")
+load("data/PublicGSEdata_GOcamera.Rdata")
+```
+
+The data in dataClustereR.Rdata (net especially), are generated using networkeR but take a while to generate. Just loading them here instead
+
+```{r}
+targets <- rownames(datGSE$GSE781[datGSE$GSE781$FDR<0.05,])
+targets <- targets[targets %in% V(net)$name]
+results <- clustereR(net, GOnames, GOlength, targets, filterTerms = c("RNA binding",
+                                                                      "binding",
+                                                                      "molecular_function",
+                                                                      "protein binding"))
+head(results$res)
+```
+
+Plotting the network as well.
+
+```{r, out.width="100%", dpi=300}
+set.seed(42)
+results <- clustereR(net, GOnames, GOlength, sample(targets, 50), filterTerms = c("RNA binding",
+                                                                      "binding",
+                                                                      "molecular_function",
+                                                                      "protein binding"))
+
+par(mar = c(0,0,0,0))
+plot(results$plot,
+     vertex.label = NA,
+     vertex.label.cex = 0.5,
+     vertex.border.cex = 0.000001,
+     asp = 0,
+     axes = F)
+
+```
+
