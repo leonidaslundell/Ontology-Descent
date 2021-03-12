@@ -7,7 +7,7 @@ modData <- function(data, pathN, clustN){
   return(data)
 }
 
-a
+
 #' Plot Enrichment By Cluster
 #'
 #' @param ontoID Optional. A character vector of Gene Ontology IDs.
