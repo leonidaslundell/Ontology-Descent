@@ -60,7 +60,7 @@ sorting_page <- function(input, output, session, descent_data)
         ##################################################################
         labels = as.list(ontologies_in_cluster[1:100]),
         input_id = ns(i),
-        options = sortable_options(multiDrag = TRUE)
+        options = sortable::sortable_options(multiDrag = TRUE)
       )
       boxes_list <- append(boxes_list, list(this_ranked_list))
     }
