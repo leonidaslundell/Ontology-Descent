@@ -14,11 +14,11 @@ data_entry_page_ui <- function(id)
 
     fluidRow(
       column(
-        2,
+        6,
         textAreaInput(
-          ns("OntoID"),
-          h4("Ontology ID"),
-          value = "Ontology ID",
+          ns("data_entry"),
+          h4("Paste in data, with heads in first row, select delimiter from the menu"),
+          value = "Copy in data",
           height = "100%",
           rows = 10,
           resize = "both"
@@ -27,51 +27,7 @@ data_entry_page_ui <- function(id)
         actionButton(ns("dummy"), label = "Load dummy data")
       ),
       column(
-        2,
-        textAreaInput(
-          ns("Terms"),
-          h4("Ontology Terms"),
-          value = "Ontology Terms",
-          height = "100%",
-          rows = 10,
-          resize = "both"
-        )
-      ),
-      column(
-        2,
-        textAreaInput(
-          ns("Enrichment"),
-          h4("Enrichment"),
-          value = "Enrichment Scores",
-          height = "100%",
-          rows = 10,
-          resize = "both"
-        )
-      ),
-      column(
-        2,
-        textAreaInput(
-          ns("pValues"),
-          h4("Point Size"),
-          value = "pValue",
-          height = "100%",
-          rows = 10,
-          resize = "both"
-        )
-      ),
-      column(
-        2,
-        textAreaInput(
-          ns("Direction"),
-          h4("Direction"),
-          value = "Enrichment direction (up or down)",
-          height = "100%",
-          rows = 10,
-          resize = "both"
-        )
-      ),
-      column(
-        2,
+        4,
         fileInput(
           inputId = ns("file"),
           label = "Upload a csv or xlsx file",
@@ -83,15 +39,16 @@ data_entry_page_ui <- function(id)
           inputId = ns("sep"),
           label = "Seperator",
           choices = c(
-            Auto = "auto",
             Comma = ",",
             Semicolon = ":",
-            Tab = "\t"
+            Tab = "\t",
+            Auto = "auto"
           )
         ),
         helpText(
           "A csv file should contain ontology ID, ontology term, enrichment value, p.value and direction, in that order"
-        )
+        ),
+        img(src = "logo.png", heigth = 120, width = 200)
 
       )
     ),
@@ -166,11 +123,13 @@ data_entry_page <- function(input, output, session, descent_data)
   })
 #input from input columns
   observeEvent(input$Setting1,
-               {data_matrix <- data.frame("ontoID"= ifelse(is.na(input$OntoID), " ", unlist(strsplit(input$OntoID, "\n"))),
-                                          "ontoTerm"= ifelse(is.na(input$Terms), " ", unlist(strsplit(input$Terms, "\n"))),
-                                          "Enrichment" = ifelse(is.na(input$Enrichment), " ",unlist(strsplit(input$Enrichment, "\n"))),
-                                          "P-values" = ifelse(is.na(input$pValues), " ",unlist(strsplit(input$pValues, "\n"))),
-                                          "Direction" = ifelse(is.na(input$Direction), " ",unlist(strsplit(input$Direction, "\n"))))
+               {data_matrix <-
+                 data.frame(
+                   "data" =  unlist(strsplit(input$data_entry, "\n"))
+                 )
+               data_matrix <- data.frame(do.call("rbind", strsplit(data_matrix$data, input$sep, fixed = T)))
+               colnames(data_matrix) <- data_matrix[1,]
+               data_matrix <- data_matrix[-1,]
 
                  data$inputData <- data_matrix
                  descent_data$inputData <- data$inputData
@@ -180,23 +139,9 @@ data_entry_page <- function(input, output, session, descent_data)
   observeEvent(input$dummy,
                {
                  dummy_ref <- get_test_data()
-                 dummy_data <- dummy_ref$inputData
-                 data_matrix <-
-                   data.frame(
-                     dummy_data$ontoID,
-                     dummy_data$ontoTerm,
-                     dummy_data$enrichmentScore,
-                     dummy_data$pValue,
-                     dummy_data$direction
-                   )
-                 colnames(data_matrix) <-
-                   c("ontoID",
-                     "ontoTerm",
-                     "Enrichment",
-                     "P-values",
-                     "Direction")
-                 descent_data$inputData <- data_matrix
-                 output$GO_table <- renderDataTable(descent_data$inputData)
+                 descent_data$inputData <- dummy_ref$inputData
+
+                  output$GO_table <- renderDataTable(descent_data$inputData)
                })
 
 
