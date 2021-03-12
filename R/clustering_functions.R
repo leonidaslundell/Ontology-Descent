@@ -10,26 +10,50 @@
 #' @export
 #'
 
-clustereR <- function(ontoNet, ontoNames, ontoLength, target){
+clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "edge_betweenness", filterTerms = NULL){
+
+  # c("edge_betweenness",
+  #   "fast_greedy",
+  #   "infomap",
+  #   "label_prop",
+  #   "leading_eigen",
+  #   "louvain",
+  #   "optimal",
+  #   "spinglass",
+  #   "walktrap")
 
   #############
   #network based clustering
   connectedSubgraph <- shortest_paths(ontoNet, from = target, to = target, mode = "all")
-  ##commented out parts are for removing too distant connections
-  # connectedSubgraph <- connectedSubgraph$vpath[sapply(connectedSubgraph$vpath, length)<8]
   connectedSubgraph <- connectedSubgraph$vpath
   connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
-  # connectedSubgraph <- c(connectedSubgraph, target)
   ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
-  # ontoClust <- igraph::cluster_spinglass(as.undirected(ontoNetSubgraph))
-  ontoClust <- igraph::cluster_edge_betweenness(as.undirected(ontoNetSubgraph))
+  ontoClust <- switch(method,
+                      edge_betweenness = igraph::cluster_edge_betweenness(as.undirected(ontoNetSubgraph)),
+                      fast_greedy = igraph::cluster_fast_greedy(as.undirected(ontoNetSubgraph)),
+                      infomap = igraph::cluster_infomap(as.undirected(ontoNetSubgraph)),
+                      label_prop = igraph::cluster_label_prop(as.undirected(ontoNetSubgraph)),
+                      leading_eigen = igraph::cluster_leading_eigen(as.undirected(ontoNetSubgraph)),
+                      louvain = igraph::cluster_louvain(as.undirected(ontoNetSubgraph)),
+                      optimal = igraph::cluster_optimal(as.undirected(ontoNetSubgraph)),
+                      spinglass = igraph::cluster_spinglass(as.undirected(ontoNetSubgraph)),
+                      walktrap = igraph::cluster_walktrap(as.undirected(ontoNetSubgraph)))
 
   #############
   #eigen centrality quantifies connected connecteness...
   clusterTerm <- sapply(igraph::communities(ontoClust), function(x){
-    xx <- igraph::induced_subgraph(ontoNet, x)
-    xx <- which.max(centr_eigen(xx)$vector)
-    ontoNames[x[xx]]
+
+    xSub <- igraph::induced_subgraph(ontoNet, x)
+    xMax <- centr_eigen(xSub)$vector
+    xTerm <- ontoNames[x[which.max(xMax)]]
+
+    if(any(xTerm %in% filterTerms)){
+      xMax <- xMax[-which.max(xMax)]
+      xTerm <- ontoNames[x[which.max(xMax)]]
+      return(xTerm)
+    }else{
+      return(xTerm)
+    }
   })
   names(clusterTerm) <- 1:max(ontoClust$membership)
 
