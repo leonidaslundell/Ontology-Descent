@@ -5,3 +5,5 @@
 Ontology-Descent.Rproj
 .DS_Store
 .Rapp.history
+.gitignore
+*pptx
