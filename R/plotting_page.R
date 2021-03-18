@@ -34,51 +34,47 @@ plotting_page_ui <- function(id)
                                          choices = c("bw", "classic", "grey", "minimal", "dark"),
                                          selected = "minimal", multiple = FALSE),
 
-                             selectInput(inputId = ns("colorSet"), label = "Color Palette",
-                                         choices = c("Brewer", "AAAS", "D3", "Futurama", "IGV",
-                                                     "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM",
-                                                     "NPG", "RickAndMorty", "Simpsons", "StarTrek",
-                                                     "Tron", "UChicago", "UCSCGB"),
-                                         selected = "IGV", multiple = FALSE),
+                             uiOutput(ns("lgdPosition")),
 
-                             selectInput(inputId = ns("lgdPosition"), label = "Legend Position",
-                                         choices = NULL, selected = NULL, multiple = FALSE),
+                             uiOutput(ns("dotShape")),
+
+                             numericInput(ns("dotSize"), label = "Pathway (size)",
+                                          value = 1, min = 0, max = 5, step = .25)
+
                              ),
 
                     tabPanel(title = "Text:",
-                             numericInput(ns("nameSize"), label = "Pathway (size)",
+                             selectInput(ns("fontFam"), label = "Font Family",
+                                         choices = c("Sans (Arial)" = "sans",
+                                                     "Serif (Times New Roman)" = "serif",
+                                                     "Mono (Courier New)" = "mono"),
+                                         selected = "sans", multiple = FALSE),
+
+                             numericInput(ns("axTitleSize"), label = "Axis title (size)",
+                                          value = 9, min = 4, max = 96, step = 1),
+
+                             numericInput(ns("nameSize"), label = "Pathway Names (size)",
                                           value = 7, min = 4, max = 96, step = 1),
 
                              numericInput(ns("axTxtSize"), label = "Axis text (size)",
                                           value = 7, min = 4, max = 96, step = 1),
 
-                             numericInput(ns("axTitleSize"), label = "Axis title (size)",
-                                          value = 9, min = 4, max = 96, step = 1),
+                             uiOutput(ns("lgTitleSize")),
 
-                             numericInput(ns("lgTxtSize"), label = "Legend text (size)",
-                                          value = 7, min = 4, max = 96, step = 1),
+                             uiOutput(ns("lgTxtSize"))
 
-                             numericInput(ns("lgTitleSize"), label = "Legend title (size)",
-                                          value = 9, min = 4, max = 96, step = 1),
-
-                             selectInput(ns("fontFam"), label = "Font Family",
-                                         choices = c("Sans (Arial)" = "sans",
-                                                     "Serif (Times New Roman)" = "serif",
-                                                     "Mono (Courier New)" = "mono"),
-                                         selected = "sans", multiple = FALSE)
-                    ),
+                             ),
 
                     tabPanel(title = "Download:",
-
-                             numericInput(inputId = ns("plotHt"), label = "Height", min = 2, max = 50,
-                                          value = 15, step = .5),
-
-                             numericInput(inputId = ns("plotWd"), label = "Width", min = 2, max = 50,
-                                          value = 15, step = .5),
-
-                             selectInput(inputId = ns("plotUnit"), label = "Units",
+                             selectInput(inputId = ns("plotUnit"), label = "Size Units",
                                          choices = c("cm", "in", "mm"),
                                          selected = "cm", multiple = FALSE),
+
+                             numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
+                                          value = 15, step = .5),
+
+                             numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
+                                          value = 15, step = .5),
 
                              numericInput(inputId = ns("plotDPI"), label = "DPI", min = 75, max = 1000,
                                           value = 300, step = 25),
@@ -115,6 +111,8 @@ plotting_page_ui <- function(id)
 #' @export
 plotting_page <- function(input, output, session, descent_data)
 {
+  ns <- session$ns
+
   reacVals <- reactiveValues()
 
   # reacVals$data <- reactive(example_data)
@@ -123,6 +121,8 @@ plotting_page <- function(input, output, session, descent_data)
   ### Modify Data for Cluster Names ###
   ### DELETE THIS FROM FINAL CODE ###
   reacVals$data <- reactive(modData(example_data, input$pathN, input$clustN))
+
+  ### Render UI Based on Selected Options ###
 
   ### Update plotType Based on Data Size ###
   observe({
@@ -138,14 +138,45 @@ plotting_page <- function(input, output, session, descent_data)
         }
   })
 
-  ### Update lgdPosition based on coordFlip ###
-  observe({
-    if (!isTRUE(input$coordFlip)){
-      updateSelectInput(session, "lgdPosition", choices = c("top", "bottom"), selected = "bottom")
-    } else if (isTRUE(input$coordFlip)){
-      updateSelectInput(session, "lgdPosition", choices = c("left", "right", "top", "bottom"), selected = "bottom")
-    }
-  })
+  ### Plot Type Based Options - Dot Size / Dot Shape / Legend Position / Legend Text ###
+  observe(switch(input$plotType,
+                 "pth" = {
+                   updateNumericInput(session, "dotSize", label = "Dot Size", value = 2, min = 0, max = 5, step = .25)
+
+                   if(isTRUE(input$axisType)){
+                     output$dotShape <- renderUI(
+                       selectInput(ns("dotShape"), label = "Dot Shape", choices = c(0:25), selected = 19)
+                     )
+                   } else if (!isTRUE(input$axisType)){
+                     output$dotShape <- NULL
+                   }
+
+                   output$lgdPosition <- renderUI(
+                     selectInput(ns("lgdPosition"), label = "Legend Position", choices = c("top", "bottom"), selected = "bottom")
+                   )
+
+                   output$lgTitleSize <- renderUI(
+                     numericInput(ns("lgTitleSize"), label = "Legend title (size)", value = 9, min = 4, max = 96, step = 1)
+                   )
+
+                   output$lgTxtSize <- renderUI(
+                     numericInput(ns("lgTxtSize"), label = "Legend text (size)", value = 7, min = 4, max = 96, step = 1)
+                     )
+                 },
+                 "clust" = {
+                   updateNumericInput(session, "dotSize", label = "Dot Size", value = 1, min = 0, max = 5, step = .25)
+
+                   output$dotShape <- renderUI(
+                     selectInput(ns("dotShape"), label = "Dot Shape", choices = c(0:25), selected = 19)
+                   )
+
+                   output$lgdPosition <- NULL
+
+                   output$lgTitleSize <- NULL
+
+                   output$lgTxtSize <- NULL
+                 }))
+
 
   ### Create Plot ###
   reacVals$plotOut <- eventReactive(input$actPlot,
@@ -153,17 +184,25 @@ plotting_page <- function(input, output, session, descent_data)
                                            "pth" = {
                                              dat <- reactive(reacVals$data())
 
+                                             if (isTRUE(input$axisType)){
+                                               dotShape <- reactive(as.numeric(input$dotShape))
+                                             } else if (!isTRUE(input$axisType)){
+                                               dotShape <- reactive(19)
+                                               }
+
                                              pathwayGraph(ontoID = dat()$ontoID,
-                                                          ontoTerm = dat()$ontoTerm,
+                                                          ontoTerm = cutText(dat()$ontoTerm, 52),
                                                           pValue = dat()$pValue,
                                                           clusterNumber = dat()$clusterNumber,
-                                                          clusterName = dat()$clusterName,
+                                                          clusterName = cutText(dat()$clusterName, 52),
                                                           enrichmentScore = dat()$enrichmentScore,
                                                           direction = dat()$direction,
+                                                          colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
                                                           coordFlip = input$coordFlip,
+                                                          dotSize = input$dotSize,
+                                                          dotShape = dotShape(),
                                                           themeSet = input$themeSet,
-                                                          colorSet = input$colorSet,
                                                           lgdPosition = input$lgdPosition,
                                                           nameSize = input$nameSize,
                                                           axTxtSize = input$axTxtSize,
@@ -177,16 +216,18 @@ plotting_page <- function(input, output, session, descent_data)
                                              dat <- reactive(reacVals$data())
 
                                              clusterGraph(ontoID = dat()$ontoID,
-                                                          ontoTerm = dat()$ontoTerm,
+                                                          ontoTerm = cutText(dat()$ontoTerm, 52),
                                                           pValue = dat()$pValue,
                                                           clusterNumber = dat()$clusterNumber,
-                                                          clusterName = dat()$clusterName,
+                                                          clusterName = cutText(dat()$clusterName, 52),
                                                           enrichmentScore = dat()$enrichmentScore,
                                                           direction = dat()$direction,
+                                                          colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
                                                           coordFlip = input$coordFlip,
+                                                          dotSize = input$dotSize,
+                                                          dotShape = as.numeric(input$dotShape),
                                                           themeSet = input$themeSet,
-                                                          colorSet = input$colorSet,
                                                           nameSize = input$nameSize,
                                                           axTxtSize = input$axTxtSize,
                                                           axTitleSize = input$axTitleSize,

@@ -4,9 +4,54 @@ modData <- function(data, pathN, clustN){
   data$clusterNumber <- sample(1:clustN, nrow(data), replace = TRUE)
   data$clusterName <- sample(data$ontoTerm, clustN)[data$clusterNumber]
 
+  if (clustN < 52){
+    data$color <- ggsci::pal_igv()((51))[data$clusterNumber]
+  } else if (clustN >= 52){
+    data$color <- colorRampPalette(ggsci::pal_igv()((51)))((clustN))[data$clusterNumber]
+  }
+
   return(data)
 }
 
+#' Shorten Ontology Terms
+#'
+#' @param text character vector - ontology terms
+#' @param cutoff number of characters to cut the terms to
+#'
+#' @return character vector with shortened ontology terms
+#' @export
+#'
+#' @examples
+cutText <- function(text, cutoff){
+  sub <- data.frame("word" = c("\\<regulation\\>", "\\<activity\\>", "\\<positive\\>",
+                               "\\<negative\\>", "involved in", "ic process", "\\<pathway\\>",
+                               "\\<signaling\\>", "\\<biosynthetic\\>"),
+                    "sub" = c("reg.", "act.", "pos.", "neg.", "", "ism", "path.", "sign.", "synth."))
+
+  sub$word <- as.character(sub$word)
+  sub$sub <- as.character(sub$sub)
+
+  fil.l <- nchar(text) > cutoff
+
+  new.text <- text
+
+  ### Fiter Out Words ###
+  for(i in 1:nrow(sub)){
+    new.text[fil.l] <- gsub(sub[i,1], sub[i,2], new.text[fil.l])
+  }
+
+  ### Filter Out Parentheses ###
+  fil.l <- nchar(new.text) > cutoff
+
+  new.text[fil.l] <- gsub(" *\\(.*?\\) *", "", new.text[fil.l])
+
+  ### Cut The Rest ###
+  fil.l <- nchar(new.text) > cutoff
+
+  new.text[fil.l] <- paste(strtrim(new.text[fil.l], cutoff), "...", sep = "")
+
+  return(new.text)
+}
 
 #' Plot Enrichment By Cluster
 #'
@@ -19,6 +64,8 @@ modData <- function(data, pathN, clustN){
 #' @param direction Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.
 #' @param plotEnrichment Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.
 #' @param coordFlip Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.
+#' @param dotSize Optional. Numeric. Dot size in plots. Default == 1.
+#' @param dotShape Optional. Numeric. Select ggplot2 pch shape. Default == 19.
 #' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "minimal"
 #' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"
 #' @param nameSize Optional. A numeric value setting font size for cluster names. Default == 7.
@@ -30,12 +77,15 @@ modData <- function(data, pathN, clustN){
 #' @import ggplot2
 #' @import RColorBrewer
 #' @import ggsci
+#' @import ggbeeswarm
 #' @export
 #'
 #' @examples
 #'
-clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber = NULL, clusterName,
-                         enrichmentScore = NULL, direction = NULL, plotEnrichment = FALSE, coordFlip = FALSE,
+clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, clusterNumber = NULL,
+                         enrichmentScore = NULL, direction = NULL, colorManual = NULL,
+                         plotEnrichment = FALSE, coordFlip = FALSE,
+                         dotSize = 1, dotShape = 19,
                          themeSet = "minimal", colorSet = "IGV",
                          nameSize = 8, axTxtSize = 8, axTitleSize = 10, fontFam = "sans"){
 
@@ -48,29 +98,38 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
   if (!is.null(enrichmentScore)){plot$enrichmentScore <- enrichmentScore}
   if (!is.null(direction)){plot$direction <- direction}
 
-  ### Set Color Palette ###
-  col <- list("Brewer" = RColorBrewer::brewer.pal(8, "Set2"),
-              "AAAS" = ggsci::pal_aaas()((10)),
-              "D3" = ggsci::pal_d3()((10)),
-              "Futurama" = ggsci::pal_futurama()((12)),
-              "IGV" = ggsci::pal_igv()((51)),
-              "JAMA" = ggsci::pal_jama()((7)),
-              "JCO" = ggsci::pal_jco()((10)),
-              "Lancet" = ggsci::pal_lancet()((9)),
-              "LocusZoom" = ggsci::pal_locuszoom()((7)),
-              "NEJM" = ggsci::pal_nejm()((8)),
-              "NPG" = ggsci::pal_npg()((10)),
-              "RickAndMorty" = ggsci::pal_rickandmorty()((12)),
-              "Simpsons" = ggsci::pal_simpsons()((16)),
-              "StarTrek" = ggsci::pal_startrek()((7)),
-              "Tron" = ggsci::pal_tron()((7)),
-              "UChicago" = ggsci::pal_uchicago()((9)),
-              "UCSCGB" = ggsci::pal_ucscgb()((26)))
+  ### Set Colors / If Not Specified Set Palette ###
+  if (!is.null(colorManual)){
 
-  col <- unlist(col[names(col) == colorSet])
-  names(col) <- NULL
+    col <- colorManual
+    names(col) <- clusterName
+    col <- col[!duplicated(names(col))]
 
-  if (length(unique(plot$clusterName)) > length(col)){col <- colorRampPalette(col)(length(unique(plot$clusterName)))}
+  } else if (is.null(colorManual)){
+
+    col <- list("Brewer" = RColorBrewer::brewer.pal(8, "Set2"),
+                "AAAS" = ggsci::pal_aaas()((10)),
+                "D3" = ggsci::pal_d3()((10)),
+                "Futurama" = ggsci::pal_futurama()((12)),
+                "IGV" = ggsci::pal_igv()((51)),
+                "JAMA" = ggsci::pal_jama()((7)),
+                "JCO" = ggsci::pal_jco()((10)),
+                "Lancet" = ggsci::pal_lancet()((9)),
+                "LocusZoom" = ggsci::pal_locuszoom()((7)),
+                "NEJM" = ggsci::pal_nejm()((8)),
+                "NPG" = ggsci::pal_npg()((10)),
+                "RickAndMorty" = ggsci::pal_rickandmorty()((12)),
+                "Simpsons" = ggsci::pal_simpsons()((16)),
+                "StarTrek" = ggsci::pal_startrek()((7)),
+                "Tron" = ggsci::pal_tron()((7)),
+                "UChicago" = ggsci::pal_uchicago()((9)),
+                "UCSCGB" = ggsci::pal_ucscgb()((26)))
+
+    col <- unlist(col[names(col) == colorSet])
+    names(col) <- NULL
+
+    if (length(unique(plot$clusterName)) > length(col)){col <- colorRampPalette(col)(length(unique(plot$clusterName)))}
+  }
 
   ### Create ggplot Object ###
   if (!isTRUE(plotEnrichment)){
@@ -83,7 +142,7 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
 
     p <- ggplot2::ggplot(plot,
                          ggplot2::aes(x = -log10(pValue), y = clusterName, fill = clusterName, color = clusterName))+
-      ggplot2::geom_point(pch = 21, size = 1, position = "jitter")+
+      ggbeeswarm::geom_beeswarm(groupOnX = FALSE, pch = dotShape, size = dotSize)+
       ggplot2::scale_x_continuous("-log10 P Value", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
       ggplot2::scale_fill_manual(values = col, name = "Cluster", guide = "none")+
       ggplot2::scale_color_manual(values = col, name = "Cluster", guide = "none")
@@ -98,7 +157,7 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
 
     p <- ggplot2::ggplot(plot, ggplot2::aes(x = enrichmentScore, y = clusterName, fill = clusterName, color = clusterName))+
       ggplot2::geom_vline(xintercept = 0, lty = "dashed")+
-      ggplot2::geom_point(pch = 21, size = 1, position = "jitter")+
+      ggbeeswarm::geom_beeswarm(groupOnX = FALSE, pch = dotShape, size = dotSize)+
       ggplot2::scale_x_continuous("Enrichment Score", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
       ggplot2::scale_fill_manual(values = col, name = "Cluster", guide = "none")+
       ggplot2::scale_color_manual(values = col, name = "Cluster", guide = "none")
@@ -151,6 +210,8 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
 #' @param direction Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.
 #' @param plotEnrichment Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.
 #' @param coordFlip Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.
+#' @param dotSize Optional. Numeric. Dot size in plots. Default == 2.
+#' @param dotShape Optional. Numeric. Select ggplot2 pch shape. Default == 19.
 #' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "minimal"
 #' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"
 #' @param lgdPosition Optional. A character string setting the legend position: one of "right", "left", "top" or "bottom". Default == "right".
@@ -168,8 +229,10 @@ clusterGraph <- function(ontoID = NULL, ontoTerm = NULL, pValue, clusterNumber =
 #' @export
 #'
 #' @examples
-pathwayGraph <- function(ontoID = NULL, ontoTerm, pValue, clusterNumber = NULL, clusterName,
-                         enrichmentScore = NULL, direction = NULL, plotEnrichment = FALSE, coordFlip = FALSE,
+pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNumber = NULL,
+                         enrichmentScore = NULL, direction = NULL, colorManual = NULL,
+                         plotEnrichment = FALSE, coordFlip = FALSE,
+                         dotSize = 2, dotShape = 19,
                          themeSet = "minimal", colorSet = "IGV", lgdPosition = "right",
                          nameSize = 7, axTxtSize = 7, axTitleSize = 9, lgTxtSize = 7, lgTitleSize = 9, fontFam = "sans"){
 
@@ -181,29 +244,38 @@ pathwayGraph <- function(ontoID = NULL, ontoTerm, pValue, clusterNumber = NULL, 
   if (!is.null(enrichmentScore)){plot$enrichmentScore <- enrichmentScore}
   if (!is.null(direction)){plot$direction <- direction}
 
-  ### Set Color Palette ###
-  col <- list("Brewer" = RColorBrewer::brewer.pal(8, "Set2"),
-              "AAAS" = ggsci::pal_aaas()((10)),
-              "D3" = ggsci::pal_d3()((10)),
-              "Futurama" = ggsci::pal_futurama()((12)),
-              "IGV" = ggsci::pal_igv()((51)),
-              "JAMA" = ggsci::pal_jama()((7)),
-              "JCO" = ggsci::pal_jco()((10)),
-              "Lancet" = ggsci::pal_lancet()((9)),
-              "LocusZoom" = ggsci::pal_locuszoom()((7)),
-              "NEJM" = ggsci::pal_nejm()((8)),
-              "NPG" = ggsci::pal_npg()((10)),
-              "RickAndMorty" = ggsci::pal_rickandmorty()((12)),
-              "Simpsons" = ggsci::pal_simpsons()((16)),
-              "StarTrek" = ggsci::pal_startrek()((7)),
-              "Tron" = ggsci::pal_tron()((7)),
-              "UChicago" = ggsci::pal_uchicago()((9)),
-              "UCSCGB" = ggsci::pal_ucscgb()((26)))
+  ### Set Colors / If Not Specified Set Palette ###
+  if (!is.null(colorManual)){
 
-  col <- unlist(col[names(col) == colorSet])
-  names(col) <- NULL
+    col <- colorManual
+    names(col) <- clusterName
+    col <- col[!duplicated(names(col))]
 
-  if (length(unique(plot$clusterName)) > length(col)){col <- colorRampPalette(col)(length(unique(plot$clusterName)))}
+  } else if (is.null(colorManual)){
+
+    col <- list("Brewer" = RColorBrewer::brewer.pal(8, "Set2"),
+                "AAAS" = ggsci::pal_aaas()((10)),
+                "D3" = ggsci::pal_d3()((10)),
+                "Futurama" = ggsci::pal_futurama()((12)),
+                "IGV" = ggsci::pal_igv()((51)),
+                "JAMA" = ggsci::pal_jama()((7)),
+                "JCO" = ggsci::pal_jco()((10)),
+                "Lancet" = ggsci::pal_lancet()((9)),
+                "LocusZoom" = ggsci::pal_locuszoom()((7)),
+                "NEJM" = ggsci::pal_nejm()((8)),
+                "NPG" = ggsci::pal_npg()((10)),
+                "RickAndMorty" = ggsci::pal_rickandmorty()((12)),
+                "Simpsons" = ggsci::pal_simpsons()((16)),
+                "StarTrek" = ggsci::pal_startrek()((7)),
+                "Tron" = ggsci::pal_tron()((7)),
+                "UChicago" = ggsci::pal_uchicago()((9)),
+                "UCSCGB" = ggsci::pal_ucscgb()((26)))
+
+    col <- unlist(col[names(col) == colorSet])
+    names(col) <- NULL
+
+    if (length(unique(plot$clusterName)) > length(col)){col <- colorRampPalette(col)(length(unique(plot$clusterName)))}
+  }
 
   ### Create ggplot Object ###
   if (!isTRUE(plotEnrichment)){
@@ -220,7 +292,7 @@ pathwayGraph <- function(ontoID = NULL, ontoTerm, pValue, clusterNumber = NULL, 
       ### 1.1 Plot Without Indicating Direction (direction == NULL) ###
 
       p <- ggplot2::ggplot(plot, ggplot2::aes(x = -log10(pValue), y = ontoTerm, fill = clusterName, color = clusterName))+
-        ggplot2::geom_point(pch = 21, size = 1)+
+        ggplot2::geom_point(pch = dotShape, size = dotSize)+
         ggplot2::scale_x_continuous("-log10 P Value", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
         ggplot2::scale_fill_manual(values = col, name = "Cluster")+
         ggplot2::scale_color_manual(values = col, name = "Cluster")
@@ -230,7 +302,7 @@ pathwayGraph <- function(ontoID = NULL, ontoTerm, pValue, clusterNumber = NULL, 
       ### 1.2 Plot With Direction (direction != NULL) ###
 
       p <- ggplot2::ggplot(plot, ggplot2::aes(x = -log10(pValue), y = ontoTerm, fill = clusterName, color = clusterName, shape = direction))+
-        ggplot2::geom_point(size = 1)+
+        ggplot2::geom_point(size = dotSize)+
         ggplot2::scale_shape_manual(values = c(25,24), name = "Direction")+
         ggplot2::scale_fill_manual(values = col, name = "Cluster")+
         ggplot2::scale_color_manual(values = col, name = "Cluster")+
@@ -247,7 +319,7 @@ pathwayGraph <- function(ontoID = NULL, ontoTerm, pValue, clusterNumber = NULL, 
 
     p <- ggplot2::ggplot(plot, ggplot2::aes(x = enrichmentScore, y = ontoTerm, fill = clusterName, color = clusterName))+
       ggplot2::geom_vline(xintercept = 0, lty = "dashed")+
-      ggplot2::geom_point(pch = 21, size = 1)+
+      ggplot2::geom_point(pch = dotShape, size = dotSize)+
       ggplot2::scale_x_continuous("Enrichment Score", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
       ggplot2::scale_fill_manual(values = col, name = "Cluster")+
       ggplot2::scale_color_manual(values = col, name = "Cluster")
@@ -276,7 +348,7 @@ pathwayGraph <- function(ontoID = NULL, ontoTerm, pValue, clusterNumber = NULL, 
                           legend.key.width = ggplot2::unit(lgTxtSize, "pt"),
                           legend.title = ggplot2::element_text(size = lgTitleSize),
                           legend.text = ggplot2::element_text(size = lgTxtSize))+
-    ggplot2::guides("shape" = ggplot2::guide_legend(order = 1, title.position = "top"),
+    ggplot2::guides("shape" = ggplot2::guide_legend(ncol = 1, order = 1, title.position = "top"),
                     "color" = ggplot2::guide_legend(ncol = 1, title.position = "top", order = 0),
                     "fill" = ggplot2::guide_legend(ncol = 1, title.position = "top", order = 0))
 
