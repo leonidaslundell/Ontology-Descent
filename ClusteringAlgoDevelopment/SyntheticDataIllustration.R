@@ -148,12 +148,12 @@ V(xx)$color[V(xx)$name %in% c(31,32)] <- "darkred"
 set.seed(42)
 plot(xx)
 
-V(xx)$color[nchar(V(xx)$name) < 4] <- "gray"
+V(xx)$color[V(xx)$color =="black"] <- "gray"
 set.seed(42)
 plot(xx)
 
 plot.new()
-legend(0,0.5, legend = c("Significant ontology term", "Known ontology term"), pch = 16:15, cex = 1.6, col = c("gray", "black"))
+legend(0,0.5, legend = c("Provided ontology term", "Known ontology term"), pch = 16:15, cex = 1.6, col = c("gray", "black"))
 dev.off()
 
 # pdf("ClusteringAlgoDevelopment/figures/accuracyRecallPression.pdf")
