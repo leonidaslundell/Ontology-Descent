@@ -135,16 +135,16 @@ data_entry_page <- function(input, output, session, descent_data)
   observeEvent(input$dummy,
                {
                  dummy_ref <- get_test_data()
-                 print(dummy_ref)
                  dummy_ref <-
                    paste(
-                     dummy_ref$ontoID,
-                     dummy_ref$pValue,
-                     dummy_ref$enrichmentScore,
-                     dummy_ref$direction,
+                     dummy_ref$inputData$ontoID,
+                     dummy_ref$inputData$pValue,
+                     dummy_ref$inputData$enrichmentScore,
+                     dummy_ref$inputData$direction,
                      sep = "\t",
                      collapse = "\n"
                    )
+                 dummy_ref <- paste0(c("ontoID\tpValue\tenrichmentScore\tdirection\n"),dummy_ref)
 
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref

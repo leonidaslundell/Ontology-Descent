@@ -11,7 +11,7 @@ ui <- shinyUI(fluidPage(
 
 server <- shinyServer(function(input, output){
 
-  descent_data <- get_test_data()
+  descent_data <- reactiveValues()
 
   shiny::callModule(data_entry_page, "data_entry", descent_data)
   shiny::callModule(exploring_page, "clustering", descent_data)
