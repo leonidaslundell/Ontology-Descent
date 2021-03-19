@@ -20,7 +20,7 @@ data_entry_page_ui <- function(id)
         textAreaInput(
           ns("data_entry"),
           h4("Paste in data, with heads in first row, select delimiter from the menu"),
-          value = "Copy in data",
+          placeholder = "Copy in data",
           height = "100%",
           rows = 10,
           resize = "both"
@@ -36,16 +36,6 @@ data_entry_page_ui <- function(id)
           buttonLabel = "Upload",
           multiple = F,
           accept = c(".csv", ".xlsx")
-        ),
-        radioButtons(
-          inputId = ns("sep"),
-          label = "Seperator",
-          choices = c(
-            Comma = ",",
-            Semicolon = ":",
-            Tab = "\t",
-            Auto = "auto"
-          )
         ),
         helpText(
           "Your entry file needs to have a first column named 'ontoID' (ex. GO:00010) and a second column called 'pValue' (ex. 3E-5). Beware of case in names! "
@@ -96,58 +86,69 @@ data_entry_page <- function(input, output, session, descent_data)
 
 
       else if(stringr::str_ends(input$file$datapath, "\\.xlsx")){
-       imported_values <- openxlsx::read.xlsx(input$file$datapath)
+        imported_values <- openxlsx::read.xlsx(input$file$datapath)
 
-       if(colnames(imported_values)[1] == "ontoID" & colnames(imported_values)[2] == "pValue"){
-         output$GO_table <- renderDataTable(imported_values)
-         descent_data$inputData <- imported_values
-       }
-       else{
-         shinyWidgets::sendSweetAlert(session = session,
-                                      title = "Input Error",
-                                      text = "Your table is not the correct format. \n
+        if(colnames(imported_values)[1] == "ontoID" & colnames(imported_values)[2] == "pValue"){
+          output$GO_table <- renderDataTable(imported_values)
+          descent_data$inputData <- imported_values
+        }
+        else{
+          shinyWidgets::sendSweetAlert(session = session,
+                                       title = "Input Error",
+                                       text = "Your table is not the correct format. \n
                                      please name the first column 'ontoID' and the second column 'pValue'",
                                      type = "error")
-       }}
+        }}
       else{
         shinyWidgets::sendSweetAlert(session = session,
                                      title = "Input Error",
                                      text = "Your file is not the right format. \n Supported formats are xlsx and csv",
                                      type = "error")
       }
-  })
-#input from input columns
+    })
+  #input from input columns
   observeEvent(input$Setting1,
                {if(nchar(input$data_entry)>0){
 
                  data_matrix <- try(data.table::fread(input$data_entry, header = T))
                  if(all(class(data_matrix) == "try-error")){shinyWidgets::sendSweetAlert(session = session,
-                                                                                    title = "Input Error",
-                                                                                    text = "Check your seperators, number of columns or incomplete rows",
-                                     type = "error")}
-              else{
-               if(colnames(data_matrix)[1] == "ontoID" &
-                  colnames(data_matrix)[2] == "pValue"){
-                 output$GO_table <- renderDataTable(data_matrix)
-                 descent_data$inputData <- data_matrix
+                                                                                         title = "Input Error",
+                                                                                         text = "Check your seperators, number of columns or incomplete rows",
+                                                                                         type = "error")}
+                 else{
+                   if(colnames(data_matrix)[1] == "ontoID" &
+                      colnames(data_matrix)[2] == "pValue"){
+                     output$GO_table <- renderDataTable(data_matrix)
+                     descent_data$inputData <- data_matrix
 
-               }
-               else{
-                 shinyWidgets::sendSweetAlert(session = session,
-                                              title = "Input Error",
-                                              text = "Your table is not the correct format. \n
+                   }
+                   else{
+                     shinyWidgets::sendSweetAlert(session = session,
+                                                  title = "Input Error",
+                                                  text = "Your table is not the correct format. \n
                                      please name the first column 'ontoID' and the second column 'pValue'. \n
                                      Alternatively, check you have selected the correct seperator",
                                      type = "error")}
 
-                                }}})
-#load dummy data
+                 }}})
+  #load dummy data
   observeEvent(input$dummy,
                {
                  dummy_ref <- get_test_data()
-                 descent_data$inputData <- dummy_ref$inputData
+                 print(dummy_ref)
+                 dummy_ref <-
+                   paste(
+                     dummy_ref$ontoID,
+                     dummy_ref$pValue,
+                     dummy_ref$enrichmentScore,
+                     dummy_ref$direction,
+                     sep = "\t",
+                     collapse = "\n"
+                   )
 
-                  output$GO_table <- renderDataTable(descent_data$inputData)
+                 shiny::updateTextAreaInput(inputId = "data_entry",
+                                            value = dummy_ref
+                 )
                })
 
 
