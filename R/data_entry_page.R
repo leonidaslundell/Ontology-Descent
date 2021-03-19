@@ -118,14 +118,16 @@ data_entry_page <- function(input, output, session, descent_data)
   })
 #input from input columns
   observeEvent(input$Setting1,
-               {data_matrix <-
-                 data.frame(
-                   "data" =  unlist(strsplit(input$data_entry, "\n"))
-                 )
-               data_matrix <- data.frame(do.call("rbind", strsplit(data_matrix$data, input$sep, fixed = T)))
-               colnames(data_matrix) <- data_matrix[1,]
-               data_matrix <- data_matrix[-1,]
-               if(colnames(data_matrix)[1] == "ontoID" & colnames(data_matrix)[2] == "pValue"){
+               {if(nchar(input$data_entry)>0){
+
+                 data_matrix <- try(data.table::fread(input$data_entry, header = T))
+                 if(all(class(data_matrix) == "try-error")){shinyWidgets::sendSweetAlert(session = session,
+                                                                                    title = "Input Error",
+                                                                                    text = "Check your seperators, number of columns or incomplete rows",
+                                     type = "error")}
+              else{
+               if(colnames(data_matrix)[1] == "ontoID" &
+                  colnames(data_matrix)[2] == "pValue"){
                  output$GO_table <- renderDataTable(data_matrix)
                  descent_data$inputData <- data_matrix
 
@@ -138,7 +140,7 @@ data_entry_page <- function(input, output, session, descent_data)
                                      Alternatively, check you have selected the correct seperator",
                                      type = "error")}
 
-                                })
+                                }}})
 #load dummy data
   observeEvent(input$dummy,
                {
