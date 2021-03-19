@@ -59,78 +59,56 @@ data_entry_page_ui <- function(id)
 #' @export
 data_entry_page <- function(input, output, session, descent_data)
 {
-  data <- descent_data
-  dummy_ref <- descent_data
-  imported_values <- NULL
-  #Load data input from file upload
-  observeEvent(
-    input$file,
-    { if(stringr::str_ends(input$file$datapath, "\\.csv")){
-      imported_values <-
-        data.table::fread(input$file$datapath, sep = "auto")
-      if(colnames(imported_values)[1] == "ontoID" & colnames(imported_values)[2] == "pValue"){
-        output$GO_table <- renderDataTable(imported_values)
-        descent_data$inputData <- imported_values
-      }
-      else{
-        shinyWidgets::sendSweetAlert(session = session,
-                                     title = "Input Error",
-                                     text = "Your table is not the correct format. \n
-                                     please name the first column 'ontoID' and the second column 'pValue'",
-                                     type = "error")
-      }}
+  input_data <- reactiveValues(read_now = 0)
 
-
-
-
-
-
-      else if(stringr::str_ends(input$file$datapath, "\\.xlsx")){
-        imported_values <- openxlsx::read.xlsx(input$file$datapath)
-
-        if(colnames(imported_values)[1] == "ontoID" & colnames(imported_values)[2] == "pValue"){
-          output$GO_table <- renderDataTable(imported_values)
-          descent_data$inputData <- imported_values
-        }
-        else{
-          shinyWidgets::sendSweetAlert(session = session,
-                                       title = "Input Error",
-                                       text = "Your table is not the correct format. \n
-                                     please name the first column 'ontoID' and the second column 'pValue'",
-                                     type = "error")
-        }}
-      else{
-        shinyWidgets::sendSweetAlert(session = session,
-                                     title = "Input Error",
-                                     text = "Your file is not the right format. \n Supported formats are xlsx and csv",
-                                     type = "error")
-      }
+  # Observe if file is uploaded
+  observeEvent(input$file, {
+      input_data$x <- input$file$datapath
+      input_data$type <- tools::file_ext(input$file$datapath)
+      input_data$read_now <- input_data$read_now + 1 # To trigger loading of data
     })
-  #input from input columns
-  observeEvent(input$Setting1,
-               {if(nchar(input$data_entry)>0){
 
-                 data_matrix <- try(data.table::fread(input$data_entry, header = T))
-                 if(all(class(data_matrix) == "try-error")){shinyWidgets::sendSweetAlert(session = session,
-                                                                                         title = "Input Error",
-                                                                                         text = "Check your seperators, number of columns or incomplete rows",
-                                                                                         type = "error")}
-                 else{
-                   if(colnames(data_matrix)[1] == "ontoID" &
-                      colnames(data_matrix)[2] == "pValue"){
-                     output$GO_table <- renderDataTable(data_matrix)
-                     descent_data$inputData <- data_matrix
+  # Observe if text is submitted
+  observeEvent(input$Setting1, {
+    input_data$x <- input$data_entry
+    input_data$type <- "text"
+    input_data$read_now <- input_data$read_now + 1 # To trigger loading of data
+  })
 
-                   }
-                   else{
-                     shinyWidgets::sendSweetAlert(session = session,
-                                                  title = "Input Error",
-                                                  text = "Your table is not the correct format. \n
-                                     please name the first column 'ontoID' and the second column 'pValue'. \n
-                                     Alternatively, check you have selected the correct seperator",
-                                     type = "error")}
+  # Attempt to read data
+  observeEvent(input_data$read_now, {
+    req(input_data$x) # To not crash at startup
 
-                 }}})
+    # The idea is to continously run tests and add failures to error_messages.
+    # If at the end error_messages is still of length 0, everything seems to have worked.
+    error_message <- character(0)
+
+    error_message <- c(error_message, validate_input(input_data$x, input_data$type))
+
+    if (length(error_message) == 0) { #No errors in input
+      imported_values <- tryCatch(read_input(input_data$x, input_data$type), error = function(e) e)
+
+      # imported_values can either be an error from reading the file/text or properly read data
+      if (inherits(imported_values, "error")) { # Failed to read data
+        error_message <- c(error_message, imported_values$message)
+      } else { # Properly read data
+        error_message <- c(error_message, validate_data(imported_values, input_data$type))
+      }
+    }
+
+    # If no error messages are present data was read properly and passed all test.
+    if (length(error_message) > 0) {
+      error_string <- paste(error_message, collapse = "\n")
+      shinyWidgets::sendSweetAlert(session = session,
+                                   title = "Input Error",
+                                   text = error_string,
+                                   type = "error")
+    } else {
+      output$GO_table <- renderDataTable(imported_values)
+      descent_data$inputData <- imported_values
+    }
+  })
+
   #load dummy data
   observeEvent(input$dummy,
                {
@@ -152,4 +130,83 @@ data_entry_page <- function(input, output, session, descent_data)
                })
 
 
+}
+
+#' Validate input
+#'
+#' @param x character, input text string (file path or raw data)
+#' @param type character, type of input. Determines which tests to run and phrasing of errors
+#'
+#' @return string with error messages (length 0 if no errors occured)
+validate_input <- function(x, type) {
+  supported_filetypes <- c("csv", "xlsx", "text")
+
+  error_message <- character(0)
+
+  if (!(type %in% supported_filetypes)) {
+    error_message <- c(error_message, "Your file is not the right format. \n Supported formats are xlsx and csv")
+  }
+
+  if (type == "text") {
+    # Checks specific for text input
+    if (nchar(x) == 0) {
+      error_message <- c(error_message, "No data in text box")
+    }
+  }
+  error_message
+}
+
+#' Data reader
+#'
+#' @param x character, data to be read
+#' @param type character, type of input. Determines which function to read.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+read_input <- function(x, type) {
+  if (type == "xlsx") {
+    out <- openxlsx::read.xlsx(x, colNames = TRUE)
+  } else if (type == "csv") {
+    out <- data.table::fread(file = x, header = TRUE)
+  } else if (type == "text") {
+    out <- data.table::fread(text = x, header = TRUE)
+  } else {
+    stop("type must be one of csv, xlsx or text")
+  }
+  out
+}
+
+#' Validate input data
+#'
+#' @param x input data object (must inherit from data.frame)
+#' @param type character, type of input. Determines which tests to run and phrasing of errors
+#'
+#' @return string with error messages (length 0 if no errors occured)
+validate_data <- function(x, type) {
+  error_message <- character(0)
+
+  # Less than two columns
+  if (ncol(x) == 1) {
+    error_message <- c(error_message, "Only one column detected.")
+    if (type == "csv") {
+      error_message <- c(error_message, "Please make sure fields are seperated by one of: comma, tab, space, pipe, colon or semicolon.")
+    } else {
+      error_message <- c(error_message, "Please check excel file for errors.")
+    }
+    return(error_message) # We cant really test anything else
+  }
+
+  # Wrong column names
+  if ((colnames(x)[1] != "ontoID") |
+      (colnames(x)[2] != "pValue")) {
+    error_message <- c(error_message, "Please name the first column 'ontoID' and the second column 'pValue'.")
+  }
+
+  # P-values not parsed correctly
+  if (("pValues" %in% colnames(x)) & (class(x[["pValue"]]) != "numeric")) {
+    error_message <- c(error_message, "pValue column not recognized as numeric. Typically the decimal seperated needs to be changed from a period to a comma or vice versa.")
+  }
+  error_message
 }
