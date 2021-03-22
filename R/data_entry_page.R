@@ -19,7 +19,7 @@ data_entry_page_ui <- function(id)
         6,
         textAreaInput(
           ns("data_entry"),
-          h4("Paste in data, with heads in first row, select delimiter from the menu"),
+          h4("Paste in data, with headers in first row"),
           placeholder = "Copy in data",
           height = "100%",
           rows = 10,
@@ -86,12 +86,13 @@ data_entry_page <- function(input, output, session, descent_data)
     error_message <- c(error_message, validate_input(input_data$x, input_data$type))
 
     if (length(error_message) == 0) { #No errors in input
-      imported_values <- tryCatch(read_input(input_data$x, input_data$type), error = function(e) e)
+      imported_object <- tryCatch(read_input(input_data$x, input_data$type), error = function(e) e)
 
       # imported_values can either be an error from reading the file/text or properly read data
-      if (inherits(imported_values, "error")) { # Failed to read data
-        error_message <- c(error_message, imported_values$message)
+      if (inherits(imported_object, "error")) { # Failed to read data
+        error_message <- c(error_message, imported_object$message)
       } else { # Properly read data
+        imported_values <- imported_object
         error_message <- c(error_message, validate_data(imported_values, input_data$type))
       }
     }
@@ -113,17 +114,6 @@ data_entry_page <- function(input, output, session, descent_data)
   observeEvent(input$dummy,
                {
                  dummy_ref <- get_test_data()
-                 dummy_ref <-
-                   paste(
-                     dummy_ref$inputData$ontoID,
-                     dummy_ref$inputData$pValue,
-                     dummy_ref$inputData$enrichmentScore,
-                     dummy_ref$inputData$direction,
-                     sep = "\t",
-                     collapse = "\n"
-                   )
-                 dummy_ref <- paste0(c("ontoID\tpValue\tenrichmentScore\tdirection\n"),dummy_ref)
-
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref
                  )
@@ -167,7 +157,7 @@ validate_input <- function(x, type) {
 #' @examples
 read_input <- function(x, type) {
   if (type == "xlsx") {
-    out <- openxlsx::read.xlsx(x, colNames = TRUE)
+    out <- openxlsx::read.xlsx(xlsxFile = x, colNames = TRUE)
   } else if (type == "csv") {
     out <- data.table::fread(file = x, header = TRUE)
   } else if (type == "text") {
@@ -192,10 +182,12 @@ validate_data <- function(x, type) {
     error_message <- c(error_message, "Only one column detected.")
     if (type == "csv") {
       error_message <- c(error_message, "Please make sure fields are seperated by one of: comma, tab, space, pipe, colon or semicolon.")
-    } else {
+    } else  if (type == "xlsx"){
       error_message <- c(error_message, "Please check excel file for errors.")
+    } else {
+      error_message <- c(error_message, "Please make sure pasted fields are seperated by one of: comma, tab, space, pipe, colon or semicolon.")
     }
-    return(error_message) # We cant really test anything else
+    return(error_message) # We cant really test anything else if data was not parsed correctly
   }
 
   # Wrong column names
@@ -205,7 +197,7 @@ validate_data <- function(x, type) {
   }
 
   # P-values not parsed correctly
-  if (("pValues" %in% colnames(x)) & (class(x[["pValue"]]) != "numeric")) {
+  if (("pValues" %in% colnames(x)) && (class(x[["pValue"]]) != "numeric")) {
     error_message <- c(error_message, "pValue column not recognized as numeric. Typically the decimal seperated needs to be changed from a period to a comma or vice versa.")
   }
   error_message
