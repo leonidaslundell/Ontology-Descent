@@ -72,7 +72,9 @@ dendCut <- as.numeric(dendCut) +1
 dend %>% set("branches_k_color", c("gray", "gray","red","gray","gray"), k = 5) %>%  set("labels", NULL) %>%
   plot(axes = F, main = "Sample the tree: \n Get a random branch")
 
-dend %>% set("branches_k_color", c("gray", "gray","red","gray","gray"), k = 5) %>%  set("labels", NULL) %>%
+dend %>%
+  set("branches_k_color", c("gray", "gray","red","gray","gray"), k = 5) %>%
+  set("labels", NULL) %>%
   set("leaves_pch", 19) %>%  # node point type
   set("leaves_cex", 1) %>%
   set("leaves_col", c("NA","orange")[dendCut]) %>%
@@ -105,10 +107,15 @@ plot(clusters[,-3] * abs(rnorm(38, mean = 1, sd = 0.04)),
 
 dev.off()
 
+####################################################
+#walktrap schematic
+
 pdf("ClusteringAlgoDevelopment/figures/schematic.walktrap.pdf", height = 5, width = 5 )
 
-y <- data.frame(from = c(2,3,4,5,11,21,31), to = c(1,1,1,1, 12,22,32))
+y <- data.frame(from = c(2,3,4,5,11,21,31), to = c(1,1,1,1,12,22,32))
 x <- graph_from_data_frame(y, directed = F)
+plot(x)
+
 V(x)$arrow.size <- 0
 V(x)$label <- NA
 V(x)$color <- "gray"
@@ -122,38 +129,73 @@ V(x)$color[V(x)$name %in% c(31,32)] <- "darkred"
 plot(x, vertex.color = "gray")
 plot(x)
 
-yy <- rbind(y, data.frame(from = c(12,22,32, 1111, 1112, 1113,1113),
-                          to = c(999,999,999, 999, 1111, 1112,1)))
+yy <- rbind(y, data.frame(from = c(12,22,32, 1111, 1112, 1113,1113, 31, 21, 11),
+                          to = c(999,999,999, 999, 1111, 1112, 1, 2222,2222,2222)))
 xx <- graph_from_data_frame(yy, directed = F)
+
 V(xx)$arrow.size <- 0
-V(xx)$label <- NA
 V(xx)$color <- "gray"
 
 V(xx)$shape <- "circle"
 V(xx)$size <- 12
 
 V(xx)$shape[nchar(V(xx)$name) >= 3]  <- "square"
-# V(xx)$size[nchar(V(xx)$name) >= 3]  <- 5
-V(xx)$color[nchar(V(xx)$name) >= 3] <- "black"
+V(xx)$size[nchar(V(xx)$name) >= 3]  <- 5
 
-V(xx)$color[nchar(V(xx)$name) == 1] <- "purple"
-V(xx)$color[nchar(V(xx)$name) == 2] <- "lightblue"
 set.seed(42)
-plot(xx)
+plot(xx, vertex.label = NA, vertex.color = c("aquamarine4", "cornflowerblue", "coral3")[cluster_walktrap(xx)$membership])
 
-V(xx)$color[V(xx)$name %in%  c(1:5)] <- "purple"
-V(xx)$color[V(xx)$name %in% c(11,12)] <- "blue"
-V(xx)$color[V(xx)$name %in% c(21,22)] <- "darkgreen"
-V(xx)$color[V(xx)$name %in% c(31,32)] <- "darkred"
 set.seed(42)
-plot(xx)
-
-V(xx)$color[V(xx)$color =="black"] <- "gray"
-set.seed(42)
-plot(xx)
+plot(xx, vertex.label = NA, vertex.color = "gray")
 
 plot.new()
-legend(0,0.5, legend = c("Provided ontology term", "Known ontology term"), pch = 16:15, cex = 1.6, col = c("gray", "black"))
+legend(0,0.5, legend = c("Provided ontology term", "Known ontology term"), pch = 16:15, cex = 1.6,
+       col = c("gray", "black"), bty = "n")
+
+#############
+#reproducing figure from pons
+
+xxx <- cluster_walktrap(xx, steps = 3)
+xxxNames <- xxx$membership
+names(xxxNames) <- xxx$names
+
+xxx <- as.dendrogram(xxx)
+
+plot(xx, vertex.color = c("aquamarine4", "cornflowerblue", "coral3")[cluster_walktrap(xx)$membership])
+
+xxx %>%
+  set("labels", NULL) %>%
+  set("leaves_pch", c(rep(16, 2),
+                      15,
+                      rep(16, 2),
+                      15,
+                      rep(16, 7),
+                      rep(15, 3))) %>%  # node point type
+  set("leaves_cex", c(rep(2.5, 2),
+                      1.5,
+                      rep(2.5, 2),
+                      1.5,
+                      rep(2.5, 7),
+                      rep(1.5, 3))) %>%
+  set("leaves_col", c(rep("aquamarine4", 8), rep("coral3", 5), rep("cornflowerblue", 3))) %>%
+  plot(axes = T, horiz = T, xlab = "Tree height",cex.lab = 1.5)
+
+xxxx <- sapply(as.hclust(xxx)$height, function(i){
+  modularity(xx, cutree(tree = as.hclust(as.dendrogram(xxx)), h = i))
+})
+plot(x = 1:15, y = xxxx,
+     type = "l",
+     xlab = "Tree height",
+     ylab = "Modularity",
+     cex.lab = 1.5,
+     cex.axis = 0.9,
+     xaxt = "n",
+     yaxt = "n",
+     bty  = "n",
+     xlim = c(15,0),
+     ylim = c(-.1,.5))
+axis(side = 1, at=seq(0,15,5))
+axis(side = 2, at=c(-.1,.2,.5))
 dev.off()
 
 # pdf("ClusteringAlgoDevelopment/figures/accuracyRecallPression.pdf")
