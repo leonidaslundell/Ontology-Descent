@@ -40,8 +40,6 @@ exploring_page_ui <- function(id)
 exploring_page <- function(input, output, session, descent_data)
 {
   observeEvent(input$clusterButton,{
-    load(here::here("R/dataClustereR.rda"))
-
     results <- clustereR(ontoNet = net,
                          ontoNames = GOnames,
                          ontoLength = GOlength,

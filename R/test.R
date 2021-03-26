@@ -1,6 +1,4 @@
 get_test_data <- function() {
-  load(here::here("R/sysdata.rda"))
-
   example_data <-
     paste(
       example_data$ontoID,

@@ -4,7 +4,14 @@
 \alias{clustereR}
 \title{Internal Functions}
 \usage{
-clustereR(ontoNet, ontoNames, ontoLength, target)
+clustereR(
+  ontoNet,
+  ontoNames,
+  ontoLength,
+  target,
+  method = "edge_betweenness",
+  filterTerms = NULL
+)
 }
 \arguments{
 \item{ontoNet}{igraph representation of ontology hierarchy from networkeR}
