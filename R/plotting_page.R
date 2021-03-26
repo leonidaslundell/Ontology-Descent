@@ -2,18 +2,27 @@
 #'
 #' @param id unique id for this module
 #'
-#' @import shiny ggiraph
+#' @import shiny ggiraph shinyWidgets
 #' @export
 plotting_page_ui <- function(id)
 {
   ns <- shiny::NS(id)
 
   fluidPage(
+    tags$head(tags$style("
+                       .jhr{
+                       display: inline;
+                       padding-left: 10px;
+                       }")),
+
     titlePanel("Ontology Descent: Plotting Enrichment"),
 
     sidebarLayout(
       sidebarPanel(
+        ### TEMPORARY - DELETE ############################################################################
         radioButtons(inputId = ns("tempSel"), label = "TEMPORARY", choices = c("Long", "Short"), selected = "Long"),
+
+        ###################################################################################################
 
         selectInput(inputId = ns("plotType"), label = "Plot Type:", choices = NULL, selected = NULL, multiple = FALSE),
 
@@ -26,17 +35,29 @@ plotting_page_ui <- function(id)
         tabsetPanel(id = "Graphical Options",
 
                     tabPanel(title = "Style:",
-                             selectInput(inputId = ns("themeSet"), label = "Plot Theme",
-                                         choices = c("bw", "classic", "grey", "minimal", "dark"),
-                                         selected = "minimal", multiple = FALSE),
+                             shinyWidgets::pickerInput(inputId = ns("themeSet"), label = "Plot Theme",
+                                                       choices = c("bw", "classic", "grey", "minimal", "dark", "linedraw"),
+                                                       selected = "minimal", multiple = FALSE,
+                                                       choicesOpt = list(content = themeIcon())),
 
                              uiOutput(ns("lgdPosition")),
 
                              uiOutput(ns("dotShape")),
 
-                             numericInput(ns("dotSize"), label = "Pathway (size)",
-                                          value = 1, min = 0, max = 5, step = .25)
+                             numericInput(ns("dotSize"), label = "Dot Size",
+                                          value = 1, min = 0, max = 5, step = .25),
 
+                             numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
+                                          value = 15, step = .5),
+
+                             numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
+                                          value = 15, step = .5),
+
+                             selectInput(inputId = ns("plotUnit"), label = "Size Units",
+                                         choices = c("cm", "in", "mm"),
+                                         selected = "cm", multiple = FALSE),
+
+                             actionButton(inputId = ns("upDate1"), label = "Update")
                              ),
 
                     tabPanel(title = "Text:",
@@ -57,22 +78,24 @@ plotting_page_ui <- function(id)
 
                              uiOutput(ns("lgTitleSize")),
 
-                             uiOutput(ns("lgTxtSize"))
+                             uiOutput(ns("lgTxtSize")),
 
+                             actionButton(inputId = ns("upDate2"), label = "Update")
                              ),
 
                     tabPanel(title = "Download:",
-                             selectInput(inputId = ns("plotUnit"), label = "Size Units",
+
+                             numericInput(inputId = ns("dwnHt"), label = "Plot Height", min = 2, max = 50,
+                                          value = 15, step = .5),
+
+                             numericInput(inputId = ns("dwnWd"), label = "Plot Width", min = 2, max = 50,
+                                          value = 15, step = .5),
+
+                             selectInput(inputId = ns("dwnUnit"), label = "Size Units",
                                          choices = c("cm", "in", "mm"),
                                          selected = "cm", multiple = FALSE),
 
-                             numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
-                                          value = 15, step = .5),
-
-                             numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
-                                          value = 15, step = .5),
-
-                             numericInput(inputId = ns("plotDPI"), label = "DPI", min = 75, max = 1000,
+                             numericInput(inputId = ns("dwnDPI"), label = "DPI", min = 75, max = 1000,
                                           value = 300, step = 25),
 
                              selectInput(inputId = ns("fileType"), label = "File Type",
@@ -91,10 +114,10 @@ plotting_page_ui <- function(id)
         textOutput(outputId = ns("warText")),
 
         ggiraph::girafeOutput(outputId = ns("plotOut"), height = 750)
-        )
+      )
     )
   )
-  }
+}
 
 #' Server for the plotting page
 #'
@@ -111,16 +134,22 @@ plotting_page <- function(input, output, session, descent_data)
 
   reacVals <- reactiveValues()
 
-  # reacVals$data <- reactive(descent_data$inputData)
+  reacVals$data <- reactive({
+    req(descent_data$inputData)
+    return(descent_data$inputData)
+  })
 
+  ### TEMPORARY - DELETE ############################################################################
   reacVals$data <- reactive(switch(input$tempSel,
-                                   "Long" = {descent_data$inputData[sample(1:nrow(descent_data$inputData), 500),]},
-                                   "Short" = {descent_data$inputData[sample(1:nrow(descent_data$inputData), 50),]}))
+                                   "Long" = {tempDataFormat(example_data)},
+                                   "Short" = {temp <- tempDataFormat(example_data, short = TRUE)}))
 
+  ###################################################################################################
   ### Render UI Based on Selected Options ###
 
   ### Update plotType Based on Data Size ###
   observe({
+    req(reacVals$data())
     pn <- nrow(reacVals$data())
     cn <- length(unique(reacVals$data()$clusterName))
 
@@ -131,7 +160,7 @@ plotting_page <- function(input, output, session, descent_data)
         updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway (Unavailable)" = "long"), selected = "clust")
 
         }
-  })
+    })
 
   ### Plot Type Based Options - Dot Size / Dot Shape / Legend Position / Legend Text ###
   observe(switch(input$plotType,
@@ -140,8 +169,11 @@ plotting_page <- function(input, output, session, descent_data)
 
                    if(isTRUE(input$axisType)){
                      output$dotShape <- renderUI(
-                       selectInput(ns("dotShape"), label = "Dot Shape", choices = c(0:25), selected = 19)
+                       shinyWidgets::pickerInput(inputId = ns("dotShape"), label = "Dot Shape",
+                                                 choices = c(1:25), selected = 19, multiple = FALSE,
+                                                 choicesOpt = list(content = pchIcon()))
                      )
+
                    } else if (!isTRUE(input$axisType)){
                      output$dotShape <- NULL
                    }
@@ -162,7 +194,9 @@ plotting_page <- function(input, output, session, descent_data)
                    updateNumericInput(session, "dotSize", label = "Dot Size", value = 1, min = 0, max = 5, step = .25)
 
                    output$dotShape <- renderUI(
-                     selectInput(ns("dotShape"), label = "Dot Shape", choices = c(0:25), selected = 19)
+                     shinyWidgets::pickerInput(inputId = ns("dotShape"), label = "Dot Shape",
+                                               choices = c(1:25), selected = 19, multiple = FALSE,
+                                               choicesOpt = list(content = pchIcon()))
                    )
 
                    output$lgdPosition <- NULL
@@ -174,7 +208,7 @@ plotting_page <- function(input, output, session, descent_data)
 
 
   ### Create Plot ###
-  reacVals$plotOut <- eventReactive(input$actPlot,
+  reacVals$plotOut <- eventReactive(input$actPlot | input$upDate1 | input$upDate2,
                                     switch(input$plotType,
                                            "pth" = {
                                              dat <- reactive(reacVals$data())
@@ -271,10 +305,10 @@ plotting_page <- function(input, output, session, descent_data)
 
   ### Download Plot ###
   reacVals$plotDwnld <- reactive(reacVals$plotOut())
-  reacVals$plotUnit <- reactive(switch(input$plotUnit, "cm" = "cm", "in" = "in", "mm" = "mm"))
-  reacVals$plotHt <- reactive(input$plotHt)
-  reacVals$plotWd <- reactive(input$plotWd)
-  reacVals$plotDPI <- reactive(input$plotDPI)
+  reacVals$plotUnit <- reactive(switch(input$dwnUnit, "cm" = "cm", "in" = "in", "mm" = "mm"))
+  reacVals$plotHt <- reactive(input$dwnHt)
+  reacVals$plotWd <- reactive(input$dwnWd)
+  reacVals$plotDPI <- reactive(input$dwnDPI)
   reacVals$fileType <- reactive(input$fileType)
 
   output$plotDwnld <- downloadHandler(

@@ -1,3 +1,67 @@
+### TEMPORARY Data Formatting - DELETE ###
+tempDataFormat <- function(data, short = FALSE){
+  library(GO.db)
+  library(ggsci)
+
+  terms <- list(
+    "terms" = select(GO.db, data$ontoID, columns = "TERM", keytype = "GOID")$TERM,
+    "color" = pal_igv()((51))
+  )
+
+
+  data$ontoTerm <- terms$terms[sample(1:length(terms$terms), nrow(data))]
+  data$clusterNumber <- sample(1:50, nrow(data), replace = TRUE)
+  data$clusterName <- terms$terms[sample(1:length(terms$terms),50)][data$clusterNumber]
+  data$color <- terms$color[data$clusterNumber]
+
+  if (isTRUE(short)){
+    data <- data[sample(1:nrow(data), 50),]
+    data$clusterNumber <- sample(1:10, 50, replace = TRUE)
+    data$clusterName <- terms$terms[sample(1:length(terms$terms), 10)][data$clusterNumber]
+  }
+
+  return(data)
+}
+
+#' Load Theme Icons
+#'
+#' @return
+#' @export
+#'
+#' @examples
+themeIcon <- function(){
+  nm <- c(
+    sprintf("<img src='theme_bw.png' width=75px><div class='jhr'>%s</div></img>", "bw"),
+    sprintf("<img src='theme_classic.png' width=75px><div class='jhr'>%s</div></img>", "classic"),
+    sprintf("<img src='theme_grey.png' width=75px><div class='jhr'>%s</div></img>", "grey"),
+    sprintf("<img src='theme_minimal.png' width=75px><div class='jhr'>%s</div></img>", "minimal"),
+    sprintf("<img src='theme_dark.png' width=75px><div class='jhr'>%s</div></img>", "dark"),
+    sprintf("<img src='theme_linedraw.png' width=75px><div class='jhr'>%s</div></img>", "linedraw"))
+
+  return(nm)
+}
+
+#' Load Ggplot Shape Icons
+#'
+#' @return
+#' @export
+#'
+#' @examples
+pchIcon <- function(){
+  nm <- c()
+
+  for(i in 1:25){
+    nm <- c(nm,
+            sprintf(
+              paste("<img src='s", i, ".png' ", "width=50px><div class='jhr'>%s</div></img>", sep = ""),
+              paste("shape", i, sep = " ")
+            )
+    )
+  }
+
+  return(nm)
+}
+
 #' Shorten Ontology Terms
 #'
 #' @param text character vector - ontology terms
@@ -7,6 +71,7 @@
 #' @export
 #'
 #' @examples
+#'
 cutText <- function(text, cutoff){
   sub <- data.frame("word" = c("\\<regulation\\>", "\\<activity\\>", "\\<positive\\>",
                                "\\<negative\\>", "involved in", "ic process", "\\<pathway\\>",
@@ -15,6 +80,8 @@ cutText <- function(text, cutoff){
 
   sub$word <- as.character(sub$word)
   sub$sub <- as.character(sub$sub)
+
+  text[is.na(text)] <- ""
 
   fil.l <- nchar(text) > cutoff
 
@@ -51,7 +118,7 @@ cutText <- function(text, cutoff){
 #' @param coordFlip Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.
 #' @param dotSize Optional. Numeric. Dot size in plots. Default == 1.
 #' @param dotShape Optional. Numeric. Select ggplot2 pch shape. Default == 19.
-#' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "minimal"
+#' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"
 #' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"
 #' @param nameSize Optional. A numeric value setting font size for cluster names. Default == 7.
 #' @param axTxtSize Optional. A numeric value setting font size for the axis text. Defualt == 7.
@@ -116,13 +183,18 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
     if (length(unique(plot$clusterName)) > length(col)){col <- colorRampPalette(col)(length(unique(plot$clusterName)))}
   }
 
+
+  ### Order Y-axis (Clusters) ###
+  if (!is.null(plot$clusterNumber)){
+    plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName[order(plot$clusterNumber)]))
+  } else if (is.null(plot$clusterNumber)){
+    plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName))
+  }
+
   ### Create ggplot Object ###
   if (!isTRUE(plotEnrichment)){
 
     ### 1. Plot P Values (plotEnrichement == FALSE) ###
-    plot <- plot[order(plot$clusterName, -log10(plot$pValue)),]
-    plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName))
-
     xlim <- c(floor(min(-log10(plot$pValue))), ceiling(max(-log10(plot$pValue))))
 
     p <- ggplot2::ggplot(plot,
@@ -135,9 +207,6 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
   } else if (isTRUE(plotEnrichment)){
 
     ### 2. Plot Enrichment Score (plotEnrichement == TRUE) ###
-    plot <- plot[order(plot$clusterName, plot$enrichmentScore),]
-    plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName))
-
     xlim <- c(-ceiling(max(abs(plot$enrichmentScore))),ceiling(max(abs(plot$enrichmentScore))))
 
     p <- ggplot2::ggplot(plot, ggplot2::aes(x = enrichmentScore, y = clusterName, fill = clusterName, color = clusterName))+
@@ -159,6 +228,8 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
     p <- p + ggplot2::theme_minimal()
   } else if (themeSet == "dark"){
     p <- p + ggplot2::theme_dark()
+  } else if (themeSet == "linedraw"){
+    p <- p + ggplot2::theme_linedraw()
   }
 
   ### Other Theme Options + Coord Flip ###
@@ -180,6 +251,8 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
                      axis.title.y = ggplot2::element_text(size = axTitleSize, angle = 90, hjust = .5))
   }
 
+  p <- p + ggplot2::coord_cartesian(clip = "off")
+
   return(p)
 }
 
@@ -197,7 +270,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @param coordFlip Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.
 #' @param dotSize Optional. Numeric. Dot size in plots. Default == 2.
 #' @param dotShape Optional. Numeric. Select ggplot2 pch shape. Default == 19.
-#' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "minimal"
+#' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"
 #' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"
 #' @param lgdPosition Optional. A character string setting the legend position: one of "right", "left", "top" or "bottom". Default == "right".
 #' @param nameSize Optional. A numeric value setting font size for cluster names. Default == 7.
@@ -262,13 +335,19 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
     if (length(unique(plot$clusterName)) > length(col)){col <- colorRampPalette(col)(length(unique(plot$clusterName)))}
   }
 
+  ### Order Y-axis (Clusters) ###
+  if (!is.null(plot$clusterNumber)){
+    plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName[order(plot$clusterNumber)]))
+  } else if (is.null(plot$clusterNumber)){
+    plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName))
+  }
+
   ### Create ggplot Object ###
   if (!isTRUE(plotEnrichment)){
 
     ### 1. Plot P Values (plotEnrichment == FALSE) ###
     plot <- plot[order(plot$clusterName, -log10(plot$pValue)),]
     plot$ontoTerm <- factor(plot$ontoTerm, levels = unique(plot$ontoTerm))
-    plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName))
 
     xlim <- c(floor(min(-log10(plot$pValue))), ceiling(max(-log10(plot$pValue))))
 
@@ -321,18 +400,28 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
     p <- p + ggplot2::theme_minimal()
   } else if (themeSet == "dark"){
     p <- p + ggplot2::theme_dark()
+  } else if (themeSet == "linedraw"){
+    p <- p + ggplot2::theme_linedraw()
   }
 
   ### Other Theme Options + Coord Flip + Legend Position ###
+  if(is.null(lgTxtSize)){
+    hw <- 7
+    th <- 9
+    } else if (!is.null(lgTxtSize)){
+      hw <- lgTxtSize
+      th <- lgTitleSize
+      }
+
   p <- p + ggplot2::theme(text = ggplot2::element_text(family = fontFam),
                           legend.position = lgdPosition, legend.justification = "left",
                           legend.margin = ggplot2::margin(1, 1, 1, 0, unit = "pt"),
-                          legend.spacing.x = ggplot2::unit(1, "pt"),
+                          legend.spacing.x = ggplot2::unit(2, "pt"),
                           legend.spacing.y = ggplot2::unit(1, "pt"),
-                          legend.key.height = ggplot2::unit(lgTxtSize, "pt"),
-                          legend.key.width = ggplot2::unit(lgTxtSize, "pt"),
-                          legend.title = ggplot2::element_text(size = lgTitleSize),
-                          legend.text = ggplot2::element_text(size = lgTxtSize))+
+                          legend.key.height = ggplot2::unit(hw, "pt"),
+                          legend.key.width = ggplot2::unit(hw, "pt"),
+                          legend.title = ggplot2::element_text(size = th),
+                          legend.text = ggplot2::element_text(size = hw))+
     ggplot2::guides("shape" = ggplot2::guide_legend(ncol = 1, order = 1, title.position = "top"),
                     "color" = ggplot2::guide_legend(ncol = 1, title.position = "top", order = 0),
                     "fill" = ggplot2::guide_legend(ncol = 1, title.position = "top", order = 0))
@@ -352,6 +441,8 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
                      axis.title.x = ggplot2::element_blank(),
                      axis.title.y = ggplot2::element_text(size = axTitleSize, angle = 90, hjust = .5))
   }
+
+  p <- p + ggplot2::coord_cartesian(clip = "off")
 
   return(p)
 }
