@@ -1,18 +1,3 @@
-### Temporary Function for Modifying Example Data ### DELETE LATER ###
-modData <- function(data, pathN, clustN){
-  data <- droplevels(data[sample(1:nrow(data), pathN),])
-  data$clusterNumber <- sample(1:clustN, nrow(data), replace = TRUE)
-  data$clusterName <- sample(data$ontoTerm, clustN)[data$clusterNumber]
-
-  if (clustN < 52){
-    data$color <- ggsci::pal_igv()((51))[data$clusterNumber]
-  } else if (clustN >= 52){
-    data$color <- colorRampPalette(ggsci::pal_igv()((51)))((clustN))[data$clusterNumber]
-  }
-
-  return(data)
-}
-
 #' Shorten Ontology Terms
 #'
 #' @param text character vector - ontology terms

@@ -13,11 +13,7 @@ plotting_page_ui <- function(id)
 
     sidebarLayout(
       sidebarPanel(
-        ### For Modifying the Test Data ###
-        ### DELETE IN FINAL VERSION ###
-        numericInput(inputId = ns("clustN"), label = "Cluster Number", value = 10, min = 5, max = 1000, step = 5),
-        numericInput(inputId = ns("pathN"), label = "Pathway Number", value = 50, min = 5, max = 10000, step = 5),
-        ####################################
+        radioButtons(inputId = ns("tempSel"), label = "TEMPORARY", choices = c("Long", "Short"), selected = "Long"),
 
         selectInput(inputId = ns("plotType"), label = "Plot Type:", choices = NULL, selected = NULL, multiple = FALSE),
 
@@ -115,12 +111,11 @@ plotting_page <- function(input, output, session, descent_data)
 
   reacVals <- reactiveValues()
 
-  # reacVals$data <- reactive(example_data)
+  # reacVals$data <- reactive(descent_data$inputData)
 
-
-  ### Modify Data for Cluster Names ###
-  ### DELETE THIS FROM FINAL CODE ###
-  reacVals$data <- reactive(modData(example_data, input$pathN, input$clustN))
+  reacVals$data <- reactive(switch(input$tempSel,
+                                   "Long" = {descent_data$inputData[sample(1:nrow(descent_data$inputData), 500),]},
+                                   "Short" = {descent_data$inputData[sample(1:nrow(descent_data$inputData), 50),]}))
 
   ### Render UI Based on Selected Options ###
 
