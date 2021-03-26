@@ -79,7 +79,7 @@ data_entry_page <- function(input, output, session, descent_data)
   observeEvent(input_data$read_now, {
     req(input_data$x) # To not crash at startup
 
-    # The idea is to continously run tests and add failures to error_messages.
+    # The idea is to continuously run tests and add failures to error_messages.
     # If at the end error_messages is still of length 0, everything seems to have worked.
     error_message <- character(0)
 
