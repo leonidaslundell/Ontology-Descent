@@ -29,19 +29,20 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "edge_bet
   connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
   ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
   ontoClust <- switch(method,
-                      edge_betweenness = igraph::cluster_edge_betweenness(as.undirected(ontoNetSubgraph)),
-                      fast_greedy = igraph::cluster_fast_greedy(as.undirected(ontoNetSubgraph)),
-                      infomap = igraph::cluster_infomap(as.undirected(ontoNetSubgraph)),
-                      label_prop = igraph::cluster_label_prop(as.undirected(ontoNetSubgraph)),
-                      leading_eigen = igraph::cluster_leading_eigen(as.undirected(ontoNetSubgraph)),
-                      louvain = igraph::cluster_louvain(as.undirected(ontoNetSubgraph)),
-                      optimal = igraph::cluster_optimal(as.undirected(ontoNetSubgraph)),
-                      spinglass = igraph::cluster_spinglass(as.undirected(ontoNetSubgraph)),
-                      walktrap = igraph::cluster_walktrap(as.undirected(ontoNetSubgraph)))
+                      # edge_betweenness = igraph::cluster_edge_betweenness(as.undirected(ontoNetSubgraph)),
+                      fast_greedy = igraph::cluster_fast_greedy(as.undirected(ontoNetSubgraph))$membership,
+                      # infomap = igraph::cluster_infomap(as.undirected(ontoNetSubgraph)),
+                      # label_prop = igraph::cluster_label_prop(as.undirected(ontoNetSubgraph)),
+                      leading_eigen = igraph::cluster_leading_eigen(as.undirected(ontoNetSubgraph))$membership,
+                      louvain = igraph::cluster_louvain(as.undirected(ontoNetSubgraph))$membership,
+                      # spinglass = igraph::cluster_spinglass(as.undirected(ontoNetSubgraph)),
+                      leiden = leiden::leiden(igraph::as_adjacency_matrix(as.undirected(ontoNetSubgraph)), resolution_parameter = .5),
+                      walktrap = igraph::cluster_walktrap(as.undirected(ontoNetSubgraph))$membership)
 
+  ontoClust <- data.frame(membership = ontoClust, names = V(ontoNetSubgraph)$name)
   #############
   #eigen centrality quantifies connected connecteness...
-  clusterTerm <- sapply(igraph::communities(ontoClust), function(x){
+  clusterTerm <- sapply(ontoClust$membership, function(x){
 
     xSub <- igraph::induced_subgraph(ontoNet, x)
     xMax <- centr_eigen(xSub)$vector
