@@ -40,6 +40,20 @@ data_entry_page_ui <- function(id)
         helpText(
           "Your entry file needs to have a first column named 'ontoID' (ex. GO:00010) and a second column called 'pValue' (ex. 3E-5). Beware of case in names! "
         ),
+        selectInput(
+          inputId = ns("species"),
+          label = "Select species",
+          choices = c("Human", "Mouse"),
+          multiple = F,
+          selected = "Human"
+        ),
+        selectInput(
+          inputId = ns("datatype"),
+          label = "Select data type",
+          choices = c("GO Biological Processes", "GO Cellular Component", "GO Molecular Function", "Reactome"),
+          multiple = F,
+          selected = "GO BP"
+        ),
         img(src = "logo.png", heigth = 120, width = 200)
 
       )
