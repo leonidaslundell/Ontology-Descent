@@ -10,42 +10,34 @@
 #' @export
 #'
 
-clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "edge_betweenness", filterTerms = NULL){
-
-  # c("edge_betweenness",
-  #   "fast_greedy",
-  #   "infomap",
-  #   "label_prop",
-  #   "leading_eigen",
-  #   "louvain",
-  #   "optimal",
-  #   "spinglass",
-  #   "walktrap")
+clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain", filterTerms = NULL){
 
   #############
   #network based clustering
-  connectedSubgraph <- shortest_paths(ontoNet, from = target, to = target, mode = "all")
-  connectedSubgraph <- connectedSubgraph$vpath
+  connectedSubgraph <- all_shortest_paths(ontoNet, from = target, to = target, mode = "all")
+  connectedSubgraph <- connectedSubgraph$res
   connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
   ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
-  ontoClust <- switch(method,
-                      # edge_betweenness = igraph::cluster_edge_betweenness(as.undirected(ontoNetSubgraph)),
-                      fast_greedy = igraph::cluster_fast_greedy(as.undirected(ontoNetSubgraph))$membership,
-                      # infomap = igraph::cluster_infomap(as.undirected(ontoNetSubgraph)),
-                      # label_prop = igraph::cluster_label_prop(as.undirected(ontoNetSubgraph)),
-                      leading_eigen = igraph::cluster_leading_eigen(as.undirected(ontoNetSubgraph))$membership,
-                      louvain = igraph::cluster_louvain(as.undirected(ontoNetSubgraph))$membership,
-                      # spinglass = igraph::cluster_spinglass(as.undirected(ontoNetSubgraph)),
-                      leiden = leiden::leiden(igraph::as_adjacency_matrix(as.undirected(ontoNetSubgraph)), resolution_parameter = .5),
-                      walktrap = igraph::cluster_walktrap(as.undirected(ontoNetSubgraph))$membership)
 
-  ontoClust <- data.frame(membership = ontoClust, names = V(ontoNetSubgraph)$name)
+  ontoClustCommunity <- switch(method,
+                               fast_greedy = igraph::cluster_fast_greedy(as.undirected(ontoNetSubgraph))$membership,
+                               leading_eigen = igraph::cluster_leading_eigen(as.undirected(ontoNetSubgraph))$membership,
+                               louvain = igraph::cluster_louvain(as.undirected(ontoNetSubgraph))$membership,
+                               leiden = leiden::leiden(igraph::as_adjacency_matrix(as.undirected(ontoNetSubgraph)),
+                                                       resolution_parameter = .5),
+                               walktrap = igraph::cluster_walktrap(as.undirected(ontoNetSubgraph))$membership)
+
+  ontoClust <- data.frame(membership = ontoClustCommunity, names = V(ontoNetSubgraph)$name)
+
   #############
   #eigen centrality quantifies connected connecteness...
-  clusterTerm <- sapply(ontoClust$membership, function(x){
+  clusterTerm <- sapply(unique(ontoClust$membership), function(x){
+
+    x <- ontoClust$names[ontoClust$membership == x]
 
     xSub <- igraph::induced_subgraph(ontoNet, x)
     xMax <- centr_eigen(xSub)$vector
+    print(sum(xMax %in% max(xMax)))
     xTerm <- ontoNames[x[which.max(xMax)]]
 
     if(any(xTerm %in% filterTerms)){
@@ -56,15 +48,16 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "edge_bet
       return(xTerm)
     }
   })
+
   names(clusterTerm) <- 1:max(ontoClust$membership)
 
   #############
   #prepare result table
 
   ontoClust <- data.frame(clusterNumber = ontoClust$membership,
-                          clusterTerm = clusterTerm[membership(ontoClust)],
+                          clusterTerm = unlist(clusterTerm[membership(ontoClust)]),
                           ontoID = ontoClust$names,
-                          ontoTerm = GOnames[ontoClust$names],
+                          ontoTerm = ontoNames[ontoClust$names],
                           ontoLength = ontoLength[ontoClust$names])
 
   #############
@@ -98,11 +91,10 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "edge_bet
   #remove the "stepping stones"
   ontoClust <- ontoClust[ontoClust$ontoID %in% target,]
 
-  return(list(res = ontoClust, plot = ontoNetSubgraph))
-
+  return(list(res = ontoClust, plot = ontoNetSubgraph, community = ontoClustCommunity))
 }
 
-networkeR <- function(ont = "MF", species = "HSA"){
+networkeR <- function(ont = "MF", species = "HSA", termFilter = NULL){
   library(GO.db)
   library(igraph)
   library(data.table)
@@ -137,6 +129,10 @@ networkeR <- function(ont = "MF", species = "HSA"){
     flatNet <- flatNet[,c("from", "to"):=.(as.character(from),
                                            as.character(to))]
 
+  }
+
+  if(!is.null(termFilter)){
+    flatNet <- flatNet[from %in% termFilter & to %in% termFilter,]
   }
 
   graphNet <- graph_from_data_frame(flatNet)
