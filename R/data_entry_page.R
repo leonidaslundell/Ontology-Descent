@@ -26,7 +26,7 @@ data_entry_page_ui <- function(id)
           resize = "both"
         ),
         actionButton(ns("Setting1"), label = "Submit!"),
-        actionButton(ns("dummy"), label = "Load dummy data (n = 250)"),
+        actionButton(ns("dummy"), label = "Load dummy data (n = 300)"),
         actionButton(ns("dummy_short"), label = "Load dummy data (n = 50)")
       ),
       column(
@@ -125,7 +125,7 @@ data_entry_page <- function(input, output, session, descent_data)
     }
   })
 
-  #load dummy data long (250 terms)
+  #load dummy data long (300 terms)
   observeEvent(input$dummy,
                {
                  dummy_ref <- get_test_data()
