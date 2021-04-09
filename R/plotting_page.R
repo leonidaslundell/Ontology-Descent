@@ -2,7 +2,7 @@
 #'
 #' @param id unique id for this module
 #'
-#' @import shiny ggiraph shinyWidgets
+#' @import shiny ggiraph shinyWidgets xlsx
 #' @export
 plotting_page_ui <- function(id)
 {
@@ -24,9 +24,9 @@ plotting_page_ui <- function(id)
 
         checkboxInput(inputId = ns("axisType"), label = "Plot enrichmentScore (replaces pValue)", value = FALSE),
 
-        checkboxInput(inputId = ns("coordFlip"), label = "Flip X and Y axes", value = FALSE),
-
         actionButton(inputId = ns("actPlot"), label = "Show plot"),
+
+        downloadButton(outputId = ns("dataDwnld"), label = "Download Data"),
 
         tabsetPanel(id = "Graphical Options",
 
@@ -54,7 +54,7 @@ plotting_page_ui <- function(id)
                                          selected = "cm", multiple = FALSE),
 
                              actionButton(inputId = ns("upDate1"), label = "Update")
-                             ),
+                    ),
 
                     tabPanel(title = "Text:",
                              selectInput(ns("fontFam"), label = "Font Family",
@@ -77,7 +77,7 @@ plotting_page_ui <- function(id)
                              uiOutput(ns("lgTxtSize")),
 
                              actionButton(inputId = ns("upDate2"), label = "Update")
-                             ),
+                    ),
 
                     tabPanel(title = "Download:",
 
@@ -146,11 +146,11 @@ plotting_page <- function(input, output, session, descent_data)
     if (pn <= 50 & cn <= 10) {
       updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway" = "pth"), selected = "clust")
 
-      } else if (pn > 50 | cn > 10){
-        updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway (Unavailable)" = "long"), selected = "clust")
+    } else if (pn > 50 | cn > 10){
+      updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway (Unavailable)" = "long"), selected = "clust")
 
-        }
-    })
+    }
+  })
 
   ### Plot Type Based Options - Dot Size / Dot Shape / Legend Position / Legend Text ###
   observe(switch(input$plotType,
@@ -178,7 +178,7 @@ plotting_page <- function(input, output, session, descent_data)
 
                    output$lgTxtSize <- renderUI(
                      numericInput(ns("lgTxtSize"), label = "Legend text (size)", value = 7, min = 4, max = 96, step = 1)
-                     )
+                   )
                  },
                  "clust" = {
                    updateNumericInput(session, "dotSize", label = "Dot Size", value = 1, min = 0, max = 5, step = .25)
@@ -207,7 +207,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                dotShape <- reactive(as.numeric(input$dotShape))
                                              } else if (!isTRUE(input$axisType)){
                                                dotShape <- reactive(19)
-                                               }
+                                             }
 
                                              pathwayGraph(ontoID = dat()$ontoID,
                                                           ontoTerm = cutText(dat()$ontoTerm, 52),
@@ -218,7 +218,6 @@ plotting_page <- function(input, output, session, descent_data)
                                                           direction = dat()$direction,
                                                           colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
-                                                          coordFlip = input$coordFlip,
                                                           dotSize = input$dotSize,
                                                           dotShape = dotShape(),
                                                           themeSet = input$themeSet,
@@ -229,7 +228,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           lgTxtSize = input$lgTxtSize,
                                                           lgTitleSize = input$lgTitleSize,
                                                           fontFam = input$fontFam)
-                                             },
+                                           },
 
                                            "clust" = {
                                              dat <- reactive(reacVals$data())
@@ -243,7 +242,6 @@ plotting_page <- function(input, output, session, descent_data)
                                                           direction = dat()$direction,
                                                           colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
-                                                          coordFlip = input$coordFlip,
                                                           dotSize = input$dotSize,
                                                           dotShape = as.numeric(input$dotShape),
                                                           themeSet = input$themeSet,
@@ -254,29 +252,29 @@ plotting_page <- function(input, output, session, descent_data)
                                            },
 
                                            "long" = {NULL}
-                                           )
                                     )
+  )
 
   ### Display Plot - as ggiraph svg ###
   observeEvent(input$actPlot, {
-      h <- eventReactive(input$actPlot,{
-        switch(input$plotUnit,
-               "cm" = {input$plotHt * 0.393701},
-               "in" = {input$plotHt},
-               "mm" = {input$plotHt * 0.0393701})
-        })
+    h <- eventReactive(input$actPlot,{
+      switch(input$plotUnit,
+             "cm" = {input$plotHt * 0.393701},
+             "in" = {input$plotHt},
+             "mm" = {input$plotHt * 0.0393701})
+    })
 
-      w <- eventReactive(input$actPlot,{
-        switch(input$plotUnit,
-               "cm" = {input$plotWd * 0.393701},
-               "in" = {input$plotWd},
-               "mm" = {input$plotWd * 0.0393701})
-      })
+    w <- eventReactive(input$actPlot,{
+      switch(input$plotUnit,
+             "cm" = {input$plotWd * 0.393701},
+             "in" = {input$plotWd},
+             "mm" = {input$plotWd * 0.0393701})
+    })
 
     output$plotOut <- ggiraph::renderGirafe(ggiraph::girafe(ggobj = reacVals$plotOut(),
-                                                             width_svg = w(),
-                                                             height_svg = h()))
-    })
+                                                            width_svg = w(),
+                                                            height_svg = h()))
+  })
 
   ### Create Warning Message ###
   observeEvent(input$actPlot,
@@ -289,7 +287,7 @@ plotting_page <- function(input, output, session, descent_data)
                           Please use plot By Cluster to visualize a larger number of pathways and clusters."
                         )
                       }
-                      ))
+               ))
 
 
 
@@ -308,6 +306,14 @@ plotting_page <- function(input, output, session, descent_data)
                       width = reacVals$plotWd(), height = reacVals$plotHt(),
                       units = reacVals$plotUnit(), dpi = reacVals$plotDPI())
     }
+  )
+
+
+  ### Download Data ###
+  output$dataDwnld <- downloadHandler(
+    filename = function() {"OntoDescResults.xlsx"},
+    content = function(file) {xlsx::write.xlsx(reorderData(reacVals$data()), file = file, sheetName = "OntoDesc",
+                                               row.names = FALSE, col.names = TRUE)}
   )
 
   ### Stop App on Session End ###
