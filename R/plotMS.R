@@ -1,3 +1,20 @@
+#' Format Data Frame for Excel Export
+#'
+#' @param data descent_data$inputData
+#'
+#' @return
+#' @export
+#'
+#' @examples
+reorderData <- function(data){
+  exp <- as.data.frame(data)
+  ord <- c("ontoID", "ontoTerm", "pValue", "enrichmentScore", "direction", "clusterNumber", "clusterTerm")
+  ord <- ord[ord %in% colnames(exp)]
+
+  exp <- exp[,ord]
+
+  return(exp)
+}
 
 #' Load Theme Icons
 #'
@@ -91,7 +108,6 @@ cutText <- function(text, cutoff){
 #' @param enrichmentScore Optional. A numeric vector of enrichment scores for each Gene Ontology.
 #' @param direction Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.
 #' @param plotEnrichment Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.
-#' @param coordFlip Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.
 #' @param dotSize Optional. Numeric. Dot size in plots. Default == 1.
 #' @param dotShape Optional. Numeric. Select ggplot2 pch shape. Default == 19.
 #' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"
@@ -112,7 +128,7 @@ cutText <- function(text, cutoff){
 #'
 clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, clusterNumber = NULL,
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
-                         plotEnrichment = FALSE, coordFlip = FALSE,
+                         plotEnrichment = FALSE,
                          dotSize = 1, dotShape = 19,
                          themeSet = "minimal", colorSet = "IGV",
                          nameSize = 8, axTxtSize = 8, axTitleSize = 10, fontFam = "sans"){
@@ -208,26 +224,13 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
     p <- p + ggplot2::theme_linedraw()
   }
 
-  ### Other Theme Options + Coord Flip ###
-  if (!isTRUE(coordFlip)){
-
-    p <- p + ggplot2::theme(text = ggplot2::element_text(family = fontFam),
-                            axis.text.y = ggplot2::element_text(size = nameSize),
-                            axis.text.x = ggplot2::element_text(size = axTxtSize),
-                            axis.title.y = ggplot2::element_blank(),
-                            axis.title.x = ggplot2::element_text(size = axTitleSize))
-
-  } else if (isTRUE(coordFlip)){
-
-    p <- p + ggplot2::coord_flip()+
-      ggplot2::theme(text = ggplot2::element_text(family = fontFam),
-                     axis.text.x = ggplot2::element_text(size = nameSize, angle = 90, hjust = 1),
-                     axis.text.y = ggplot2::element_text(size = axTxtSize),
-                     axis.title.x = ggplot2::element_blank(),
-                     axis.title.y = ggplot2::element_text(size = axTitleSize, angle = 90, hjust = .5))
-  }
-
-  p <- p + ggplot2::coord_cartesian(clip = "off")
+  ### Other Theme Options ###
+  p <- p + ggplot2::theme(text = ggplot2::element_text(family = fontFam),
+                          axis.text.y = ggplot2::element_text(size = nameSize),
+                          axis.text.x = ggplot2::element_text(size = axTxtSize),
+                          axis.title.y = ggplot2::element_blank(),
+                          axis.title.x = ggplot2::element_text(size = axTitleSize))+
+    ggplot2::coord_cartesian(clip = "off")
 
   return(p)
 }
@@ -243,7 +246,6 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @param enrichmentScore Optional. A numeric vector of enrichment scores for each Gene Ontology.
 #' @param direction Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.
 #' @param plotEnrichment Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.
-#' @param coordFlip Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.
 #' @param dotSize Optional. Numeric. Dot size in plots. Default == 2.
 #' @param dotShape Optional. Numeric. Select ggplot2 pch shape. Default == 19.
 #' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"
@@ -265,7 +267,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @examples
 pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNumber = NULL,
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
-                         plotEnrichment = FALSE, coordFlip = FALSE,
+                         plotEnrichment = FALSE,
                          dotSize = 2, dotShape = 19,
                          themeSet = "minimal", colorSet = "IGV", lgdPosition = "right",
                          nameSize = 7, axTxtSize = 7, axTitleSize = 9, lgTxtSize = 7, lgTitleSize = 9, fontFam = "sans"){
@@ -380,14 +382,14 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
     p <- p + ggplot2::theme_linedraw()
   }
 
-  ### Other Theme Options + Coord Flip + Legend Position ###
+  ### Other Theme Options ###
   if(is.null(lgTxtSize)){
     hw <- 7
     th <- 9
-    } else if (!is.null(lgTxtSize)){
-      hw <- lgTxtSize
-      th <- lgTitleSize
-      }
+  } else if (!is.null(lgTxtSize)){
+    hw <- lgTxtSize
+    th <- lgTitleSize
+  }
 
   p <- p + ggplot2::theme(text = ggplot2::element_text(family = fontFam),
                           legend.position = lgdPosition, legend.justification = "left",
@@ -397,28 +399,15 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
                           legend.key.height = ggplot2::unit(hw, "pt"),
                           legend.key.width = ggplot2::unit(hw, "pt"),
                           legend.title = ggplot2::element_text(size = th),
-                          legend.text = ggplot2::element_text(size = hw))+
+                          legend.text = ggplot2::element_text(size = hw),
+                          axis.text.y = ggplot2::element_text(size = nameSize),
+                          axis.text.x = ggplot2::element_text(size = axTxtSize),
+                          axis.title.y = ggplot2::element_blank(),
+                          axis.title.x = ggplot2::element_text(size = axTitleSize))+
     ggplot2::guides("shape" = ggplot2::guide_legend(ncol = 1, order = 1, title.position = "top"),
                     "color" = ggplot2::guide_legend(ncol = 1, title.position = "top", order = 0),
-                    "fill" = ggplot2::guide_legend(ncol = 1, title.position = "top", order = 0))
-
-  if (!isTRUE(coordFlip)){
-
-    p <- p + ggplot2::theme(axis.text.y = ggplot2::element_text(size = nameSize),
-                            axis.text.x = ggplot2::element_text(size = axTxtSize),
-                            axis.title.y = ggplot2::element_blank(),
-                            axis.title.x = ggplot2::element_text(size = axTitleSize))
-
-  } else if (isTRUE(coordFlip)){
-
-    p <- p + ggplot2::coord_flip()+
-      ggplot2::theme(axis.text.x = ggplot2::element_text(size = nameSize, angle = 90, hjust = 1),
-                     axis.text.y = ggplot2::element_text(size = axTxtSize),
-                     axis.title.x = ggplot2::element_blank(),
-                     axis.title.y = ggplot2::element_text(size = axTitleSize, angle = 90, hjust = .5))
-  }
-
-  p <- p + ggplot2::coord_cartesian(clip = "off")
+                    "fill" = ggplot2::guide_legend(ncol = 1, title.position = "top", order = 0))+
+    ggplot2::coord_cartesian(clip = "off")
 
   return(p)
 }
