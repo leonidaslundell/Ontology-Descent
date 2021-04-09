@@ -44,13 +44,19 @@ exploring_page <- function(input, output, session, descent_data)
     results <- clustereR(ontoNet = net,
                          ontoNames = GOnames,
                          ontoLength = GOlength,
-                         method = "louvain",
-                         target = descent_data$inputData$ontoID)
+                         method = "leiden",
+                         target = clipr::read_clip())
 
 
     # descent_data$inputData
-    descent_data$inputData <- merge(descent_data$inputData[,c("ontoID", "direction", "pValue", "enrichmentScore")],
+    descent_data$inputData <- merge(descent_data$inputData[,colnames(descent_data$inputData) %in%
+                                                             c("ontoID",
+                                                               "direction",
+                                                               "pValue",
+                                                               "enrichmentScore")],
                                     results$res, by = "ontoID", order = F)
+
+    print(descent_data$inputData[,c("clusterTerm", "ontoTerm")])
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0,0,0,0))
