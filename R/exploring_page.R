@@ -49,8 +49,12 @@ exploring_page <- function(input, output, session, descent_data)
 
 
     # descent_data$inputData
-    descent_data$inputData <- merge(descent_data$inputData[,c("ontoID", "direction", "pValue", "enrichmentScore")],
+
+    descent_data$inputData <- merge(descent_data$inputData[,colnames(descent_data$inputData) %in%
+                                                             c("ontoID", "direction", "pValue", "enrichmentScore")],
                                     results$res, by = "ontoID", order = F)
+
+
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0,0,0,0))
