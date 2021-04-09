@@ -51,142 +51,44 @@ Another major consideration: am i shooting an arrow on the wall and painting a b
 ## Generating tree data
 
 ```{r, message=FALSE}
+setwd("ClusteringAlgoDevelopment")
+
 source("../R/clustering_functions.R")
 library(org.Hs.eg.db)
+library(GO.db)
 library(simplifyEnrichment)
 library(igraph)
 library(ggplot2)
 library(data.table)
 library(patchwork)
 library(fossil)
+
+library(myFunction)
 ```
 
+Not all GO terms have an associated gene list. consider only the go terms with genes.
 
 ```{r}
-# net <- networkeR(ont = "MF")
+# goMF <- as.list(GOMFCHILDREN)
+# goMF <- unique(c(names(goMF), unlist(goMF)))
+# 
+# go2eg <- as.list(org.Hs.egGO2ALLEGS)
+# go2eg <- go2eg[names(go2eg) %in% goMF]
+# names(go2eg)
+#  
+# net <- networkeR(ont = "MF", termFilter = names(go2eg))
 # 
 # distNet <- distances(net)
 # clustNet <- hclust(as.dist(distNet))
 # 
-# GOlength <- sapply(as.list(org.Hs.egGO2ALLEGS), length)
-# GOlength <- c(GOlength, sapply(as.list(org.Mm.egGO2ALLEGS), length))
+# GOlength <- sapply(go2eg, length)
 # GOnames <- as.list(GO.db::GOTERM)
 # GOnames <- sapply(GOnames, Term)
+# GOnames <- GOnames[names(go2eg)]
 # 
-# save(list = c("net", "clustNet", "GOlength", "GOnames", "GOnames"), 
+# save(list = c("net", "clustNet", "GOlength", "GOnames", "go2eg"),
 #      file = "data/OntoDescSupportData.Rdata")
 load("data/OntoDescSupportData.Rdata")
-```
-
-## Generating 1000 samples of synthetic IC data
-
-```{r}
-# library(parallel)
-# 
-# clustNet2 <- GO_similarity(V(net)$name, ont = "MF", measure = "Jiang")
-# clustNet2 <- hclust(as.dist(clustNet2))
-# 
-# datJia <- mclapply(1:1000, function(n){
-#   # print(n)
-#   sampleR(ontoHclust = clustNet2, n = sample(5:50,1), maxClusterSize = 350, minClusters = 15, maxClusters = 1000)
-# }, mc.cores = 14)
-# datJia <- datJia[sapply(datJia, length)>0]
-# hist(sapply(datJia, function(x) length(unique(unlist(x)))))
-
-# save(datJia, file = "data/JiaBenchmark.Rdata")
-load("data/JiaBenchmark.Rdata")
-```
-
-## Generating 1000 samples of synthetic semantic data (Wang)
-
-This was run on the cluster since wang is too slow.
-
-```{r}
-# setwd("/home/people/leolun/projects/ontologyDescent/wangBenchmark")
-# load("env.RData")
-# 
-# library(parallel)
-# library(simplifyEnrichment)
-# library(igraph)
-# 
-# clustNet2 <- GO_similarity(V(net)$name, ont = "MF", measure = "Wang")
-# clustNet2 <- hclust(as.dist(clustNet2))
-# 
-# save(clustNet2, file = "WangBenchmark.Rdata")
-# 
-# datWang <- mclapply(1:1000, function(n){
-#   # print(n)
-#   sampleR(ontoHclust = clustNet2, n = sample(5:50,1))
-# }, mc.cores = 40)
-# datWang <- datWang[sapply(datWang, length)>0]
-# # hist(sapply(datWang, function(x) length(unique(unlist(x)))))
-# 
-# save(list=c("clustNet2", "datWang"), file = "WangBenchmark.Rdata")
-load("data/WangBenchmark.Rdata")
-```
-
-## Generating 1000 samples of synthetic jackard data
-
-This calculation is pretty slow, running it on a thinnod in computerome instead, and loadingb the cluster object here instead:
-
-```{r}
-# #all these were run on computerome
-# library(org.Hs.eg.db)
-# library(GO.db)
-# 
-# jackardIndex <- function(c1, c2){
-#   length(intersect(c1, c2))/length(unique(c(c1, c2)))
-# }
-# 
-# x <- as.list(org.Hs.egGO2EG)
-# 
-# y <- AnnotationDbi::select(GO.db, keys = V(net)$name, columns = "ONTOLOGY")
-# y <- y[y$ONTOLOGY == "MF", "GOID"]
-# 
-# x <- x[y]
-# 
-# xRes <- matrix(NA, length(x), length(x))
-# colnames(xRes) <- rownames(xRes) <- names(x)
-# 
-# for(i in rownames(xRes)[1:3]){
-#   print(i)
-#   for(ii in colnames(xRes)){
-#     xRes[i,ii] <- jackardIndex(x[[i]], x[[ii]])
-#   }
-# }
-# 
-# xDist <- hclust(as.dist(xRes))
-# save(file = "~/projects/ontologyDescent/jackardMFdistance.Rdata", xDist)
-# save(file = "~/projects/ontologyDescent/jackardMFval.Rdata", xRest)
-# load("data/jackardMFdistance.Rdata")
-# 
-# library(parallel)
-# datJack <- mclapply(1:1000, function(n){
-#   sampleR(ontoHclust = xDist, n = sample(5:50,1),minClusters = 15, maxClusterSize = 250, maxClusters = 1000)
-# }, mc.cores = 16)
-# datJack <- datRel[sapply(datJack, length)>0]
-# hist(sapply(datRel, function(x) length(unique(unlist(x)))))
-# 
-# GOnames[unlist(datJack[[1]][25])]
-# save(file = "data/JackardBenchmark.Rdata", datJack)
-load("data/JackardBenchmark.Rdata")
-```
-
-Investigating single generated clusters is not really encouraging...
-Also this data is comprising of ~4000 GO terms, both the org.Hs.eg.db and biomart only contain so many GO terms with associated go terms.
-
-## Generating 1000 samples of synthetic distance data
-
-```{r}
-# library(parallel)
-# datClust <- mclapply(1:1000, function(n){
-#   # print(n)
-#   sampleR(ontoHclust = clustNet, n = sample(5:50,1))
-# }, mc.cores = 16)
-# datClust <- datClust[sapply(datClust, length)>0]
-# save(datClust, file = "data/TopoDistBenchmark.Rdata")
-
-load("data/TopoDistBenchmark.Rdata")
 ```
 
 ## Generating real GO data
@@ -214,45 +116,168 @@ load("data/TopoDistBenchmark.Rdata")
 # sum(!rownames(GSE1297) == names(a))
 # names(a)[!rownames(GSE1297) == names(a)]
 # 
-# x <- as.list(org.Hs.egGO2ALLEGS)
-# plus2 <- ids2indices(gene.sets = x,identifiers = unlist(plus2))
-# a <- ids2indices(gene.sets = x,identifiers = unlist(a))
+# plus2 <- ids2indices(gene.sets = go2eg, identifiers = unlist(plus2))
+# a <- ids2indices(gene.sets = go2eg,identifiers = unlist(a))
 # 
 # mysets <- c(data(package="KEGGandMetacoreDzPathwaysGEO")$results[,"Item"],
 #             data(package="KEGGdzPathwaysGEO")$results[,"Item"])
 # 
-# datGSE <- NULL
 # 
-# for(gse in mysets){
-#   print(gse)
 # 
+# datGSE <- mclapply(mysets, function(gse){
 #   eval(parse(text = paste0("data(", gse, ")")))
 #   eval(parse(text = paste0("dat <- ", gse)))
 #   eval(parse(text = paste0("rm(", gse, ")")))
-#   
-#   datGSE[[gse]] <- "NA"
-#   
+# 
 #   if(annotation(dat) == "hgu133plus2")
-#     datGSE[[gse]] <- camera(exprs(dat), plus2, model.matrix(~0 + Group, dat))
+#     return(camera(exprs(dat), plus2, model.matrix(~0 + Group, dat)))
 # 
 #   if(annotation(dat) == "hgu133a")
-#     datGSE[[gse]] <- camera(exprs(dat), a, model.matrix(~0 + Group, dat))
+#     return(camera(exprs(dat), a, model.matrix(~0 + Group, dat)))
+# }, mc.cores = 8)
 # 
-# }
-# datGSE <- datGSE
+# names(datGSE) <- mysets
+# 
+# datGSE <- lapply(datGSE, function(res){
+#   res <- res[!is.na(res$FDR),]
+#   rownames(res[res$FDR<0.05,])
+# })
+# 
+# datGSE <- datGSE[!sapply(datGSE, is.null)]
+# 
+# hist(sapply(datGSE, length), main = "real")
 # save(datGSE, file = "data/PublicGSEdata_GOcamera.Rdata")
 load("data/PublicGSEdata_GOcamera.Rdata")
 ```
+
+## Generating 1000 samples of synthetic distance data
+
+```{r}
+# datClust <- mclapply(1:1000, function(n){
+#   # print(n)
+#   sampleR(ontoHclust = clustNet,  n = sample(5:50,1), maxClusterSize = 350, minClusters = 15, maxClusters = 1000)
+# }, mc.cores = 14)
+# 
+# beep()
+# datClust <- datClust[sapply(datClust, length)>0]
+# hist(sapply(datClust, function(x) length(unique(unlist(x)))), main = "TopoDist")
+# save(datClust, file = "data/TopoDistBenchmark.Rdata")
+load("data/TopoDistBenchmark.Rdata")
+```
+
+
+## Generating 1000 samples of synthetic Jiang data
+
+```{r}
+# clustNet2 <- GO_similarity(V(net)$name, ont = "MF", measure = "Jiang")
+# clustNet2 <- hclust(as.dist(clustNet2))
+# 
+# datJia <- mclapply(1:1000, function(n){
+#   # print(n)
+#   sampleR(ontoHclust = clustNet2, n = sample(5:50,1), maxClusterSize = 350, minClusters = 15, maxClusters = 1000)
+# }, mc.cores = 14)
+# datJia <- datJia[sapply(datJia, length)>0]
+# hist(sapply(datJia, function(x) length(unique(unlist(x)))), main = "Jiang Dist")
+# beep()
+# save(datJia, file = "data/JiaBenchmark.Rdata")
+load("data/JiaBenchmark.Rdata")
+```
+
+## Generating 1000 samples of synthetic semantic data (Wang)
+
+```{r}
+# clustNet2 <- GO_similarity(V(net)$name, ont = "MF", measure = "Wang")
+# clustNet2 <- hclust(as.dist(clustNet2))
+# 
+# save(clustNet2, file = "WangBenchmark.Rdata")
+# 
+# datWang <- mclapply(1:1000, function(n){
+#   # print(n)
+#   sampleR(ontoHclust = clustNet2, n = sample(5:50,1), maxClusterSize = 350, minClusters = 15, maxClusters = 1000)
+# }, mc.cores = 10)
+# datWang <- datWang[sapply(datWang, length)>0]
+# hist(sapply(datWang, function(x) length(unique(unlist(x)))), main = "Wang distance")
+# 
+# save(list=c("clustNet2", "datWang"), file = "WangBenchmark.Rdata")
+load("data/WangBenchmark.Rdata")
+```
+
+## Generating 1000 samples of synthetic jackard data
+
+This calculation is pretty slow, running it on a thinnod in computerome instead, and loadingb the cluster object here instead:
+
+```{r}
+# #all these were run on computerome
+# library(org.Hs.eg.db)
+# library(GO.db)
+# library(parallel)
+# library(data.table)
+# 
+# jackardIndex <- function(c1, c2){
+#   length(intersect(c1, c2))/length(unique(c(c1, c2)))
+# }
+# 
+# goMF <- as.list(GOMFCHILDREN)
+# goMF <- unique(c(names(goMF), unlist(goMF)))
+# 
+# go2eg <- as.list(org.Hs.egGO2ALLEGS)
+# go2eg <- go2eg[names(go2eg) %in% goMF]
+# 
+# go2eg <- reshape2::melt(go2eg)
+# go2eg <- as.data.table(go2eg)
+# 
+# jackardIndexGO <- mclapply(unique(go2eg$L1), function(i){
+#     
+#     go2eg[,jackardIndex(go2eg[L1 %in% i, value], value), by = L1]$V1
+#     
+#   }, mc.cores = 40)
+# 
+# save(file = "jackardIndexGO.Rdata", jackardIndexGO)
+#
+#############
+#continuing local
+# load("data/jackardIndexGO.Rdata")
+# 
+# temp <- matrix(NA, length(jackardIndexGO), length(jackardIndexGO))
+# 
+# for(i in 1:nrow(temp)){
+#   temp[i,] <- jackardIndexGO[[i]]
+# }
+# 
+# rownames(temp) <- colnames(temp) <- names(go2eg)
+# jackardIndexGO <- temp
+# rm(temp)
+# 
+# #############
+# #doublechecvk that the go terms are in the same order on computerome and here.
+# jackardIndex <- function(c1, c2){
+#   length(intersect(c1, c2))/length(unique(c(c1, c2)))
+# }
+# jackardIndex(go2eg[["GO:0000009"]], go2eg[["GO:0000030"]]) ==
+# jackardIndexGO["GO:0000009", "GO:0000030"]
+# 
+# clustNet2 <- hclust(as.dist(jackardIndexGO))
+# datJack <- mclapply(1:1000, function(n){
+#   sampleR(ontoHclust = clustNet2, n = sample(30:100,1))
+# }, mc.cores = 16)
+# datJack <- datJack[sapply(datJack, length)>0]
+# hist(sapply(datJack, function(x) length(unique(unlist(x)))), main = "Jackard distance")
+# beep()
+# save(file = "data/JackardBenchmark.Rdata", datJack)
+load("data/JackardBenchmark.Rdata")
+```
+
+Investigating single generated clusters is not really encouraging...
+Also this data is comprising of ~4000 GO terms, both the org.Hs.eg.db and biomart only contain so many GO terms with associated go terms.
 
 ## Generating 1000 completely random GO sets with variable size
 
 ```{r}
 # x <- sapply(datGSE, length)
-# # x <- rnorm(1000, mean = mean(x), sd = sd(x))
 # x <- rpois(1000, x)
 # 
 # datRand <- mclapply(x, function(size){
-#   random_GO(n = size, ont = "MF")
+#   sample(names(go2eg), size, replace = F)
 # })
 # save(datRand, file = "data/RandomGO.Rdata")
 load("data/RandomGO.Rdata")
@@ -260,27 +285,12 @@ load("data/RandomGO.Rdata")
 
 ## Comparing the shape and properties of the real GO data and the synthetic data
 
-### Summary statistics of real GO terms
-
-```{r}
-datGSE <- lapply(datGSE, function(x){
-  x <- rownames(x[x$FDR<0.05,])
-  x[x %in% V(net)$name] #keeping only MF
-})
-```
-
-Remove maps without any results.
-
-```{r}
-datGSE <- datGSE[sapply(datGSE, length)>1]
-```
-
 ### Are the synthetic and real data comparable?
 
 ```{r}
 #warning suppresed is that closseness is not well defined for disconnected graphs
 
-allParameters <- lapply(c("datGSE", "datClust", "datJack", "datRand", "datJia"),
+allParameters <- lapply(c("datGSE", "datClust", "datJack", "datRand", "datJia", "datWang"),
                         function(truth){
                           datTruth <- get(truth)
                           sapply(datTruth, function(n){
@@ -293,7 +303,7 @@ allParameters <- lapply(c("datGSE", "datClust", "datJack", "datRand", "datJia"),
                           })
                         })
 
-names(allParameters) <- c("Public data\nGO enrichment", "Topology distance", "Jackard distance", "Random GO", "Jiang distance")
+names(allParameters) <- c("Public data\nGO enrichment", "Topology distance", "Jackard distance", "Random GO", "Jiang distance", "Wang distance")
   
 allParameters <- reshape2::melt(allParameters)
 colnames(allParameters)[4] <- "data"
@@ -303,7 +313,7 @@ allParameters <- as.data.table(allParameters)
 ### Comparing the synthetic data and real data structures and large scale properties
 
 ```{r}
-resGOnumbers <- lapply(c("datGSE", "datRand", "datClust", "datJack", "datJia"), function(dat){
+resGOnumbers <- lapply(c("datGSE", "datRand", "datClust", "datJack", "datJia", "datWang"), function(dat){
   dat <- get(dat)
   
   sapply(dat, function(clust){
@@ -316,7 +326,8 @@ names(resGOnumbers) <- c("Public data\nGO enrichment",
                          "Random GO", 
                          "Topology distance", 
                          "Jackard distance", 
-                         "Jiang distance")
+                         "Jiang distance",
+                         "Wang distance")
 
 resGOnumbers <- reshape2::melt(resGOnumbers)
 colnames(resGOnumbers) <- c("value", "Benchmark")
@@ -329,7 +340,8 @@ orderBenchmark <- c("Public data\nGO enrichment",
                     "Random GO", 
                     "Topology distance", 
                     "Jackard distance", 
-                    "Jiang distance")
+                    "Jiang distance",
+                    "Wang distance")
 
 resGOnumbersPlot <- ggplot(resGOnumbers, aes(y = Benchmark, x = value)) +
   geom_boxplot() +
@@ -346,7 +358,7 @@ ggsave("figures/number.go.terms.pdf", width = 5, height = 5)
 #number of unique terms
 levels(allParameters$Var1) <- c("Degree\nCentrality", "Betweenness\nCentralitity", "Eigen\nCentralitity", "Components", "Diameter")
 allParameters$Benchmark <- factor(allParameters$data, levels = orderBenchmark)
-levels(allParameters$Benchmark) <- c("GSE data\nGO enrich.", "Random\nGO", "Topology\ndistance", "Jackard\ndistance", "Jiang\ndistance")
+levels(allParameters$Benchmark) <- c("GSE data\nGO enrich.", "Random\nGO", "Topology\ndistance", "Jackard\ndistance", "Jiang\ndistance", "Wang\ndistance")
 
 allParametersPlot <- ggplot(allParameters, aes(x = value, group = Var2, fill = Benchmark)) +
   geom_histogram() +
@@ -354,14 +366,14 @@ allParametersPlot <- ggplot(allParameters, aes(x = value, group = Var2, fill = B
   theme(legend.position = "none") +
   xlab("") +
   theme_minimal() +
-  theme(strip.text.y = element_text(size = 11),
+  theme(strip.text.y = element_text(size = 10.5),
         strip.text.x = element_text(size = 14),
         panel.border = element_rect(fill = NA),
         axis.ticks = element_line(),
         legend.position = "bottom",
         axis.text.x.bottom = element_text(size = 8))
 allParametersPlot
-ggsave("figures/network.parameters.pdf", width = 10, height = 6.2)
+ggsave(plot = allParametersPlot, "figures/network.parameters.pdf", width = 10, height = 6.4)
 ```
 
 What do the different graph measures mean? 
@@ -393,7 +405,7 @@ clusterDiversity <- function(x){
   sort(table(x), decreasing = T)
 }
 
-resTermDiversity <- lapply(c("datClust", "datJack", "datJia"), function(dat){
+resTermDiversity <- lapply(c("datClust", "datJack", "datJia", "datWang"), function(dat){
   dat <- get(dat)
   
   sapply(dat, function(clust){
@@ -405,9 +417,9 @@ resTermDiversity <- lapply(c("datClust", "datJack", "datJia"), function(dat){
   })
   
 })
-names(resTermDiversity) <- c("Topology\ndistance", "Jackard\ndistance", "Jiang\ndistance")
+names(resTermDiversity) <- c("Topology\ndistance", "Jackard\ndistance", "Jiang\ndistance", "Wang\ndistance")
 
-resTermDiversityRand <- lapply(c("datClust", "datJack", "datJia"), function(dat){
+resTermDiversityRand <- lapply(c("datClust", "datJack", "datJia", "datWang"), function(dat){
   print(dat)
   dat <- get(dat)
   
@@ -427,7 +439,7 @@ resTermDiversityRand <- lapply(c("datClust", "datJack", "datJia"), function(dat)
   })
   x
 })
-names(resTermDiversityRand) <- c("Topology\ndistance", "Jackard\ndistance", "Jiang\ndistance")
+names(resTermDiversityRand) <- c("Topology\ndistance", "Jackard\ndistance", "Jiang\ndistance", "Wang\ndistance")
 
 resTermDiversityRand <- lapply(resTermDiversityRand, function(x) 1-unlist(x))
 resTermDiversityRand <- reshape2::melt(resTermDiversityRand)
@@ -449,13 +461,11 @@ ggsave("figures/GO.term.title.diversity.pdf",width = 5,height = 2)
 Making figure 1 with patchwork
 
 ```{r}
-
 g <- (ggplot() + theme_void() + resGOnumbersPlot) / allParametersPlot / ( resTermDiversityPlot + plot_spacer()) +
   plot_layout(heights = c(0.25,.51,.25)) +
   plot_annotation(tag_levels = "A")
 g
 ggsave(filename = "figures/F1.pdf", width = 8.25,height = 11.75)
-
 ```
 
 # Comparing network clustering to classical methods
@@ -473,7 +483,7 @@ This calculation is pretty slow, running it on computerome instead.
 Saving enviroment to just pick up in the cluster.
 
 ```{r}
-# save.image() #change this stupid name .Rdata to env.Rdata
+# save.image("data/env.Rdata") #change this stupid name .Rdata to env.Rdata
 ```
 
 Ran this script verabtim.
@@ -502,7 +512,7 @@ Ran this script verabtim.
 # }
 # 
 # 
-# for(meth in c("kmeans", "dynamicTreeCut", "apcluster", "hdbscan", "MCL", "mclust")){#mclust is too slow even on the fucking cluster.
+# for(meth in c("binary_cut", "kmeans", "dynamicTreeCut", "apcluster", "hdbscan", "MCL", "mclust")){#mclust is too slow even on the fucking cluster.
 #   resOptimization$TopoDist[[meth]] <- mclapply(datClust, function(n){
 #     #calculate distances
 #     targets <- unique(unlist(n))
@@ -524,43 +534,43 @@ Ran this script verabtim.
 # #All IC based distances
 # 
 # for(distance in c("Resnik", "Rel", "Jiang", "Lin", "Wang")){
-#   
+# 
 #   print(distance)
 #   print("----------------")
-#   
+# 
 #   resOptimization[[distance]] <- NULL
-#   
+# 
 #   #bizare workaround from https://github.com/YuLab-SMU/clusterProfiler/issues/207.
 #   #not having this lapply  statement leads to a "Error in result_fetch(res@ptr, n = n) : database disk image is malformed\n"
 #   temp <- unique(unlist(datClust[[1]]))[1:10]
 #   temp <- GO_similarity(temp, "MF", measure = distance)
-#   temp <- lapply(all_clustering_methods()[c(-1)], function(x){
+#   temp <- lapply(all_clustering_methods()[c(-11)], function(x){
 #     cluster_terms(temp,
 #                   method = x,
-#                   catch_error = T, 
+#                   catch_error = T,
 #                   verbose = T)
 #   })
-#   
-#   clusteringMethods <- all_clustering_methods()[c(-1,-4,-11)]
-#   
+# 
+#   clusteringMethods <- all_clustering_methods()[c(-11)]
+# 
 #   resOptimization[[distance]] <- mclapply(datClust, function(n){
-#     
+# 
 #     targets <- unique(unlist(n))
 #     targetsDistance <- GO_similarity(targets, "MF", measure = distance)
-#     
+# 
 #     n <- lapply(clusteringMethods, function(meth){
-#       
+# 
 #       test <- cluster_terms(targetsDistance,
 #                             method = meth,
-#                             catch_error = T, 
+#                             catch_error = T,
 #                             verbose = T)
 #       test <- try(structure(as.numeric(test), names = targets))
 #       test
 #     })
 #     names(n) <- clusteringMethods
-#     
+# 
 #     n
-#     
+# 
 #   }, mc.cores = 40)
 # }
 # 
@@ -599,58 +609,58 @@ resOptimization$Resnik$kmeans[!sapply(resOptimization$Resnik$kmeans, length) ==
 I also want to apply the leiden clustering method. Complicated to install on the cluster so things are run here.
 
 ```{r}
-# registers new method in simplifyEnrichment and allows using it within its pipeline
-register_clustering_methods(
-  leiden = function(mat, ...) {
-    leiden::leiden(mat, resolution_parameter = .5)
-  }
-)
-
-print("TopoDist")
-resOptimization$TopoDist$leiden <- mclapply(datClust, function(n){
-  print(length(n))
-  targets <- unique(unlist(n))
-  test <- clustereR(net, GOnames, GOlength, targets, method = "leiden")$res
-  test <- structure(test$clusterNumber, names = test$ontoID)
-  test
-}, mc.cores = 10)
-
-#############
-#All IC based distances
-
-for(distance in c("Resnik", "Rel", "Jiang", "Lin", "Wang")){
-  print(distance)
-
-  #bizare workaround from https://github.com/YuLab-SMU/clusterProfiler/issues/207.
-  #not having this lapply  statement leads to a "Error in result_fetch(res@ptr, n = n) : database disk image is malformed\n"
-  temp <- unique(unlist(datClust[[1]]))[1:10]
-  temp <- GO_similarity(temp, "MF", measure = distance)
-  temp <- cluster_terms(temp,
-                        method = "leiden",
-                        catch_error = T,
-                        verbose = F)
-  
-  resOptimization[[distance]]$leiden <- mclapply(datClust, function(n){
-    
-    targets <- unique(unlist(n))
-    targetsDistance <- GO_similarity(targets, "MF", measure = distance)
-    
-    test <- cluster_terms(targetsDistance,
-                          method = "leiden",
-                          catch_error = T,
-                          verbose = T)
-    test <- try(structure(as.numeric(test), names = targets))
-    test
-  }, mc.cores = 10)
-}
+## registers new method in simplifyEnrichment and allows using it within its pipeline
+# register_clustering_methods(
+#   leiden = function(mat, ...) {
+#     leiden::leiden(mat, resolution_parameter = .5)
+#   }
+# )
+# 
+# resOptimization$TopoDist$leiden <- mclapply(datClust, function(n){
+#   print(length(n))
+#   targets <- unique(unlist(n))
+#   test <- clustereR(net, GOnames, GOlength, targets, method = "leiden")$res
+#   test <- structure(test$clusterNumber, names = test$ontoID)
+#   test
+# }, mc.cores = 10)
+# 
+# #############
+# #All IC based distances
+# 
+# for(distance in c("Resnik", "Rel", "Jiang", "Lin", "Wang")){
+#   print(distance)
+# 
+#   #bizare workaround from https://github.com/YuLab-SMU/clusterProfiler/issues/207.
+#   #not having this lapply  statement leads to a "Error in result_fetch(res@ptr, n = n) : database disk image is malformed\n"
+#   temp <- unique(unlist(datClust[[1]]))[1:10]
+#   temp <- GO_similarity(temp, "MF", measure = distance)
+#   temp <- cluster_terms(temp,
+#                         method = "leiden",
+#                         catch_error = T,
+#                         verbose = F)
+#   
+#   resOptimization[[distance]]$leiden <- mclapply(datClust, function(n){
+#     
+#     targets <- unique(unlist(n))
+#     targetsDistance <- GO_similarity(targets, "MF", measure = distance)
+#     
+#     test <- cluster_terms(targetsDistance,
+#                           method = "leiden",
+#                           catch_error = T,
+#                           verbose = T)
+#     test <- try(structure(as.numeric(test), names = targets))
+#     test
+#   }, mc.cores = 10)
+# }
 
 # save(file = "parameterOptimizationLeiden.Rdata", x = resOptimization)
+load("data/parameterOptimizationLeiden.Rdata")
 ```
 
 Convert the benchmarks to the same format as the results
 
 ```{r}
-truth <- lapply(c("datClust", "datJia", "datJack"), function(x){
+truth <- lapply(c("datClust", "datJia", "datJack", "datWang"), function(x){
   x <- get(x)
   lapply(x, function(i){
     x <- reshape2::melt(i)
@@ -660,7 +670,7 @@ truth <- lapply(c("datClust", "datJia", "datJack"), function(x){
   })
 })
 
-names(truth) <- c("TopoDist", "Jiang", "Jackard")
+names(truth) <- c("TopoDist", "Jiang", "Jackard", "Wang")
 ```
 
 Compare the vectors generated in resOptimization with the truth vectors. Make sure to align and overlap the names.
@@ -697,8 +707,8 @@ resOptimizationFM <- lapply(resOptimization, function(dist){
 Plot these as an ecdf plot
 
 ```{r}
-clusterColors <- RColorBrewer::brewer.pal(11,"Spectral")[c(1:4,7:11)]
-names(clusterColors) <- names(resOptimization$TopoDist)
+clusterColors <- RColorBrewer::brewer.pal(11,"Spectral")
+names(clusterColors) <- names(resOptimization$Resnik)
 
 resOptimizationFM <- lapply(names(resOptimizationFM), function(meth){
   temp <- reshape2::melt(resOptimizationFM[[meth]])
@@ -738,6 +748,9 @@ resOptimizationClusterSize <- lapply(resOptimization, function(dist){
   }, mc.cores = 8)
 })
 
+#since binary_cut hasnt been applied to topodist we need to 
+# resOptimizationClusterSize$TopoDist[[1]] <- NULL
+
 resOptimizationClusterSize <- reshape2::melt(resOptimizationClusterSize)
 colnames(resOptimizationClusterSize) <- c("counts", "Cluster", "Distance")
 
@@ -763,6 +776,7 @@ resOptimizationClusterProp <- lapply(resOptimization, function(dist){
   }, mc.cores = 8)
 })
 
+resOptimizationClusterProp$TopoDist[[1]] <- NULL
 resOptimizationClusterProp <- reshape2::melt(resOptimizationClusterProp)
 colnames(resOptimizationClusterProp) <- c("counts", "Cluster", "Distance")
 
@@ -786,6 +800,7 @@ resOptimizationClusterMedian <- lapply(resOptimization, function(dist){
   }, mc.cores = 8)
 })
 
+resOptimizationClusterMedian$TopoDist[[1]] <- NULL
 resOptimizationClusterMedian <- reshape2::melt(resOptimizationClusterMedian)
 colnames(resOptimizationClusterMedian) <- c("counts", "Cluster", "Distance")
 
@@ -809,79 +824,117 @@ ggsave("figures/F2.pdf", width = 8.25,height = 11.75)
 
 ```
 
-FM index analysis suggests that that Wang method and TopoDist perform similarly on the topodist benchmark.
+Jiang + walktrap,
+resnik + dynamic tree cut
+lin & rel + apcluster
+wang + mclust
+Also, which methods converge?
 
-Wang + networks seems to generate larger and fewer clusters, at the cost of proportion of clustered terms.
-
-TopoDist + leiden generates the best coverage with smaller cluster size than Wang. 
-
-Final combinations: TopoDist+leiden, Wang+apcluster, remaining + walktrap
+```{r}
+sapply(resOptimization, function(x) sapply(x, function(i) sum(sapply(i, class) == "numeric")))
+```
 
 ## Compare best combination of methods on the three benchmarks
 
+Too slow to be reasonable. back to the server.
+
 ```{r}
-#############
-#Classic distances + walktrap
-
-resCompare <- lapply(c("Jiang", "Lin", "Rel", "Resnik"), function(dist){
-  mclapply(truth, function(bench){
-    lapply(bench, function(n){
-      targets <- unique(names(n))
-      test <- cluster_terms(GO_similarity(targets, "MF", measure = dist),
-                            method = "walktrap",
-                            catch_error = T,
-                            verbose = T)
-      test <- try(structure(as.numeric(test), names = targets))
-      return(test)
-    })
-  }, mc.cores = 3)
-})
-
-names(resCompare) <- c("Jiang", "Lin", "Rel", "Resnik")
-
-#############
-#OntoDesc
-
-resCompare$TopoDist <- mclapply(truth, function(bench){
-  lapply(bench, function(n){
-    targets <- unique(names(n))
-    test <- clustereR(net, GOnames, GOlength, targets, method = "leiden")$res
-    test <- structure(test$clusterNumber, names = test$ontoID)
-    test
-  })
-}, mc.cores = 3)
-
-#############
-#Wang+apcluser
-
-resCompare$Wang <- mclapply(truth, function(bench){
-  lapply(bench, function(n){
-    targets <- unique(names(n))
-    test <- cluster_terms(GO_similarity(targets, "MF", measure = "Wang"),
-                          method = "apcluster",
-                          catch_error = T,
-                          verbose = T)
-    test <- try(structure(as.numeric(test), names = targets))
-    return(test)
-  })
-}, mc.cores = 3)
-
-beepr::beep()
-# save(file = "data/resultsComparinson.Rdata", x = resCompare)
-load("data/resultsComparinson.Rdata")
+# save(file = "data/env2.Rdata", list = c("truth"))
 ```
 
-calculate the rand index for each benchmark and also run the random bench.
 
 ```{r}
+load("env2.Rdata")
+library(simplifyEnrichment)
+library(parallel)
+
+testFunction <- function(n, dist, clust){
+  targets <- unique(names(n))
+  test <- cluster_terms(GO_similarity(targets, "MF", measure = dist),
+                        method = clust,
+                        catch_error = T,
+                        verbose = T)
+  test <- try(structure(as.numeric(test), names = targets))
+  return(test)
+}
+
+#nCores <- 8
+#manaully distribute? maybe thats why there is the stupid length 10 out?
+
+resCompare <- NULL
+for(bench in names(truth)[-1]){#topodist is removed since we already have that calculation from above...
+  print(bench)
+
+  #wierd work around like before
+  x <- unique(names(truth[[bench]][[1]]))[1:10]
+  temp <- GO_similarity(x, "MF", measure = "Jiang")
+  temp <- cluster_terms(temp,
+                        method = "walktrap",
+                        catch_error = T,
+                        verbose = F)
+  temp <- GO_similarity(x, "MF", measure = "Wang")
+  temp <- cluster_terms(temp,
+                        method = "mclust",
+                        catch_error = T,
+                        verbose = F)
+  temp <- GO_similarity(x, "MF", measure = "Resnik")
+  temp <- cluster_terms(temp,
+                        method = "dynamicTreeCut",
+                        catch_error = T,
+                        verbose = F)
+  temp <- GO_similarity(x, "MF", measure = "Lin")
+  temp <- cluster_terms(temp,
+                        method = "apcluster",
+                        catch_error = T,
+                        verbose = F)
+  temp <- GO_similarity(x, "MF", measure = "Rel")
+  temp <- cluster_terms(temp,
+                        method = "apcluster",
+                        catch_error = T,
+                        verbose = F)
+
+  resCompare[[bench]] <- list(Jiang = mclapply(truth[[bench]],
+                                               testFunction,
+                                               dist = "Jiang",
+                                               clust = "walktrap",
+                                               mc.cores = 5),
+                              Wang = mclapply(truth[[bench]],
+                                               testFunction,
+                                               dist = "Wang",
+                                               clust = "mclust",
+                                               mc.cores = 20),
+                              Resnik = mclapply(truth[[bench]],
+                                               testFunction,
+                                               dist = "Resnik",
+                                               clust = "dynamicTreeCut",
+                                               mc.cores = 5),
+                              Lin = mclapply(truth[[bench]],
+                                               testFunction,
+                                               dist = "Lin",
+                                               clust = "apcluster",
+                                               mc.cores = 5),
+                              Rel = mclapply(truth[[bench]],
+                                               testFunction,
+                                               dist = "Rel",
+                                               clust = "apcluster",
+                                               mc.cores = 5))
+}
+
+save(file = "resultsComparinson.Rdata", x = resCompare)
+```
+
+calculate the FM index for each benchmark and also run the random bench.
+
+```{r}
+load("data/resultsComparinson.Rdata")
 #############
 #Comparison
 
-resCompareFM <- mclapply(resCompare, function(meth){
-  lapply(names(meth), function(bench){
+resCompareFM <- mclapply(resCompare, function(bench){
+  lapply(names(bench), function(meth){
     out <- vector(length = 1000)
     for(i in 1:1000){
-      if(class(meth[[bench]][[i]]) != "try-error"){
+      if(class(bench[[meth]][[i]]) != "try-error"){
         
         t <- truth[[bench]][[i]]
         tt <- meth[[bench]][[i]]
@@ -1068,6 +1121,163 @@ resComparePrecisionPlot /
 resSizeClustersWangTopoDist
 ```
 
+# Prototypical analysis using a real dataset
+
+GSE15471 seems to give allot GO hits. Apply the ontodesc analysis using both GO and reactome.
+
+First prepare the reactome indices though.
+
+```{r}
+library(reactome.db)
+
+react2eg <- as.list(reactomePATHID2EXTID)
+react2eg <- react2eg[grepl("HSA", names(react2eg))]
+react2pathname <- as.list(reactomePATHID2NAME)[names(react2eg)]
+react2pathname <- lapply(react2pathname, function(path){
+  gsub("Homo sapiens: ", "", path, fixed = T)
+})
+```
+
+
+```{r}
+library(limma)
+library(KEGGdzPathwaysGEO)
+library(Biobase)
+library(hgu133plus2.db)
+library(annotate)
+library(reactome.db)
+
+data("GSE15471")
+datReal <- GSE15471
+rm(GSE15471)
+
+plus2 <- as.list(hgu133plus2ENTREZID)
+sum(!rownames(datReal) == names(plus2))
+names(plus2)[!rownames(datReal) == names(plus2)]
+
+GOindices <- ids2indices(gene.sets = go2eg, identifiers = unlist(plus2))
+ReactIndices <- ids2indices(gene.sets = react2eg, identifiers = unlist(plus2))
+
+resGO <- camera(exprs(datReal), GOindices, model.matrix(~0 + Group, datReal))
+resGO <- resGO[resGO$FDR<0.05,]
+resGO$term <- GOnames[rownames(resGO)]
+resGO$ontoID <- rownames(resGO)
+
+resReact <- camera(exprs(datReal), ReactIndices, model.matrix(~0 + Group, datReal))
+resReact <- resReact[resReact$FDR<0.05,]
+resReact$term <- react2pathname[rownames(resReact)]
+resReact$ontoID <- rownames(resReact)
+```
+
+Perform the ontoDesc on GO
+
+```{r}
+library(ggbeeswarm)
+
+resGOcluster <- clustereR(ontoNet = net, 
+                          ontoNames = GOnames, 
+                          ontoLength = GOlength, 
+                          target = resGO$ontoID,
+                          filterTerms = NULL,
+                          method = "leiden")
+
+resGO <- merge(resGO,resGOcluster$res, by = "ontoID", reorder = F)
+resGO$clusterTerm[nchar(resGO$clusterTerm)>100] <-
+  "oxidoreductase activity ... reduction of molecular oxygen"
+
+resGO$Direction <- paste0(resGO$Direction, "\nRegulated") 
+ggplot(resGO, 
+       aes(x = clusterTerm, y = -log10(PValue), color = color)) +
+  geom_quasirandom(size = 1.2) +
+  scale_color_identity() + 
+  facet_wrap(~Direction) +
+  coord_flip() +
+  theme_all +
+  xlab("") +
+  theme(strip.background = element_rect(),
+        strip.text = element_text(size = 14),
+        axis.text.y = element_text(size = 8)) + 
+ggplot(resGO, aes(x=clusterTerm, fill = color)) +
+  stat_count() +
+  coord_flip() +
+  scale_fill_identity() +
+  scale_y_continuous(expand = c(0,0)) + 
+  scale_x_discrete(position = "top") +
+  ylab("Counts") +
+  xlab("Pathways") +
+  theme_all +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        strip.background = element_rect(),
+        strip.text = element_text(size = 14)) +
+  facet_wrap(~"Number of\npathways") +
+plot_layout(widths = c(7,3))
+ggsave("figures/GSE15471.GO.main.pdf", width = 8.25,height = 11.75*.4)  
+
+openLastFig()
+```
+
+```{r}
+pdf("figures/GSE15471.GO.network.pdf", width = 20, height = 20)
+plot(resGOcluster$community,
+     resGOcluster$plot,
+     # layout = layout_with_mds(resGOcluster$plot),
+     # vertex.label = V(resGOcluster$plot)$ontoTerm[V(resGOcluster$plot)$color !=],
+     vertex.label.cex = 0.2,
+     vertex.size = 0.5,
+     asp = 0,
+     axes = F)
+dev.off()
+openLastFig()
+
+plot(cluster_label_prop(resGOcluster$plot), resGOcluster$plot)
+```
+
+OntoDesc on reactome
+
+
+```{r}
+library(ggbeeswarm)
+
+netReact <- networkeR(ont = "Reactome")
+react2pathname
+resReactcluster <- clustereR(ontoNet = netReact, 
+                             ontoNames = react2pathname, 
+                             ontoLength = rep(1, length(react2pathname)), 
+                             target = resReact$ontoID,
+                             filterTerms = NULL,
+                             method = "leiden")
+
+resGO <- merge(resGO,resGOcluster$res, by = "ontoID", reorder = F)
+resGO$clusterTerm[nchar(resGO$clusterTerm)>100] <-
+  "oxidoreductase activity ... NAD(P)H as one donor,\nand incorporation of one atom of oxygen"
+
+ggplot(resGO, 
+       aes(x = clusterTerm, y = -log10(PValue), color = color)) +
+  geom_quasirandom(size = 2) +
+  scale_color_identity() + 
+  facet_wrap(~Direction) +
+  coord_flip() +
+  theme_all +
+  xlab("") +
+  theme(strip.background = element_rect(),
+        strip.text = element_text(size = 14),
+        axis.text.y = element_text(size = 8)) +
+ggplot(resGO, aes(x=clusterTerm, fill = color)) +
+  stat_count() +
+  coord_flip() +
+  scale_fill_identity() +
+  scale_y_continuous(expand = c(0,0)) + 
+  scale_x_discrete(position = "top") +
+  xlab("Number of pathways") +
+  theme_all +
+  theme(axis.text.y = element_blank()) +
+plot_layout(widths = c(8,2))
+ggsave("figures/GSE15471.GO.pdf", width = 8.25,height = 11.75*.4)  
+
+openLastFig()
+
+```
 
 <!-- ```{r} -->
 
