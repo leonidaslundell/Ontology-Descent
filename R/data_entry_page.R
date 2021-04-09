@@ -26,7 +26,8 @@ data_entry_page_ui <- function(id)
           resize = "both"
         ),
         actionButton(ns("Setting1"), label = "Submit!"),
-        actionButton(ns("dummy"), label = "Load dummy data")
+        actionButton(ns("dummy"), label = "Load dummy data (n = 300)"),
+        actionButton(ns("dummy_short"), label = "Load dummy data (n = 50)")
       ),
       column(
         4,
@@ -124,10 +125,18 @@ data_entry_page <- function(input, output, session, descent_data)
     }
   })
 
-  #load dummy data
+  #load dummy data long (300 terms)
   observeEvent(input$dummy,
                {
                  dummy_ref <- get_test_data()
+                 shiny::updateTextAreaInput(inputId = "data_entry",
+                                            value = dummy_ref
+                 )
+               })
+  #load dummy data short version (50 terms)
+  observeEvent(input$dummy_short,
+               {
+                 dummy_ref <- get_test_data(size = "short")
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref
                  )
