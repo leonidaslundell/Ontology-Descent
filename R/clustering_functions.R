@@ -63,7 +63,8 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain"
   #############
   #prepare network plot
 
-  cols <- colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(max(ontoClust$clusterNumber))
+  cols <- ggsci::pal_igv()(max(ontoClust$clusterNumber))
+  # colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(max(ontoClust$clusterNumber))
   cols <- sample(cols, max(ontoClust$clusterNumber), replace = F)
   cols <- cols[ontoClust$clusterNumber]
   ontoClust$color <- cols
