@@ -1,27 +1,3 @@
-### TEMPORARY Data Formatting - DELETE ###
-tempDataFormat <- function(data, short = FALSE){
-  library(GO.db)
-  library(ggsci)
-
-  terms <- list(
-    "terms" = select(GO.db, data$ontoID, columns = "TERM", keytype = "GOID")$TERM,
-    "color" = pal_igv()((51))
-  )
-
-
-  data$ontoTerm <- terms$terms[sample(1:length(terms$terms), nrow(data))]
-  data$clusterNumber <- sample(1:50, nrow(data), replace = TRUE)
-  data$clusterName <- terms$terms[sample(1:length(terms$terms),50)][data$clusterNumber]
-  data$color <- terms$color[data$clusterNumber]
-
-  if (isTRUE(short)){
-    data <- data[sample(1:nrow(data), 50),]
-    data$clusterNumber <- sample(1:10, 50, replace = TRUE)
-    data$clusterName <- terms$terms[sample(1:length(terms$terms), 10)][data$clusterNumber]
-  }
-
-  return(data)
-}
 
 #' Load Theme Icons
 #'
