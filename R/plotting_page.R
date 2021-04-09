@@ -19,10 +19,6 @@ plotting_page_ui <- function(id)
 
     sidebarLayout(
       sidebarPanel(
-        ### TEMPORARY - DELETE ############################################################################
-        radioButtons(inputId = ns("tempSel"), label = "TEMPORARY", choices = c("Long", "Short"), selected = "Long"),
-
-        ###################################################################################################
 
         selectInput(inputId = ns("plotType"), label = "Plot Type:", choices = NULL, selected = NULL, multiple = FALSE),
 
@@ -139,12 +135,6 @@ plotting_page <- function(input, output, session, descent_data)
     return(descent_data$inputData)
   })
 
-  ### TEMPORARY - DELETE ############################################################################
-  reacVals$data <- reactive(switch(input$tempSel,
-                                   "Long" = {tempDataFormat(example_data)},
-                                   "Short" = {temp <- tempDataFormat(example_data, short = TRUE)}))
-
-  ###################################################################################################
   ### Render UI Based on Selected Options ###
 
   ### Update plotType Based on Data Size ###
