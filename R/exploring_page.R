@@ -44,7 +44,7 @@ exploring_page <- function(input, output, session, descent_data)
     results <- clustereR(ontoNet = net,
                          ontoNames = GOnames,
                          ontoLength = GOlength,
-                         method = "leiden",
+                         method = "louvain",
                          target = descent_data$inputData$ontoID)
 
 
