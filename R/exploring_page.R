@@ -40,10 +40,13 @@ exploring_page_ui <- function(id)
 exploring_page <- function(input, output, session, descent_data)
 {
   observeEvent(input$clusterButton,{
+
     results <- clustereR(ontoNet = net,
                          ontoNames = GOnames,
                          ontoLength = GOlength,
+                         method = "leiden",
                          target = descent_data$inputData$ontoID)
+
 
     # descent_data$inputData
     descent_data$inputData <- merge(descent_data$inputData[,c("ontoID", "direction", "pValue", "enrichmentScore")],
