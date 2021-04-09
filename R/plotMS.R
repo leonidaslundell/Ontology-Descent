@@ -175,7 +175,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 
     p <- ggplot2::ggplot(plot,
                          ggplot2::aes(x = -log10(pValue), y = clusterName, fill = clusterName, color = clusterName))+
-      ggbeeswarm::geom_beeswarm(groupOnX = FALSE, pch = dotShape, size = dotSize)+
+      ggbeeswarm::geom_quasirandom(groupOnX = FALSE, pch = dotShape, size = dotSize)+
       ggplot2::scale_x_continuous("-log10 P Value", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
       ggplot2::scale_fill_manual(values = col, name = "Cluster", guide = "none")+
       ggplot2::scale_color_manual(values = col, name = "Cluster", guide = "none")
@@ -187,7 +187,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 
     p <- ggplot2::ggplot(plot, ggplot2::aes(x = enrichmentScore, y = clusterName, fill = clusterName, color = clusterName))+
       ggplot2::geom_vline(xintercept = 0, lty = "dashed")+
-      ggbeeswarm::geom_beeswarm(groupOnX = FALSE, pch = dotShape, size = dotSize)+
+      ggbeeswarm::geom_quasirandom(groupOnX = FALSE, pch = dotShape, size = dotSize)+
       ggplot2::scale_x_continuous("Enrichment Score", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
       ggplot2::scale_fill_manual(values = col, name = "Cluster", guide = "none")+
       ggplot2::scale_color_manual(values = col, name = "Cluster", guide = "none")
