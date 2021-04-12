@@ -10,6 +10,31 @@
 #' @export
 #'
 
+relabelleR <- function(ontoNet,
+                       ontoNames,
+                       target,
+                       filterTerms = c("molecular_function")){
+
+  #############
+  #just return the centralest from the cluster
+  connectedSubgraph <- all_shortest_paths(ontoNet, from = target, to = target, mode = "all")
+
+  connectedSubgraph <- connectedSubgraph$res
+  connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
+  ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
+
+  xMax <- centr_eigen(ontoNetSubgraph)$vector
+  xTerm <- ontoNames[V(ontoNetSubgraph)$name[which.max(xMax)]]
+
+  if(any(xTerm %in% filterTerms)){
+    xMax <- xMax[-which.max(xMax)]
+    xTerm <- ontoNames[x[which.max(xMax)]]
+    return(xTerm)
+  }else{
+    return(xTerm)
+  }
+}
+
 clustereR <- function(ontoNet,ontoNames, ontoLength, target,
                       method = "louvain",
                       filterTerms = c("molecular_function")){
@@ -41,7 +66,6 @@ clustereR <- function(ontoNet,ontoNames, ontoLength, target,
 
     xSub <- igraph::induced_subgraph(ontoNet, x)
     xMax <- centr_eigen(xSub)$vector
-    print(sum(xMax %in% max(xMax)))
     xTerm <- ontoNames[x[which.max(xMax)]]
 
     if(any(xTerm %in% filterTerms)){
