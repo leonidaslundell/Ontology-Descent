@@ -10,9 +10,6 @@ data_entry_page_ui <- function(id)
   shinyWidgets::useSweetAlert()
 
   fluidPage(
-    titlePanel(
-      "Ontology Descent: A data visualization tool for Gene Ontology Enrichment data"
-    ),
 
     fluidRow(
       column(
@@ -56,7 +53,7 @@ data_entry_page_ui <- function(id)
           multiple = F,
           selected = "GO BP"
         ),
-        img(src = "logo.png", heigth = 120, width = 200)
+        img(src = "logo.png", heigth = 60, width = 100)
 
       )
     ),
@@ -121,6 +118,11 @@ data_entry_page <- function(input, output, session, descent_data)
                                    text = error_string,
                                    type = "error")
     } else {
+      #convert the , to . if excel is set to a nordic language
+      if(class(imported_values$pValue) == "character"){
+        imported_values$pValue <- as.numeric(gsub("\\,", "\\.", imported_values$pValue))
+      }
+
       output$GO_table <- renderDataTable(imported_values)
       descent_data$inputData <- imported_values
     }
