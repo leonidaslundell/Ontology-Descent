@@ -45,18 +45,17 @@ exploring_page <- function(input, output, session, descent_data)
                          ontoNames = GOnames,
                          ontoLength = GOlength,
                          method = "leiden",
-                         target = clipr::read_clip())
+                         target = descent_data$inputData$ontoID)
 
 
-    # descent_data$inputData
     descent_data$inputData <- merge(descent_data$inputData[,colnames(descent_data$inputData) %in%
                                                              c("ontoID",
                                                                "direction",
                                                                "pValue",
-                                                               "enrichmentScore")],
-                                    results$res, by = "ontoID", order = F)
+                                                               "enrichmentScore"), with = F],
+                                    results$res,
+                                    by = "ontoID", order = F)
 
-    print(descent_data$inputData[,c("clusterTerm", "ontoTerm")])
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0,0,0,0))
