@@ -23,6 +23,7 @@ data_entry_page_ui <- function(id)
           placeholder = "Copy in data",
           height = "100%",
           rows = 10,
+          width = "100%",
           resize = "both"
         ),
         actionButton(ns("Setting1"), label = "Submit!"),
