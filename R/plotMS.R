@@ -256,6 +256,9 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 
   p <- p + ggplot2::coord_cartesian(clip = "off")
 
+  p <- p + q +
+    plot_layout(widths = c(.7, .3))
+
   return(p)
 }
 
