@@ -1,11 +1,12 @@
 get_test_data <- function(size = "big") {
   if(size == "big"){
+    rand <- sample(1:nrow(example_data), nrow(example_data), replace = F)
     example_data <-
       paste(
-        example_data$ontoID,
-        example_data$pValue,
-        example_data$enrichmentScore,
-        example_data$direction,
+        example_data$ontoID[rand],
+        example_data$pValue[rand],
+        example_data$enrichmentScore[rand],
+        example_data$direction[rand],
         sep = "\t",
         collapse = "\n"
       )
@@ -13,8 +14,7 @@ get_test_data <- function(size = "big") {
 
     return(example_data)
   }else{
-    set.seed(42)
-    rand <- sample(1:nrow(example_data), 50)
+    rand <- sample(1:nrow(example_data), 50, replace = F)
     example_data <-
       paste(
         example_data$ontoID[rand],
