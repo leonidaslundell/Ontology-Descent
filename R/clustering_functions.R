@@ -14,7 +14,9 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain"
 
   #############
   #network based clustering
+
   connectedSubgraph <- all_shortest_paths(ontoNet, from = target, to = target, mode = "all")
+
   connectedSubgraph <- connectedSubgraph$res
   connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
   ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
@@ -49,13 +51,13 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain"
     }
   })
 
-  names(clusterTerm) <- 1:max(ontoClust$membership)
+  names(clusterTerm) <- unique(ontoClust$membership)
 
   #############
   #prepare result table
 
   ontoClust <- data.frame(clusterNumber = ontoClust$membership,
-                          clusterTerm = unlist(clusterTerm[membership(ontoClust)]),
+                          clusterTerm = clusterTerm[as.character(ontoClust$membership)],
                           ontoID = ontoClust$names,
                           ontoTerm = ontoNames[ontoClust$names],
                           ontoLength = ontoLength[ontoClust$names])
@@ -64,7 +66,6 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain"
   #prepare network plot
 
   cols <- ggsci::pal_igv()(max(ontoClust$clusterNumber))
-  # colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(max(ontoClust$clusterNumber))
   cols <- sample(cols, max(ontoClust$clusterNumber), replace = F)
   cols <- cols[ontoClust$clusterNumber]
   ontoClust$color <- cols
