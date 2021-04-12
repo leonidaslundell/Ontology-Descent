@@ -10,7 +10,9 @@
 #' @export
 #'
 
-clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain", filterTerms = NULL){
+clustereR <- function(ontoNet,ontoNames, ontoLength, target,
+                      method = "louvain",
+                      filterTerms = c("molecular_function")){
 
   #############
   #network based clustering
