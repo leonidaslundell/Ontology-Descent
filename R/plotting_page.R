@@ -28,75 +28,82 @@ plotting_page_ui <- function(id)
 
         downloadButton(outputId = ns("dataDwnld"), label = "Download Data"),
 
-        tabsetPanel(id = "Graphical Options",
+        downloadButton(outputId = ns("plotDwnld"), label = "Download Plot"),
 
-                    tabPanel(title = "Style:",
-                             shinyWidgets::pickerInput(inputId = ns("themeSet"), label = "Plot Theme",
-                                                       choices = c("bw", "classic", "grey", "minimal", "dark", "linedraw"),
-                                                       selected = "minimal", multiple = FALSE,
-                                                       choicesOpt = list(content = themeIcon())),
+        br(),
+        br(),
 
-                             uiOutput(ns("lgdPosition")),
+        shinyWidgets::pickerInput(inputId = ns("themeSet"), label = "Plot Theme",
+                                  choices = c("bw", "classic", "grey", "minimal", "dark", "linedraw"),
+                                  selected = "minimal", multiple = FALSE,
+                                  choicesOpt = list(content = themeIcon())),
 
-                             numericInput(ns("dotSize"), label = "Dot Size",
-                                          value = 1, min = 0, max = 5, step = .25),
+        sliderInput(ns("dotSize"), label = "Dot Size",
+                    value = 1, min = 0, max = 5, step = .5),
 
-                             selectInput(inputId = ns("plotUnit"), label = "Size Units",
-                                         choices = c("cm", "in", "mm"),
-                                         selected = "cm", multiple = FALSE),
+        uiOutput(ns("lgdPosition")),
 
-                             actionButton(inputId = ns("upDate1"), label = "Update")
-                    ),
+        actionButton(inputId = ns("upDate1"), label = "Refresh Plot"),
 
-                    tabPanel(title = "Text:",
-                             selectInput(ns("fontFam"), label = "Font Family",
-                                         choices = c("Sans (Arial)" = "sans",
-                                                     "Serif (Times New Roman)" = "serif",
-                                                     "Mono (Courier New)" = "mono"),
-                                         selected = "sans", multiple = FALSE),
+        br(),
+        br(),
 
-                             numericInput(ns("axTitleSize"), label = "Axis title (size)",
-                                          value = 9, min = 4, max = 96, step = 1),
+        shinyWidgets::dropdownButton(
+          h3("Text Options:"),
 
-                             numericInput(ns("nameSize"), label = "Pathway Names (size)",
-                                          value = 7, min = 4, max = 96, step = 1),
+          selectInput(ns("fontFam"), label = "Font Family",
+                      choices = c("Sans (Arial)" = "sans",
+                                  "Serif (Times New Roman)" = "serif",
+                                  "Mono (Courier New)" = "mono"),
+                      selected = "sans", multiple = FALSE),
 
-                             numericInput(ns("axTxtSize"), label = "Axis text (size)",
-                                          value = 7, min = 4, max = 96, step = 1),
+          sliderInput(ns("axTitleSize"), label = "Axis title (size)",
+                      value = 9, min = 4, max = 48, step = 1),
 
-                             uiOutput(ns("lgTitleSize")),
+          sliderInput(ns("nameSize"), label = "Pathway Names (size)",
+                       value = 7, min = 4, max = 48, step = 1),
 
-                             uiOutput(ns("lgTxtSize")),
+          sliderInput(ns("axTxtSize"), label = "Axis text (size)",
+                       value = 7, min = 4, max = 48, step = 1),
 
-                             actionButton(inputId = ns("upDate2"), label = "Update")
-                    ),
+          uiOutput(ns("lgTitleSize")),
 
-                    tabPanel(title = "Download:",
+          uiOutput(ns("lgTxtSize")),
 
-                             numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
-                                          value = 15, step = .5),
+          actionButton(inputId = ns("upDate2"), label = "Refresh Plot"),
 
-                             numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
-                                          value = 15, step = .5),
+          circle = FALSE, status = "info", label = "Text Options", width = "300px",
+          tooltip = tooltipOptions(title = "Click to modify text")
+        ),
 
-                             selectInput(inputId = ns("dwnUnit"), label = "Size Units",
-                                         choices = c("cm", "in", "mm"),
-                                         selected = "cm", multiple = FALSE),
+        br(),
 
-                             numericInput(inputId = ns("dwnDPI"), label = "DPI", min = 75, max = 1000,
-                                          value = 300, step = 25),
+        shinyWidgets::dropdownButton(
+          h3("Download Options:"),
 
-                             selectInput(inputId = ns("fileType"), label = "File Type",
-                                         choices = c("tiff", "png", "eps", "ps", "tex", "pdf",
-                                                     "jpeg", "bmp", "svg", "wmf"),
-                                         selected = "tiff", multiple = FALSE),
+          numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
+                       value = 15, step = .5),
 
-                             downloadButton(outputId = ns("plotDwnld"), label = "Download Plot"),
-                    )
-        )
+          numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
+                       value = 15, step = .5),
+
+          selectInput(inputId = ns("plotUnit"), label = "Size Units",
+                      choices = c("cm", "in", "mm"),
+                      selected = "cm", multiple = FALSE),
+
+          numericInput(inputId = ns("dwnDPI"), label = "DPI", min = 75, max = 1000,
+                       value = 300, step = 25),
+
+          selectInput(inputId = ns("fileType"), label = "File Type",
+                      choices = c("tiff", "png", "eps", "ps", "tex", "pdf",
+                                  "jpeg", "bmp", "svg", "wmf"),
+                      selected = "tiff", multiple = FALSE),
+
+          circle = FALSE, status = "info", label = "Download Options", width = "300px",
+          tooltip = tooltipOptions(title = "Click to modify plot size"))
 
 
-      ),
+        ),
 
       mainPanel(
         textOutput(outputId = ns("warText")),
@@ -153,11 +160,11 @@ plotting_page <- function(input, output, session, descent_data)
                    )
 
                    output$lgTitleSize <- renderUI(
-                     numericInput(ns("lgTitleSize"), label = "Legend title (size)", value = 9, min = 4, max = 96, step = 1)
+                     sliderInput(ns("lgTitleSize"), label = "Legend title (size)", value = 9, min = 4, max = 48, step = 1)
                    )
 
                    output$lgTxtSize <- renderUI(
-                     numericInput(ns("lgTxtSize"), label = "Legend text (size)", value = 7, min = 4, max = 96, step = 1)
+                     sliderInput(ns("lgTxtSize"), label = "Legend text (size)", value = 7, min = 4, max = 48, step = 1)
                    )
                  },
 
@@ -246,7 +253,10 @@ plotting_page <- function(input, output, session, descent_data)
 
     output$plotOut <- ggiraph::renderGirafe(ggiraph::girafe(ggobj = reacVals$plotOut(),
                                                             width_svg = w(),
-                                                            height_svg = h()))
+                                                            height_svg = h(),
+                                                            options = list(
+                                                              ggiraph::opts_hover(css = "fill:wheat;stroke:orange;r:5pt;")
+                                                            )))
   })
 
   ### Create Warning Message ###
@@ -266,7 +276,7 @@ plotting_page <- function(input, output, session, descent_data)
 
   ### Download Plot ###
   reacVals$plotDwnld <- reactive(reacVals$plotOut())
-  reacVals$plotUnit <- reactive(switch(input$dwnUnit, "cm" = "cm", "in" = "in", "mm" = "mm"))
+  reacVals$plotUnit <- reactive(switch(input$plotUnit, "cm" = "cm", "in" = "in", "mm" = "mm"))
   reacVals$plotHt <- reactive(input$plotHt)
   reacVals$plotWd <- reactive(input$plotWd)
   reacVals$plotDPI <- reactive(input$dwnDPI)
