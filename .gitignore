@@ -8,3 +8,4 @@ Ontology-Descent.Rproj
 .gitignore
 *pptx
 BenchmarksV2.Rmd alias
+inst/doc

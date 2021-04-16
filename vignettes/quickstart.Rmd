@@ -21,7 +21,7 @@ Quickstast for us. Will grow this into a proper vigete.
 ```{r}
 library(ontologyDescent)
 
-load_all(".")
+load(here::here("R/sysdata.rda"))
 ```
 
 The data in dataClustereR.Rdata (net especially), are generated using networkeR but take a while to generate. Just loading them here instead.
@@ -34,14 +34,17 @@ This is how you generate the network data.
 
 Running clusterer. Outputs: igraph object, a result data.frame, and an list with community membership needed for internal stuff currently...
 
-If you are running this with new data, make sure that every ontology term provided is found in the network as things are curently crashing.
+If you are running this with new data, make sure that every ontology term provided is found in the network as things are currently crashing.
 
 ```{r}
 targets <- example_data$ontoID[1:50]
 #filter out any terms not found in the network.
-targets <- target[targets %in% V(net)$name]
+targets <- targets[targets %in% igraph::V(net)$name]
 
-results <- clustereR(net, GOnames, GOlength, targets, 
+results <- clustereR(ontoNet = net, 
+                     ontoNames = GOnames, 
+                     ontoLength = GOlength, 
+                     target = targets, 
                      filterTerms = c("RNA binding",
                                      "binding",
                                      "molecular_function",
@@ -52,7 +55,7 @@ Plotting the network as well.
 
 ```{r, out.width="100%", dpi=300}
 par(mar = c(0,0,0,0))
-plot(results$plot,
+igraph::plot.igraph(results$plot,
      vertex.label = NA,
      vertex.label.cex = 0.5,
      vertex.border.cex = 0.000001,

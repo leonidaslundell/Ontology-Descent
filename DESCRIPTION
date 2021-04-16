@@ -22,6 +22,15 @@ Imports:
     tools,
     ggbeeswarm,
     patchwork,
-    data.table
+    data.table,
+    RColorBrewer,
+    ggiraph,
+    ggsci,
+    igraph,
+    shinyWidgets
 Depends: 
-    R (>= 2.10)
+    R (>= 3.5.0)
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr
