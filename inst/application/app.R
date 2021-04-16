@@ -1,12 +1,11 @@
 ui <- shinyUI(fluidPage(
   # Application title
-  shiny::navbarPage("Ontology Descent: A data visualization tool for Gene Ontology Enrichment data",
+  shiny::navbarPage(title = "Ontology Descent: summarizing and visualizing complex enrichment data",
                     shiny::tabPanel("Data Entry", data_entry_page_ui("data_entry")),
                     shiny::tabPanel("Clustering", exploring_page_ui("clustering")),
                     shiny::tabPanel("Sorting", sorting_page_ui("sorting")),
                     shiny::tabPanel("Plotting", plotting_page_ui("plotting")),
-                    id = "mainApp"
-  )
+                    id = "mainApp")
 ))
 
 server <- shinyServer(function(input, output){

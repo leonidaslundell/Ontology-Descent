@@ -209,19 +209,46 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
       ggplot2::scale_color_manual(values = col, name = "Cluster", guide = "none")
   }
 
+  ### Create histogram counts to place next to dotplot ###
+  q <- ggplot(plot, aes(y=clusterName, fill = clusterName)) +
+    stat_count(show.legend = F) +
+    scale_fill_manual(values = col) +
+    scale_x_continuous(expand = c(0,0),
+                       limits = c(0, ceiling(max(table(plot$clusterName)) * 1.1)),
+                       breaks = ceiling(seq(0, max(table(plot$clusterName)) * 1.1, length.out = 3))) +
+    scale_y_discrete(position = "right") +
+    xlab("Counts") +
+    ylab("Pathways")
+
+  themeQ <- theme(axis.text.y = element_blank(),
+                  axis.ticks.y = element_blank())
+
   ### Set Theme ###
   if (themeSet == "bw"){
-    p <- p + ggplot2::theme_bw()
+    p <- p + ggplot2::theme_bw() + theme(axis.text.x = element_text(size = 8))
+    q <- q + ggplot2::theme_bw()  + theme(axis.text.x = element_text(size = 8),
+                                          axis.text.y = element_blank())#+ themeQ + theme(panel.border = element_rect(size = 1))
+
   } else if (themeSet == "classic"){
     p <- p + ggplot2::theme_classic()
+    q <- q + ggplot2::theme_classic() + themeQ
+
   } else if (themeSet == "grey"){
     p <- p + ggplot2::theme_grey()
+    q <- q + ggplot2::theme_gray() + themeQ
+
   } else if (themeSet == "minimal"){
     p <- p + ggplot2::theme_minimal()
+    q <- q + ggplot2::theme_minimal() + themeQ
+
   } else if (themeSet == "dark"){
     p <- p + ggplot2::theme_dark()
+    q <- q + ggplot2::theme_dark() + themeQ
+
   } else if (themeSet == "linedraw"){
     p <- p + ggplot2::theme_linedraw()
+    q <- q + ggplot2::theme_linedraw() + themeQ
+
   }
 
   ### Other Theme Options ###
@@ -231,6 +258,9 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
                           axis.title.y = ggplot2::element_blank(),
                           axis.title.x = ggplot2::element_text(size = axTitleSize))+
     ggplot2::coord_cartesian(clip = "off")
+
+  p <- p + q +
+    plot_layout(widths = c(.7, .3))
 
   return(p)
 }

@@ -10,11 +10,40 @@
 #' @export
 #'
 
-clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain", filterTerms = NULL){
+relabelleR <- function(ontoNet,
+                       ontoNames,
+                       target,
+                       filterTerms = c("molecular_function")){
+
+  #############
+  #just return the centralest from the cluster
+  connectedSubgraph <- all_shortest_paths(ontoNet, from = target, to = target, mode = "all")
+
+  connectedSubgraph <- connectedSubgraph$res
+  connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
+  ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
+
+  xMax <- centr_eigen(ontoNetSubgraph)$vector
+  xTerm <- ontoNames[V(ontoNetSubgraph)$name[which.max(xMax)]]
+
+  if(any(xTerm %in% filterTerms)){
+    xMax <- xMax[-which.max(xMax)]
+    xTerm <- ontoNames[x[which.max(xMax)]]
+    return(xTerm)
+  }else{
+    return(xTerm)
+  }
+}
+
+clustereR <- function(ontoNet,ontoNames, ontoLength, target,
+                      method = "louvain",
+                      filterTerms = c("molecular_function")){
 
   #############
   #network based clustering
+
   connectedSubgraph <- all_shortest_paths(ontoNet, from = target, to = target, mode = "all")
+
   connectedSubgraph <- connectedSubgraph$res
   connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
   ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
@@ -37,7 +66,6 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain"
 
     xSub <- igraph::induced_subgraph(ontoNet, x)
     xMax <- centr_eigen(xSub)$vector
-    print(sum(xMax %in% max(xMax)))
     xTerm <- ontoNames[x[which.max(xMax)]]
 
     if(any(xTerm %in% filterTerms)){
@@ -49,13 +77,13 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain"
     }
   })
 
-  names(clusterTerm) <- 1:max(ontoClust$membership)
+  names(clusterTerm) <- unique(ontoClust$membership)
 
   #############
   #prepare result table
 
   ontoClust <- data.frame(clusterNumber = ontoClust$membership,
-                          clusterTerm = unlist(clusterTerm[membership(ontoClust)]),
+                          clusterTerm = clusterTerm[as.character(ontoClust$membership)],
                           ontoID = ontoClust$names,
                           ontoTerm = ontoNames[ontoClust$names],
                           ontoLength = ontoLength[ontoClust$names])
@@ -63,7 +91,7 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain"
   #############
   #prepare network plot
 
-  cols <- colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(max(ontoClust$clusterNumber))
+  cols <- ggsci::pal_igv()(max(ontoClust$clusterNumber))
   cols <- sample(cols, max(ontoClust$clusterNumber), replace = F)
   cols <- cols[ontoClust$clusterNumber]
   ontoClust$color <- cols

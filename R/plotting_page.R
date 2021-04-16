@@ -44,7 +44,7 @@ plotting_page_ui <- function(id)
                                           value = 1, min = 0, max = 5, step = .25),
 
                              numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
-                                          value = 15, step = .5),
+                                          value = 7, step = .5),
 
                              numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
                                           value = 15, step = .5),
