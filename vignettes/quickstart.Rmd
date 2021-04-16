@@ -41,7 +41,8 @@ targets <- example_data$ontoID[1:50]
 #filter out any terms not found in the network.
 targets <- target[targets %in% V(net)$name]
 
-results <- clustereR(net, GOnames, GOlength, targets, 
+results <- clustereR(mf_hsa, 
+                     targets, 
                      filterTerms = c("RNA binding",
                                      "binding",
                                      "molecular_function",
