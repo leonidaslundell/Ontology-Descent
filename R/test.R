@@ -1,3 +1,8 @@
+#' Get test data
+#'
+#' @param size integer, number of terms to return
+#'
+#' @return string example_data
 get_test_data <- function(size = "big") {
 
   if(size == "big"){
