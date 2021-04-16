@@ -66,6 +66,3 @@ A ggplot object.
 \description{
 Plot Enrichment By Cluster
 }
-\examples{
-
-}
