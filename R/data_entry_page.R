@@ -210,13 +210,12 @@ validate_input <- function(x, type) {
 #' @param x character, data to be read
 #' @param type character, type of input. Determines which function to read.
 #'
-#' @return
+#' @return data.table containing the data in the file or text supplied with x
 #' @export
-#'
-#' @examples
 read_input <- function(x, type) {
   if (type == "xlsx") {
     out <- openxlsx::read.xlsx(xlsxFile = x, colNames = TRUE)
+    data.table::setDT(out)
   } else if (type == "csv") {
     out <- data.table::fread(file = x, header = TRUE)
   } else if (type == "text") {

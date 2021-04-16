@@ -3,8 +3,6 @@
 #'
 #' @return
 #' @export
-#'
-#' @examples
 themeIcon <- function(){
   nm <- c(
     sprintf("<img src='theme_bw.png' width=75px><div class='jhr'>%s</div></img>", "bw"),
@@ -21,8 +19,6 @@ themeIcon <- function(){
 #'
 #' @return
 #' @export
-#'
-#' @examples
 pchIcon <- function(){
   nm <- c()
 
@@ -45,9 +41,6 @@ pchIcon <- function(){
 #'
 #' @return character vector with shortened ontology terms
 #' @export
-#'
-#' @examples
-#'
 cutText <- function(text, cutoff){
   sub <- data.frame("word" = c("\\<regulation\\>", "\\<activity\\>", "\\<positive\\>",
                                "\\<negative\\>", "involved in", "ic process", "\\<pathway\\>",
@@ -108,9 +101,6 @@ cutText <- function(text, cutoff){
 #' @import ggbeeswarm
 #' @import patchwork
 #' @export
-#'
-#' @examples
-#'
 clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, clusterNumber = NULL,
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
                          plotEnrichment = FALSE, coordFlip = FALSE,
@@ -293,8 +283,6 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @import ggsci
 #' @import patchwork
 #' @export
-#'
-#' @examples
 pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNumber = NULL,
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
                          plotEnrichment = FALSE, coordFlip = FALSE,
