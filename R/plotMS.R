@@ -106,6 +106,7 @@ cutText <- function(text, cutoff){
 #' @import RColorBrewer
 #' @import ggsci
 #' @import ggbeeswarm
+#' @import patchwork
 #' @export
 #'
 #' @examples
@@ -290,6 +291,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @import ggplot2
 #' @import RColorBrewer
 #' @import ggsci
+#' @import patchwork
 #' @export
 #'
 #' @examples
