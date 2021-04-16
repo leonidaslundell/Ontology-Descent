@@ -51,7 +51,7 @@ clustereR <- function(ontoNet,
                                fast_greedy = igraph::cluster_fast_greedy(igraph::as.undirected(ontoNetSubgraph))$membership,
                                leading_eigen = igraph::cluster_leading_eigen(igraph::s.undirected(ontoNetSubgraph))$membership,
                                louvain = igraph::cluster_louvain(igraph::as.undirected(ontoNetSubgraph))$membership,
-                               leiden = leiden::leiden(igraph::igraph::as_adjacency_matrix(igraph::as.undirected(ontoNetSubgraph)),
+                               leiden = leiden::leiden(igraph::as_adjacency_matrix(igraph::as.undirected(ontoNetSubgraph)),
                                                        resolution_parameter = .5),
                                walktrap = igraph::cluster_walktrap(igraph::as.undirected(ontoNetSubgraph))$membership)
 
