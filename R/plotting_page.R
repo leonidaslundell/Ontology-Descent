@@ -41,12 +41,6 @@ plotting_page_ui <- function(id)
                              numericInput(ns("dotSize"), label = "Dot Size",
                                           value = 1, min = 0, max = 5, step = .25),
 
-                             numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
-                                          value = 7, step = .5),
-
-                             numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
-                                          value = 15, step = .5),
-
                              selectInput(inputId = ns("plotUnit"), label = "Size Units",
                                          choices = c("cm", "in", "mm"),
                                          selected = "cm", multiple = FALSE),
@@ -79,10 +73,10 @@ plotting_page_ui <- function(id)
 
                     tabPanel(title = "Download:",
 
-                             numericInput(inputId = ns("dwnHt"), label = "Plot Height", min = 2, max = 50,
+                             numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
                                           value = 15, step = .5),
 
-                             numericInput(inputId = ns("dwnWd"), label = "Plot Width", min = 2, max = 50,
+                             numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
                                           value = 15, step = .5),
 
                              selectInput(inputId = ns("dwnUnit"), label = "Size Units",
@@ -107,7 +101,7 @@ plotting_page_ui <- function(id)
       mainPanel(
         textOutput(outputId = ns("warText")),
 
-        ggiraph::girafeOutput(outputId = ns("plotOut"), height = 1500)
+        ggiraph::girafeOutput(outputId = ns("plotOut"), width = "100%", height = 750)
       )
     )
   )
@@ -273,8 +267,8 @@ plotting_page <- function(input, output, session, descent_data)
   ### Download Plot ###
   reacVals$plotDwnld <- reactive(reacVals$plotOut())
   reacVals$plotUnit <- reactive(switch(input$dwnUnit, "cm" = "cm", "in" = "in", "mm" = "mm"))
-  reacVals$plotHt <- reactive(input$dwnHt)
-  reacVals$plotWd <- reactive(input$dwnWd)
+  reacVals$plotHt <- reactive(input$plotHt)
+  reacVals$plotWd <- reactive(input$plotWd)
   reacVals$plotDPI <- reactive(input$dwnDPI)
   reacVals$fileType <- reactive(input$fileType)
 

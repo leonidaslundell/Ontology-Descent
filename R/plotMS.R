@@ -230,8 +230,8 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
                  axis.text.x = ggplot2::element_text(size = axTxtSize),
                  axis.title.x = ggplot2::element_text(size = axTitleSize),
                  axis.title.y = ggplot2::element_blank(),
-                 axis.text.y = element_blank(),
-                 axis.ticks.y = element_blank())
+                 axis.text.y = ggplot2::element_blank(),
+                 axis.ticks.y = ggplot2::element_blank())
 
   p <- p + ggplot2::theme(text = ggplot2::element_text(family = fontFam),
                           axis.text.y = ggplot2::element_text(size = nameSize),
@@ -240,8 +240,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
                           axis.title.x = ggplot2::element_text(size = axTitleSize))+
     ggplot2::coord_cartesian(clip = "off")
 
-  p <- p + q +
-    plot_layout(widths = c(.7, .3))
+  p <- p + q + patchwork::plot_layout(widths = c(.7, .3))
 
   return(p)
 }
