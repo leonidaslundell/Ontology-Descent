@@ -1,10 +1,12 @@
 get_test_data <- function(size = "big") {
 
   if(size == "big"){
-    rand <- sample(1:nrow(example_data), 300, replace = F)
+    n_terms <- 300
   } else {
-    rand <- sample(1:nrow(example_data), 50, replace = F)
+    n_terms <- 50
   }
+
+  rand <- sample(nrow(example_data), n_terms, replace = F)
 
   example_data <-
     paste(
