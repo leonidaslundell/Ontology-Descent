@@ -132,6 +132,7 @@ data_entry_page <- function(input, output, session, descent_data)
   observeEvent(input$dummy,
                {
                  dummy_ref <- get_test_data()
+                 descent_data$net <- mf_hsa
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref
                  )
@@ -140,9 +141,41 @@ data_entry_page <- function(input, output, session, descent_data)
   observeEvent(input$dummy_short,
                {
                  dummy_ref <- get_test_data(size = "short")
+                 descent_data$net <- mf_hsa
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref
                  )
+               })
+  c("GO Biological Processes", "GO Cellular Component", "GO Molecular Function", "Reactome")
+  #select network to cluster on
+  observeEvent(input$datatype,
+               {
+                 switch(input$datatype,
+                        `GO Biological Processes` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- bp_hsa
+                          }else{
+                            descent_data$net <- bp_mmu
+                          }
+                        },
+                        `GO Cellular Component` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- cc_hsa
+                          }else{
+                            descent_data$net <- cc_mmu
+                          }
+                        },
+                        `GO Molecular Function` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- mf_hsa
+                          }else{
+                            descent_data$net <- mf_mmu
+                          }
+                        },
+                        `Reactome` = {
+                          showNotification("Not implemented yet")
+                        }
+                        )
                })
 
 

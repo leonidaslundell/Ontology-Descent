@@ -38,9 +38,7 @@ exploring_page <- function(input, output, session, descent_data)
 {
   observeEvent(input$clusterButton,{
 
-    results <- clustereR(ontoNet = net,
-                         ontoNames = GOnames,
-                         ontoLength = GOlength,
+    results <- clustereR(ontoNet = descent_data$net,
                          method = "leiden",
                          target = descent_data$inputData$ontoID)
 
