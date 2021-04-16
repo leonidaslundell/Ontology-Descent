@@ -12,7 +12,7 @@ read_input(x, type)
 \item{type}{character, type of input. Determines which function to read.}
 }
 \value{
-
+data.table containing the data in the file or text supplied with x
 }
 \description{
 Data reader

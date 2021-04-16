@@ -74,7 +74,7 @@ sorting_page <- function(input, output, session, descent_data)
 
     if(any(input$shown_groups %in% "create new cluster")){
       idx_in_cluster <- descent_data$inputData$ontoTerm %in% input[["create new cluster"]]
-      term <- relabelleR(net, GOnames, target = descent_data$inputData$ontoID[idx_in_cluster])
+      term <- relabelleR(descent_data$net, target = descent_data$inputData$ontoID[idx_in_cluster])
       descent_data$inputData$clusterTerm[idx_in_cluster] <- term
 
       updateCheckboxGroupInput(session = session,
