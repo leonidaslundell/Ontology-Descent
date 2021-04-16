@@ -8,7 +8,7 @@ get_test_data <- function(size = "big") {
 
   rand <- sample(nrow(example_data), n_terms, replace = F)
 
-  example_data <-
+  out <-
     paste(
       example_data$ontoID[rand],
       example_data$pValue[rand],
@@ -17,7 +17,7 @@ get_test_data <- function(size = "big") {
       sep = "\t",
       collapse = "\n"
     )
-  example_data <- paste0("ontoID\tpValue\tenrichmentScore\tdirection\n", example_data)
+  out <- paste0("ontoID\tpValue\tenrichmentScore\tdirection\n", out)
 
-  return(example_data)
+  return(out)
 }
