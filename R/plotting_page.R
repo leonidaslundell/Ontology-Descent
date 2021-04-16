@@ -38,8 +38,6 @@ plotting_page_ui <- function(id)
 
                              uiOutput(ns("lgdPosition")),
 
-                             uiOutput(ns("dotShape")),
-
                              numericInput(ns("dotSize"), label = "Dot Size",
                                           value = 1, min = 0, max = 5, step = .25),
 
@@ -109,7 +107,7 @@ plotting_page_ui <- function(id)
       mainPanel(
         textOutput(outputId = ns("warText")),
 
-        ggiraph::girafeOutput(outputId = ns("plotOut"), height = 750)
+        ggiraph::girafeOutput(outputId = ns("plotOut"), height = 1500)
       )
     )
   )
@@ -148,7 +146,6 @@ plotting_page <- function(input, output, session, descent_data)
 
     } else if (pn > 50 | cn > 10){
       updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway (Unavailable)" = "long"), selected = "clust")
-
     }
   })
 
@@ -156,17 +153,6 @@ plotting_page <- function(input, output, session, descent_data)
   observe(switch(input$plotType,
                  "pth" = {
                    updateNumericInput(session, "dotSize", label = "Dot Size", value = 2, min = 0, max = 5, step = .25)
-
-                   if(isTRUE(input$axisType)){
-                     output$dotShape <- renderUI(
-                       shinyWidgets::pickerInput(inputId = ns("dotShape"), label = "Dot Shape",
-                                                 choices = c(1:25), selected = 19, multiple = FALSE,
-                                                 choicesOpt = list(content = pchIcon()))
-                     )
-
-                   } else if (!isTRUE(input$axisType)){
-                     output$dotShape <- NULL
-                   }
 
                    output$lgdPosition <- renderUI(
                      selectInput(ns("lgdPosition"), label = "Legend Position", choices = c("top", "bottom"), selected = "bottom")
@@ -180,14 +166,9 @@ plotting_page <- function(input, output, session, descent_data)
                      numericInput(ns("lgTxtSize"), label = "Legend text (size)", value = 7, min = 4, max = 96, step = 1)
                    )
                  },
+
                  "clust" = {
                    updateNumericInput(session, "dotSize", label = "Dot Size", value = 1, min = 0, max = 5, step = .25)
-
-                   output$dotShape <- renderUI(
-                     shinyWidgets::pickerInput(inputId = ns("dotShape"), label = "Dot Shape",
-                                               choices = c(1:25), selected = 19, multiple = FALSE,
-                                               choicesOpt = list(content = pchIcon()))
-                   )
 
                    output$lgdPosition <- NULL
 
@@ -219,7 +200,6 @@ plotting_page <- function(input, output, session, descent_data)
                                                           colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
                                                           dotSize = input$dotSize,
-                                                          dotShape = dotShape(),
                                                           themeSet = input$themeSet,
                                                           lgdPosition = input$lgdPosition,
                                                           nameSize = input$nameSize,
@@ -243,7 +223,6 @@ plotting_page <- function(input, output, session, descent_data)
                                                           colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
                                                           dotSize = input$dotSize,
-                                                          dotShape = as.numeric(input$dotShape),
                                                           themeSet = input$themeSet,
                                                           nameSize = input$nameSize,
                                                           axTxtSize = input$axTxtSize,

@@ -34,27 +34,6 @@ themeIcon <- function(){
   return(nm)
 }
 
-#' Load Ggplot Shape Icons
-#'
-#' @return
-#' @export
-#'
-#' @examples
-pchIcon <- function(){
-  nm <- c()
-
-  for(i in 1:25){
-    nm <- c(nm,
-            sprintf(
-              paste("<img src='s", i, ".png' ", "width=50px><div class='jhr'>%s</div></img>", sep = ""),
-              paste("shape", i, sep = " ")
-            )
-    )
-  }
-
-  return(nm)
-}
-
 #' Shorten Ontology Terms
 #'
 #' @param text character vector - ontology terms
@@ -109,7 +88,6 @@ cutText <- function(text, cutoff){
 #' @param direction Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.
 #' @param plotEnrichment Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.
 #' @param dotSize Optional. Numeric. Dot size in plots. Default == 1.
-#' @param dotShape Optional. Numeric. Select ggplot2 pch shape. Default == 19.
 #' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"
 #' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"
 #' @param nameSize Optional. A numeric value setting font size for cluster names. Default == 7.
@@ -129,8 +107,7 @@ cutText <- function(text, cutoff){
 clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, clusterNumber = NULL,
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
                          plotEnrichment = FALSE,
-                         dotSize = 1, dotShape = 19,
-                         themeSet = "minimal", colorSet = "IGV",
+                         dotSize = 1, themeSet = "minimal", colorSet = "IGV",
                          nameSize = 8, axTxtSize = 8, axTitleSize = 10, fontFam = "sans"){
 
   ### Create plotting Data Frame ###
@@ -191,7 +168,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 
     p <- ggplot2::ggplot(plot,
                          ggplot2::aes(x = -log10(pValue), y = clusterName, fill = clusterName, color = clusterName))+
-      ggbeeswarm::geom_quasirandom(groupOnX = FALSE, pch = dotShape, size = dotSize)+
+      ggbeeswarm::geom_quasirandom(groupOnX = FALSE, size = dotSize)+
       ggplot2::scale_x_continuous("-log10 P Value", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
       ggplot2::scale_fill_manual(values = col, name = "Cluster", guide = "none")+
       ggplot2::scale_color_manual(values = col, name = "Cluster", guide = "none")
@@ -203,7 +180,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 
     p <- ggplot2::ggplot(plot, ggplot2::aes(x = enrichmentScore, y = clusterName, fill = clusterName, color = clusterName))+
       ggplot2::geom_vline(xintercept = 0, lty = "dashed")+
-      ggbeeswarm::geom_quasirandom(groupOnX = FALSE, pch = dotShape, size = dotSize)+
+      ggbeeswarm::geom_quasirandom(groupOnX = FALSE, size = dotSize)+
       ggplot2::scale_x_continuous("Enrichment Score", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
       ggplot2::scale_fill_manual(values = col, name = "Cluster", guide = "none")+
       ggplot2::scale_color_manual(values = col, name = "Cluster", guide = "none")
@@ -220,38 +197,41 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
     xlab("Counts") +
     ylab("Pathways")
 
-  themeQ <- theme(axis.text.y = element_blank(),
-                  axis.ticks.y = element_blank())
-
   ### Set Theme ###
   if (themeSet == "bw"){
-    p <- p + ggplot2::theme_bw() + theme(axis.text.x = element_text(size = 8))
-    q <- q + ggplot2::theme_bw()  + theme(axis.text.x = element_text(size = 8),
-                                          axis.text.y = element_blank())#+ themeQ + theme(panel.border = element_rect(size = 1))
+    p <- p + ggplot2::theme_bw()
+    q <- q + ggplot2::theme_bw()
 
   } else if (themeSet == "classic"){
     p <- p + ggplot2::theme_classic()
-    q <- q + ggplot2::theme_classic() + themeQ
+    q <- q + ggplot2::theme_classic()
 
   } else if (themeSet == "grey"){
     p <- p + ggplot2::theme_grey()
-    q <- q + ggplot2::theme_gray() + themeQ
+    q <- q + ggplot2::theme_gray()
 
   } else if (themeSet == "minimal"){
     p <- p + ggplot2::theme_minimal()
-    q <- q + ggplot2::theme_minimal() + themeQ
+    q <- q + ggplot2::theme_minimal()
 
   } else if (themeSet == "dark"){
     p <- p + ggplot2::theme_dark()
-    q <- q + ggplot2::theme_dark() + themeQ
+    q <- q + ggplot2::theme_dark()
 
   } else if (themeSet == "linedraw"){
     p <- p + ggplot2::theme_linedraw()
-    q <- q + ggplot2::theme_linedraw() + themeQ
+    q <- q + ggplot2::theme_linedraw()
 
   }
 
   ### Other Theme Options ###
+  q <- q + theme(text = ggplot2::element_text(family = fontFam),
+                 axis.text.x = ggplot2::element_text(size = axTxtSize),
+                 axis.title.x = ggplot2::element_text(size = axTitleSize),
+                 axis.title.y = ggplot2::element_blank(),
+                 axis.text.y = element_blank(),
+                 axis.ticks.y = element_blank())
+
   p <- p + ggplot2::theme(text = ggplot2::element_text(family = fontFam),
                           axis.text.y = ggplot2::element_text(size = nameSize),
                           axis.text.x = ggplot2::element_text(size = axTxtSize),
@@ -277,10 +257,9 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @param direction Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.
 #' @param plotEnrichment Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.
 #' @param dotSize Optional. Numeric. Dot size in plots. Default == 2.
-#' @param dotShape Optional. Numeric. Select ggplot2 pch shape. Default == 19.
 #' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"
 #' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"
-#' @param lgdPosition Optional. A character string setting the legend position: one of "right", "left", "top" or "bottom". Default == "right".
+#' @param lgdPosition Optional. A character string setting the legend position: one of "right", "left", "top" or "bottom". Default == "bottom".
 #' @param nameSize Optional. A numeric value setting font size for cluster names. Default == 7.
 #' @param axTxtSize Optional. A numeric value setting font size for the axis text. Defualt == 7.
 #' @param axTitleSize Optional. A numeric value setting font size for the axis title. Default == 9.
@@ -298,8 +277,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNumber = NULL,
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
                          plotEnrichment = FALSE,
-                         dotSize = 2, dotShape = 19,
-                         themeSet = "minimal", colorSet = "IGV", lgdPosition = "right",
+                         dotSize = 2, themeSet = "minimal", colorSet = "IGV", lgdPosition = "bottom",
                          nameSize = 7, axTxtSize = 7, axTitleSize = 9, lgTxtSize = 7, lgTitleSize = 9, fontFam = "sans"){
 
   ### Create plotting Data Frame ###
@@ -364,7 +342,7 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
       ### 1.1 Plot Without Indicating Direction (direction == NULL) ###
 
       p <- ggplot2::ggplot(plot, ggplot2::aes(x = -log10(pValue), y = ontoTerm, fill = clusterName, color = clusterName))+
-        ggplot2::geom_point(pch = dotShape, size = dotSize)+
+        ggplot2::geom_point(size = dotSize)+
         ggplot2::scale_x_continuous("-log10 P Value", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
         ggplot2::scale_fill_manual(values = col, name = "Cluster")+
         ggplot2::scale_color_manual(values = col, name = "Cluster")
@@ -391,7 +369,7 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
 
     p <- ggplot2::ggplot(plot, ggplot2::aes(x = enrichmentScore, y = ontoTerm, fill = clusterName, color = clusterName))+
       ggplot2::geom_vline(xintercept = 0, lty = "dashed")+
-      ggplot2::geom_point(pch = dotShape, size = dotSize)+
+      ggplot2::geom_point(size = dotSize)+
       ggplot2::scale_x_continuous("Enrichment Score", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
       ggplot2::scale_fill_manual(values = col, name = "Cluster")+
       ggplot2::scale_color_manual(values = col, name = "Cluster")
@@ -441,5 +419,3 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
 
   return(p)
 }
-
-
