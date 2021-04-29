@@ -11,19 +11,21 @@ exploring_page_ui <- function(id)
 
     titlePanel("Cluster and explore"),
 
-    sidebarLayout(
-      sidebarPanel(
+    fluidRow(
+     column(4,
         actionButton(ns("clusterButton"),
-                     label = "Cluster!")
-        ),
-
-      mainPanel(
+                     label = "Cluster!"),
         plotOutput(outputId = ns("netPlotOut"), height = 750,
                    brush = ns("netSelect"))
-      )
-    )
+      ),
+     column(2,
+            uiOutput(ns("shown_groups")),
+            uiOutput(ns("move")))
+            ,
+     column(6,uiOutput(ns("sorting_boxes")))
   )
-}
+)
+  }
 
 #' Server for the clustering page
 #'
@@ -33,9 +35,11 @@ exploring_page_ui <- function(id)
 #' @param descent_data reactiveValues, contains gene ontology data
 #'
 #' @import shiny
+#' @importFrom sortable bucket_list
 #' @export
 exploring_page <- function(input, output, session, descent_data)
 {
+  ns <- session$ns
   observeEvent(input$clusterButton,{
 
     results <- clustereR(ontoNet = descent_data$net,
@@ -64,7 +68,70 @@ exploring_page <- function(input, output, session, descent_data)
            vertex.border.cex = 0.000001,
            asp = 0,
            axes = F)
+      output$shown_groups <- renderUI({
+        checkboxGroupInput(ns("shown_groups"),
+                           label = "Select groups to show",
+                           choices = "No clusters defined yet")
+      })
+        output$move <- renderUI ({
+          actionButton(inputId = ns("move"), label = "Redefine clusters")
+
+
+      })
+
     })
 
+  })
+  observe(req(descent_data$inputData$clusterNumber,
+              descent_data$inputData$clusterTerm))
+
+  observeEvent(descent_data$clustered, {
+    if (descent_data$clustered$exists) { #No need to edit anything if the page is not active
+      updateCheckboxGroupInput(session = session,
+                               inputId = "shown_groups",
+                               choices = c(sort(unique(descent_data$inputData$clusterTerm)),
+                                           "create new cluster"))
+
+
+    }
+  })
+
+  output$sorting_boxes <- renderUI({
+    req(input$shown_groups)
+
+    boxes_list <- list(header = NULL,
+                       group_name = "bucket_list_group",
+                       orientation = "horizontal")
+
+    for (i in input$shown_groups) {
+      idx_in_cluster <- descent_data$inputData$clusterTerm == i
+      ontologies_in_cluster <- descent_data$inputData$ontoTerm[idx_in_cluster]
+      this_ranked_list <- sortable::add_rank_list(
+        text = i,
+        labels = as.list(ontologies_in_cluster),
+        input_id = ns(i),
+        options = sortable::sortable_options(multiDrag = TRUE)
+      )
+      boxes_list <- append(boxes_list, list(this_ranked_list))
+    }
+    do.call(what = "bucket_list", boxes_list)
+  })
+
+  observeEvent(input$move, {
+    for (i in input$shown_groups[!input$shown_groups %in% "create new cluster"]){
+      idx_in_cluster <- descent_data$inputData$ontoTerm %in% input[[i]]
+      descent_data$inputData$clusterTerm[idx_in_cluster] <- i
+    }
+
+    if(any(input$shown_groups %in% "create new cluster")){
+      idx_in_cluster <- descent_data$inputData$ontoTerm %in% input[["create new cluster"]]
+      term <- relabelleR(descent_data$net, target = descent_data$inputData$ontoID[idx_in_cluster])
+      descent_data$inputData$clusterTerm[idx_in_cluster] <- term
+
+      updateCheckboxGroupInput(session = session,
+                               inputId = "shown_groups",
+                               choices = c(sort(unique(descent_data$inputData$clusterTerm)),
+                                           "create new cluster"))
+    }
   })
 }
