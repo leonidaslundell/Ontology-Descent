@@ -7,3 +7,5 @@ Ontology-Descent.Rproj
 .Rapp.history
 .gitignore
 *pptx
+BenchmarksV2.Rmd alias
+inst/doc

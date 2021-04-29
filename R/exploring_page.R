@@ -7,22 +7,19 @@
 exploring_page_ui <- function(id)
 {
   ns <- shiny::NS(id)
-  fluidPage( # flexible layout function
+  fluidPage(
 
-    # Title
-    titlePanel("Run clustering and explore data"),
+    titlePanel("Cluster and explore"),
 
-    sidebarLayout(  # standard inputs on sidebar, outputs in main area layout
-      sidebarPanel( # sidebar configuration
-        actionButton(ns("clusterButton"),      # this is the name of the
-                     # variable- this will be passed to server.R
+    sidebarLayout(
+      sidebarPanel(
+        actionButton(ns("clusterButton"),
                      label = "Cluster!")
         ),
 
-      # Show a plot of the generated distribution
-      mainPanel( # main output configuration
-        plotOutput(outputId = ns("netPlotOut"), height = 750)
-        # element as defined in server.R
+      mainPanel(
+        plotOutput(outputId = ns("netPlotOut"), height = 750,
+                   brush = ns("netSelect"))
       )
     )
   )
@@ -41,18 +38,21 @@ exploring_page <- function(input, output, session, descent_data)
 {
   observeEvent(input$clusterButton,{
 
-    results <- clustereR(ontoNet = net,
-                         ontoNames = GOnames,
-                         ontoLength = GOlength,
-                         method = "louvain",
+    results <- clustereR(ontoNet = descent_data$net,
+                         method = "leiden",
                          target = descent_data$inputData$ontoID)
 
 
-    # descent_data$inputData
 
     descent_data$inputData <- merge(descent_data$inputData[,colnames(descent_data$inputData) %in%
-                                                             c("ontoID", "direction", "pValue", "enrichmentScore")],
-                                    results$res, by = "ontoID", order = F)
+                                                             c("ontoID",
+                                                               "direction",
+                                                               "pValue",
+                                                               "enrichmentScore"), with = F],
+                                    results$res,
+                                    by = "ontoID", order = F)
+
+    descent_data$clustered <- list(exists =  T)
 
 
 

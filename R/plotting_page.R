@@ -2,7 +2,7 @@
 #'
 #' @param id unique id for this module
 #'
-#' @import shiny ggiraph shinyWidgets
+#' @import shiny ggiraph shinyWidgets xlsx
 #' @export
 plotting_page_ui <- function(id)
 {
@@ -24,92 +24,91 @@ plotting_page_ui <- function(id)
 
         checkboxInput(inputId = ns("axisType"), label = "Plot enrichmentScore (replaces pValue)", value = FALSE),
 
-        checkboxInput(inputId = ns("coordFlip"), label = "Flip X and Y axes", value = FALSE),
-
         actionButton(inputId = ns("actPlot"), label = "Show plot"),
 
-        tabsetPanel(id = "Graphical Options",
+        downloadButton(outputId = ns("dataDwnld"), label = "Download Data"),
 
-                    tabPanel(title = "Style:",
-                             shinyWidgets::pickerInput(inputId = ns("themeSet"), label = "Plot Theme",
-                                                       choices = c("bw", "classic", "grey", "minimal", "dark", "linedraw"),
-                                                       selected = "minimal", multiple = FALSE,
-                                                       choicesOpt = list(content = themeIcon())),
+        downloadButton(outputId = ns("plotDwnld"), label = "Download Plot"),
 
-                             uiOutput(ns("lgdPosition")),
+        br(),
+        br(),
 
-                             uiOutput(ns("dotShape")),
+        shinyWidgets::pickerInput(inputId = ns("themeSet"), label = "Plot Theme",
+                                  choices = c("bw", "classic", "grey", "minimal", "dark", "linedraw"),
+                                  selected = "minimal", multiple = FALSE,
+                                  choicesOpt = list(content = themeIcon())),
 
-                             numericInput(ns("dotSize"), label = "Dot Size",
-                                          value = 1, min = 0, max = 5, step = .25),
+        sliderInput(ns("dotSize"), label = "Dot Size",
+                    value = 1, min = 0, max = 5, step = .5),
 
-                             numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
-                                          value = 15, step = .5),
+        uiOutput(ns("lgdPosition")),
 
-                             numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
-                                          value = 15, step = .5),
+        actionButton(inputId = ns("upDate1"), label = "Refresh Plot"),
 
-                             selectInput(inputId = ns("plotUnit"), label = "Size Units",
-                                         choices = c("cm", "in", "mm"),
-                                         selected = "cm", multiple = FALSE),
+        br(),
+        br(),
 
-                             actionButton(inputId = ns("upDate1"), label = "Update")
-                             ),
+        shinyWidgets::dropdownButton(
+          h3("Text Options:"),
 
-                    tabPanel(title = "Text:",
-                             selectInput(ns("fontFam"), label = "Font Family",
-                                         choices = c("Sans (Arial)" = "sans",
-                                                     "Serif (Times New Roman)" = "serif",
-                                                     "Mono (Courier New)" = "mono"),
-                                         selected = "sans", multiple = FALSE),
+          selectInput(ns("fontFam"), label = "Font Family",
+                      choices = c("Sans (Arial)" = "sans",
+                                  "Serif (Times New Roman)" = "serif",
+                                  "Mono (Courier New)" = "mono"),
+                      selected = "sans", multiple = FALSE),
 
-                             numericInput(ns("axTitleSize"), label = "Axis title (size)",
-                                          value = 9, min = 4, max = 96, step = 1),
+          sliderInput(ns("axTitleSize"), label = "Axis title (size)",
+                      value = 9, min = 4, max = 48, step = 1),
 
-                             numericInput(ns("nameSize"), label = "Pathway Names (size)",
-                                          value = 7, min = 4, max = 96, step = 1),
+          sliderInput(ns("nameSize"), label = "Pathway Names (size)",
+                       value = 7, min = 4, max = 48, step = 1),
 
-                             numericInput(ns("axTxtSize"), label = "Axis text (size)",
-                                          value = 7, min = 4, max = 96, step = 1),
+          sliderInput(ns("axTxtSize"), label = "Axis text (size)",
+                       value = 7, min = 4, max = 48, step = 1),
 
-                             uiOutput(ns("lgTitleSize")),
+          uiOutput(ns("lgTitleSize")),
 
-                             uiOutput(ns("lgTxtSize")),
+          uiOutput(ns("lgTxtSize")),
 
-                             actionButton(inputId = ns("upDate2"), label = "Update")
-                             ),
+          actionButton(inputId = ns("upDate2"), label = "Refresh Plot"),
 
-                    tabPanel(title = "Download:",
+          circle = FALSE, status = "info", label = "Text Options", width = "300px",
+          tooltip = tooltipOptions(title = "Click to modify text")
+        ),
 
-                             numericInput(inputId = ns("dwnHt"), label = "Plot Height", min = 2, max = 50,
-                                          value = 15, step = .5),
+        br(),
 
-                             numericInput(inputId = ns("dwnWd"), label = "Plot Width", min = 2, max = 50,
-                                          value = 15, step = .5),
+        shinyWidgets::dropdownButton(
+          h3("Download Options:"),
 
-                             selectInput(inputId = ns("dwnUnit"), label = "Size Units",
-                                         choices = c("cm", "in", "mm"),
-                                         selected = "cm", multiple = FALSE),
+          numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
+                       value = 15, step = .5),
 
-                             numericInput(inputId = ns("dwnDPI"), label = "DPI", min = 75, max = 1000,
-                                          value = 300, step = 25),
+          numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
+                       value = 15, step = .5),
 
-                             selectInput(inputId = ns("fileType"), label = "File Type",
-                                         choices = c("tiff", "png", "eps", "ps", "tex", "pdf",
-                                                     "jpeg", "bmp", "svg", "wmf"),
-                                         selected = "tiff", multiple = FALSE),
+          selectInput(inputId = ns("plotUnit"), label = "Size Units",
+                      choices = c("cm", "in", "mm"),
+                      selected = "cm", multiple = FALSE),
 
-                             downloadButton(outputId = ns("plotDwnld"), label = "Download Plot"),
-                    )
-        )
+          numericInput(inputId = ns("dwnDPI"), label = "DPI", min = 75, max = 1000,
+                       value = 300, step = 25),
+
+          selectInput(inputId = ns("fileType"), label = "File Type",
+                      choices = c("tiff", "png", "eps", "ps", "tex", "pdf",
+                                  "jpeg", "bmp", "svg", "wmf"),
+                      selected = "tiff", multiple = FALSE),
+
+          circle = FALSE, status = "info", label = "Download Options", width = "300px",
+          tooltip = tooltipOptions(title = "Click to modify plot size"))
 
 
-      ),
+        ),
 
       mainPanel(
         textOutput(outputId = ns("warText")),
 
-        ggiraph::girafeOutput(outputId = ns("plotOut"), height = 750)
+        ggiraph::girafeOutput(outputId = ns("plotOut"), width = "100%", height = 750)
       )
     )
   )
@@ -146,48 +145,31 @@ plotting_page <- function(input, output, session, descent_data)
     if (pn <= 50 & cn <= 10) {
       updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway" = "pth"), selected = "clust")
 
-      } else if (pn > 50 | cn > 10){
-        updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway (Unavailable)" = "long"), selected = "clust")
-
-        }
-    })
+    } else if (pn > 50 | cn > 10){
+      updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway (Unavailable)" = "long"), selected = "clust")
+    }
+  })
 
   ### Plot Type Based Options - Dot Size / Dot Shape / Legend Position / Legend Text ###
   observe(switch(input$plotType,
                  "pth" = {
                    updateNumericInput(session, "dotSize", label = "Dot Size", value = 2, min = 0, max = 5, step = .25)
 
-                   if(isTRUE(input$axisType)){
-                     output$dotShape <- renderUI(
-                       shinyWidgets::pickerInput(inputId = ns("dotShape"), label = "Dot Shape",
-                                                 choices = c(1:25), selected = 19, multiple = FALSE,
-                                                 choicesOpt = list(content = pchIcon()))
-                     )
-
-                   } else if (!isTRUE(input$axisType)){
-                     output$dotShape <- NULL
-                   }
-
                    output$lgdPosition <- renderUI(
                      selectInput(ns("lgdPosition"), label = "Legend Position", choices = c("top", "bottom"), selected = "bottom")
                    )
 
                    output$lgTitleSize <- renderUI(
-                     numericInput(ns("lgTitleSize"), label = "Legend title (size)", value = 9, min = 4, max = 96, step = 1)
+                     sliderInput(ns("lgTitleSize"), label = "Legend title (size)", value = 9, min = 4, max = 48, step = 1)
                    )
 
                    output$lgTxtSize <- renderUI(
-                     numericInput(ns("lgTxtSize"), label = "Legend text (size)", value = 7, min = 4, max = 96, step = 1)
-                     )
+                     sliderInput(ns("lgTxtSize"), label = "Legend text (size)", value = 7, min = 4, max = 48, step = 1)
+                   )
                  },
+
                  "clust" = {
                    updateNumericInput(session, "dotSize", label = "Dot Size", value = 1, min = 0, max = 5, step = .25)
-
-                   output$dotShape <- renderUI(
-                     shinyWidgets::pickerInput(inputId = ns("dotShape"), label = "Dot Shape",
-                                               choices = c(1:25), selected = 19, multiple = FALSE,
-                                               choicesOpt = list(content = pchIcon()))
-                   )
 
                    output$lgdPosition <- NULL
 
@@ -207,7 +189,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                dotShape <- reactive(as.numeric(input$dotShape))
                                              } else if (!isTRUE(input$axisType)){
                                                dotShape <- reactive(19)
-                                               }
+                                             }
 
                                              pathwayGraph(ontoID = dat()$ontoID,
                                                           ontoTerm = cutText(dat()$ontoTerm, 52),
@@ -218,9 +200,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           direction = dat()$direction,
                                                           colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
-                                                          coordFlip = input$coordFlip,
                                                           dotSize = input$dotSize,
-                                                          dotShape = dotShape(),
                                                           themeSet = input$themeSet,
                                                           lgdPosition = input$lgdPosition,
                                                           nameSize = input$nameSize,
@@ -229,7 +209,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           lgTxtSize = input$lgTxtSize,
                                                           lgTitleSize = input$lgTitleSize,
                                                           fontFam = input$fontFam)
-                                             },
+                                           },
 
                                            "clust" = {
                                              dat <- reactive(reacVals$data())
@@ -243,9 +223,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           direction = dat()$direction,
                                                           colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
-                                                          coordFlip = input$coordFlip,
                                                           dotSize = input$dotSize,
-                                                          dotShape = as.numeric(input$dotShape),
                                                           themeSet = input$themeSet,
                                                           nameSize = input$nameSize,
                                                           axTxtSize = input$axTxtSize,
@@ -254,29 +232,32 @@ plotting_page <- function(input, output, session, descent_data)
                                            },
 
                                            "long" = {NULL}
-                                           )
                                     )
+  )
 
   ### Display Plot - as ggiraph svg ###
   observeEvent(input$actPlot, {
-      h <- eventReactive(input$actPlot,{
-        switch(input$plotUnit,
-               "cm" = {input$plotHt * 0.393701},
-               "in" = {input$plotHt},
-               "mm" = {input$plotHt * 0.0393701})
-        })
+    h <- eventReactive(input$actPlot,{
+      switch(input$plotUnit,
+             "cm" = {input$plotHt * 0.393701},
+             "in" = {input$plotHt},
+             "mm" = {input$plotHt * 0.0393701})
+    })
 
-      w <- eventReactive(input$actPlot,{
-        switch(input$plotUnit,
-               "cm" = {input$plotWd * 0.393701},
-               "in" = {input$plotWd},
-               "mm" = {input$plotWd * 0.0393701})
-      })
+    w <- eventReactive(input$actPlot,{
+      switch(input$plotUnit,
+             "cm" = {input$plotWd * 0.393701},
+             "in" = {input$plotWd},
+             "mm" = {input$plotWd * 0.0393701})
+    })
 
     output$plotOut <- ggiraph::renderGirafe(ggiraph::girafe(ggobj = reacVals$plotOut(),
-                                                             width_svg = w(),
-                                                             height_svg = h()))
-    })
+                                                            width_svg = w(),
+                                                            height_svg = h(),
+                                                            options = list(
+                                                              ggiraph::opts_hover(css = "fill:wheat;stroke:orange;r:5pt;")
+                                                            )))
+  })
 
   ### Create Warning Message ###
   observeEvent(input$actPlot,
@@ -289,15 +270,15 @@ plotting_page <- function(input, output, session, descent_data)
                           Please use plot By Cluster to visualize a larger number of pathways and clusters."
                         )
                       }
-                      ))
+               ))
 
 
 
   ### Download Plot ###
   reacVals$plotDwnld <- reactive(reacVals$plotOut())
-  reacVals$plotUnit <- reactive(switch(input$dwnUnit, "cm" = "cm", "in" = "in", "mm" = "mm"))
-  reacVals$plotHt <- reactive(input$dwnHt)
-  reacVals$plotWd <- reactive(input$dwnWd)
+  reacVals$plotUnit <- reactive(switch(input$plotUnit, "cm" = "cm", "in" = "in", "mm" = "mm"))
+  reacVals$plotHt <- reactive(input$plotHt)
+  reacVals$plotWd <- reactive(input$plotWd)
   reacVals$plotDPI <- reactive(input$dwnDPI)
   reacVals$fileType <- reactive(input$fileType)
 
@@ -308,6 +289,14 @@ plotting_page <- function(input, output, session, descent_data)
                       width = reacVals$plotWd(), height = reacVals$plotHt(),
                       units = reacVals$plotUnit(), dpi = reacVals$plotDPI())
     }
+  )
+
+
+  ### Download Data ###
+  output$dataDwnld <- downloadHandler(
+    filename = function() {"OntoDescResults.xlsx"},
+    content = function(file) {xlsx::write.xlsx(reorderData(reacVals$data()), file = file, sheetName = "OntoDesc",
+                                               row.names = FALSE, col.names = TRUE)}
   )
 
   ### Stop App on Session End ###

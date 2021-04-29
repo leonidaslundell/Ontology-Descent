@@ -10,9 +10,6 @@ data_entry_page_ui <- function(id)
   shinyWidgets::useSweetAlert()
 
   fluidPage(
-    titlePanel(
-      "Ontology Descent: A data visualization tool for Gene Ontology Enrichment data"
-    ),
 
     fluidRow(
       column(
@@ -23,6 +20,7 @@ data_entry_page_ui <- function(id)
           placeholder = "Copy in data",
           height = "100%",
           rows = 10,
+          width = "100%",
           resize = "both"
         ),
         actionButton(ns("Setting1"), label = "Submit!"),
@@ -55,7 +53,7 @@ data_entry_page_ui <- function(id)
           multiple = F,
           selected = "GO BP"
         ),
-        img(src = "logo.png", heigth = 120, width = 200)
+        img(src = "logo.png", heigth = 60, width = 100)
 
       )
     ),
@@ -120,6 +118,11 @@ data_entry_page <- function(input, output, session, descent_data)
                                    text = error_string,
                                    type = "error")
     } else {
+      #convert the , to . if excel is set to a nordic language
+      if(class(imported_values$pValue) == "character"){
+        imported_values$pValue <- as.numeric(gsub("\\,", "\\.", imported_values$pValue))
+      }
+
       output$GO_table <- renderDataTable(imported_values)
       descent_data$inputData <- imported_values
     }
@@ -129,6 +132,7 @@ data_entry_page <- function(input, output, session, descent_data)
   observeEvent(input$dummy,
                {
                  dummy_ref <- get_test_data()
+                 descent_data$net <- mf_hsa
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref
                  )
@@ -137,9 +141,41 @@ data_entry_page <- function(input, output, session, descent_data)
   observeEvent(input$dummy_short,
                {
                  dummy_ref <- get_test_data(size = "short")
+                 descent_data$net <- mf_hsa
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref
                  )
+               })
+  c("GO Biological Processes", "GO Cellular Component", "GO Molecular Function", "Reactome")
+  #select network to cluster on
+  observeEvent(input$datatype,
+               {
+                 switch(input$datatype,
+                        `GO Biological Processes` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- bp_hsa
+                          }else{
+                            descent_data$net <- bp_mmu
+                          }
+                        },
+                        `GO Cellular Component` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- cc_hsa
+                          }else{
+                            descent_data$net <- cc_mmu
+                          }
+                        },
+                        `GO Molecular Function` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- mf_hsa
+                          }else{
+                            descent_data$net <- mf_mmu
+                          }
+                        },
+                        `Reactome` = {
+                          showNotification("Not implemented yet")
+                        }
+                        )
                })
 
 
@@ -174,13 +210,12 @@ validate_input <- function(x, type) {
 #' @param x character, data to be read
 #' @param type character, type of input. Determines which function to read.
 #'
-#' @return
+#' @return data.table containing the data in the file or text supplied with x
 #' @export
-#'
-#' @examples
 read_input <- function(x, type) {
   if (type == "xlsx") {
     out <- openxlsx::read.xlsx(xlsxFile = x, colNames = TRUE)
+    data.table::setDT(out)
   } else if (type == "csv") {
     out <- data.table::fread(file = x, header = TRUE)
   } else if (type == "text") {

@@ -1,33 +1,61 @@
 #' Internal Functions
 #'
 #' @param ontoNet igraph representation of ontology hierarchy from networkeR
-#' @param ontoNames ontology ID to ontology Terms
-#' @param ontoLength ontology ID lengths
 #' @param target target ontology IDs to cluster
-#'
-#' @import igraph data.table
+#' @param filterTerms terms to not use as a cluster name
+#' @import igraph data.table leiden
 #' @return
 #' @export
 #'
 
-clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain", filterTerms = NULL){
+relabelleR <- function(ontoNet,
+                       target,
+                       filterTerms = c("molecular_function")){
+
+  #############
+  #just return the centralest from the cluster
+  connectedSubgraph <- igraph::all_shortest_paths(ontoNet, from = target, to = target, mode = "all")
+
+  connectedSubgraph <- connectedSubgraph$res
+  connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
+  ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
+
+  xMax <- igraph::centr_eigen(ontoNetSubgraph)$vector
+  xTerm <- igraph::V(ontoNet)$ontoTerm[match(igraph::V(ontoNetSubgraph)$name[which.max(xMax)], igraph::V(ontoNet)$name)]
+
+  if(any(xTerm %in% filterTerms)){
+    xMax <- xMax[-which.max(xMax)]
+    xTerm <- igraph::V(ontoNet)$ontoTerm[match(x[which.max(xMax)],
+                                               igraph::V(ontoNet)$name)]
+    return(xTerm)
+  }else{
+    return(xTerm)
+  }
+}
+
+clustereR <- function(ontoNet,
+                      target,
+                      method = "louvain",
+                      filterTerms = c("molecular_function")){
 
   #############
   #network based clustering
-  connectedSubgraph <- all_shortest_paths(ontoNet, from = target, to = target, mode = "all")
+
+  connectedSubgraph <- igraph::all_shortest_paths(ontoNet, from = target, to = target, mode = "all")
+
   connectedSubgraph <- connectedSubgraph$res
   connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
   ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
 
   ontoClustCommunity <- switch(method,
-                               fast_greedy = igraph::cluster_fast_greedy(as.undirected(ontoNetSubgraph))$membership,
-                               leading_eigen = igraph::cluster_leading_eigen(as.undirected(ontoNetSubgraph))$membership,
-                               louvain = igraph::cluster_louvain(as.undirected(ontoNetSubgraph))$membership,
-                               leiden = leiden::leiden(igraph::as_adjacency_matrix(as.undirected(ontoNetSubgraph)),
+                               fast_greedy = igraph::cluster_fast_greedy(igraph::as.undirected(ontoNetSubgraph))$membership,
+                               leading_eigen = igraph::cluster_leading_eigen(igraph::s.undirected(ontoNetSubgraph))$membership,
+                               louvain = igraph::cluster_louvain(igraph::as.undirected(ontoNetSubgraph))$membership,
+                               leiden = leiden::leiden(igraph::as_adjacency_matrix(igraph::as.undirected(ontoNetSubgraph)),
                                                        resolution_parameter = .5),
-                               walktrap = igraph::cluster_walktrap(as.undirected(ontoNetSubgraph))$membership)
+                               walktrap = igraph::cluster_walktrap(igraph::as.undirected(ontoNetSubgraph))$membership)
 
-  ontoClust <- data.frame(membership = ontoClustCommunity, names = V(ontoNetSubgraph)$name)
+  ontoClust <- data.frame(membership = ontoClustCommunity, names = igraph::V(ontoNetSubgraph)$name)
 
   #############
   #eigen centrality quantifies connected connecteness...
@@ -36,35 +64,36 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain"
     x <- ontoClust$names[ontoClust$membership == x]
 
     xSub <- igraph::induced_subgraph(ontoNet, x)
-    xMax <- centr_eigen(xSub)$vector
-    print(sum(xMax %in% max(xMax)))
-    xTerm <- ontoNames[x[which.max(xMax)]]
+    xMax <- igraph::centr_eigen(xSub)$vector
+    xTerm <- igraph::V(ontoNet)$ontoTerm[match(x[which.max(xMax)],
+                                               igraph::V(ontoNet)$name)]
 
     if(any(xTerm %in% filterTerms)){
       xMax <- xMax[-which.max(xMax)]
-      xTerm <- ontoNames[x[which.max(xMax)]]
+      xTerm <- igraph::V(ontoNet)$ontoTerm[match(x[which.max(xMax)],
+                                                 igraph::V(ontoNet)$name)]
       return(xTerm)
     }else{
       return(xTerm)
     }
   })
 
-  names(clusterTerm) <- 1:max(ontoClust$membership)
+  names(clusterTerm) <- unique(ontoClust$membership)
 
   #############
   #prepare result table
 
   ontoClust <- data.frame(clusterNumber = ontoClust$membership,
-                          clusterTerm = unlist(clusterTerm[membership(ontoClust)]),
+                          clusterTerm = clusterTerm[as.character(ontoClust$membership)],
                           ontoID = ontoClust$names,
-                          ontoTerm = ontoNames[ontoClust$names],
-                          ontoLength = ontoLength[ontoClust$names])
+                          ontoTerm = igraph::V(ontoNet)$ontoTerm[match(ontoClust$names,
+                                                               igraph::V(ontoNet)$name)])
 
   #############
   #prepare network plot
 
   cols <- ggsci::pal_igv()(max(ontoClust$clusterNumber))
-  # colorRampPalette(RColorBrewer::brewer.pal(12, "Set3"))(max(ontoClust$clusterNumber))
+  set.seed(42)
   cols <- sample(cols, max(ontoClust$clusterNumber), replace = F)
   cols <- cols[ontoClust$clusterNumber]
   ontoClust$color <- cols
@@ -76,18 +105,18 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain"
   ontoClust$nodeLabel[which(ontoClust$ontoTerm == ontoClust$clusterTerm)] <-
     ontoClust$clusterTerm[which(ontoClust$ontoTerm == ontoClust$clusterTerm)]
 
-  if(!all(V(ontoNetSubgraph)$name == ontoClust$ontoID)){stop("wrong order")}
+  if(!all(igraph::V(ontoNetSubgraph)$name == ontoClust$ontoID)){stop("wrong order")}
 
-  vertex_attr(ontoNetSubgraph) <- list(name = ontoClust$ontoID,
-                                       color = ontoClust$color,
-                                       clusterTerm = ontoClust$clusterTerm,
-                                       label.color = ontoClust$color,
-                                       ontoTerm = ontoClust$ontoTerm,
-                                       nodeLabel = ontoClust$nodeLabel)
-  V(ontoNetSubgraph)$size <- 0
-  V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$name %in% target] <- 2
+  igraph::vertex_attr(ontoNetSubgraph) <- list(name = ontoClust$ontoID,
+                                               color = ontoClust$color,
+                                               clusterTerm = ontoClust$clusterTerm,
+                                               label.color = ontoClust$color,
+                                               ontoTerm = ontoClust$ontoTerm,
+                                               nodeLabel = ontoClust$nodeLabel)
+  igraph::V(ontoNetSubgraph)$size <- 0
+  igraph::V(ontoNetSubgraph)$size[igraph::V(ontoNetSubgraph)$name %in% target] <- 2
 
-  E(ontoNetSubgraph)$arrow.size <- 0
+  igraph::E(ontoNetSubgraph)$arrow.size <- 0
 
   #remove the "stepping stones"
   ontoClust <- ontoClust[ontoClust$ontoID %in% target,]
@@ -95,10 +124,7 @@ clustereR <- function(ontoNet, ontoNames, ontoLength, target, method = "louvain"
   return(list(res = ontoClust, plot = ontoNetSubgraph, community = ontoClustCommunity))
 }
 
-networkeR <- function(ont = "MF", species = "HSA", termFilter = NULL){
-  library(GO.db)
-  library(igraph)
-  library(data.table)
+networkeR <- function(ont = "MF", species = "HSA"){
 
   if(!any(ont %in% c("CC", "BP", "MF","All","Reactome"))){
     stop("ont needs to be one of: CC, BP, MF, All, Reactome")
@@ -106,7 +132,7 @@ networkeR <- function(ont = "MF", species = "HSA", termFilter = NULL){
 
   if(ont == "Reactome"){
 
-    flatNet <- fread("https://reactome.org/download/current/ReactomePathwaysRelation.txt", header = F)
+    flatNet <- data.table::fread("https://reactome.org/download/current/ReactomePathwaysRelation.txt", header = F)
     flatNet <- flatNet[grep(species, V1)]
     colnames(flatNet) <- c("from", "to")
     flatNet
@@ -121,10 +147,25 @@ networkeR <- function(ont = "MF", species = "HSA", termFilter = NULL){
                               as.list(GOMFCHILDREN),
                               as.list(GOBPCHILDREN)))
 
+    allNodes <- unique(c(names(flatNet), unlist(flatNet)))
     flatNet <- flatNet[!is.na(flatNet)]
+
+    allNodes <- switch(species,
+           HSA = {
+             onto2eg <- as.list(org.Hs.eg.db::org.Hs.egGO2ALLEGS)
+             allNodes <- allNodes[allNodes %in% names(onto2eg)]
+             allNodes
+           },
+           MMU = {
+             onto2eg <- as.list(org.Mm.eg.db::org.Mm.egGO2ALLEGS)
+             allNodes <- allNodes[allNodes %in% names(onto2eg)]
+             allNodes
+           })
+
+    flatNet <- flatNet[names(flatNet) %in% allNodes]
     flatNet <- reshape2::melt(flatNet)
 
-    flatNet <- as.data.table(flatNet)
+    flatNet <- data.table::as.data.table(flatNet)
     colnames(flatNet) <- c("from", "to")
 
     flatNet <- flatNet[,c("from", "to"):=.(as.character(from),
@@ -132,11 +173,14 @@ networkeR <- function(ont = "MF", species = "HSA", termFilter = NULL){
 
   }
 
-  if(!is.null(termFilter)){
-    flatNet <- flatNet[from %in% termFilter & to %in% termFilter,]
-  }
+  graphNet <- igraph::graph_from_data_frame(flatNet)
 
-  graphNet <- graph_from_data_frame(flatNet)
+  #############
+  #add the names as a graph attribute
+  ontoNames <- as.list(GO.db::GOTERM)
+  ontoNames <- sapply(ontoNames, Term)
+
+  igraph::V(graphNet)$ontoTerm <- ontoNames[igraph::V(graphNet)$name]
 
   return(graphNet)
 }

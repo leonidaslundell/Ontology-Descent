@@ -5,15 +5,18 @@
 \title{Plot Enrichment By Pathway}
 \usage{
 pathwayGraph(
-  ontoID = NULL,
   ontoTerm,
   pValue,
-  clusterNumber = NULL,
   clusterName,
+  ontoID = NULL,
+  clusterNumber = NULL,
   enrichmentScore = NULL,
   direction = NULL,
+  colorManual = NULL,
   plotEnrichment = FALSE,
   coordFlip = FALSE,
+  dotSize = 2,
+  dotShape = 19,
   themeSet = "minimal",
   colorSet = "IGV",
   lgdPosition = "right",
@@ -26,15 +29,15 @@ pathwayGraph(
 )
 }
 \arguments{
-\item{ontoID}{Optional. A character vector of Gene Ontology IDs.}
-
 \item{ontoTerm}{Optional. A character vector of Terms associated with Gene Ontology IDs.}
 
 \item{pValue}{A numeric vectors of enrichment p Values for each Gene Ontology pathway.}
 
-\item{clusterNumber}{Optional. A numeric vector showing which cluster the Gene Ontologies belong to.}
-
 \item{clusterName}{A character vector showing terms associated with the Cluster IDs.}
+
+\item{ontoID}{Optional. A character vector of Gene Ontology IDs.}
+
+\item{clusterNumber}{Optional. A numeric vector showing which cluster the Gene Ontologies belong to.}
 
 \item{enrichmentScore}{Optional. A numeric vector of enrichment scores for each Gene Ontology.}
 
@@ -44,7 +47,11 @@ pathwayGraph(
 
 \item{coordFlip}{Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.}
 
-\item{themeSet}{Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal" or "dark". Default == "minimal"}
+\item{dotSize}{Optional. Numeric. Dot size in plots. Default == 2.}
+
+\item{dotShape}{Optional. Numeric. Select ggplot2 pch shape. Default == 19.}
+
+\item{themeSet}{Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"}
 
 \item{colorSet}{Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"}
 
