@@ -14,9 +14,7 @@ clusterGraph(
   direction = NULL,
   colorManual = NULL,
   plotEnrichment = FALSE,
-  coordFlip = FALSE,
   dotSize = 1,
-  dotShape = 19,
   themeSet = "minimal",
   colorSet = "IGV",
   nameSize = 8,
@@ -40,13 +38,11 @@ clusterGraph(
 
 \item{direction}{Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.}
 
+\item{colorManual}{Optional. A character vector defining colors from the clustereR.}
+
 \item{plotEnrichment}{Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.}
 
-\item{coordFlip}{Optional. TRUE or FALSE. With default == FALSE the plot shows cluster names on y and pValue/enrichmentScore on x axis. When TRUE x and y axes are flipped.}
-
 \item{dotSize}{Optional. Numeric. Dot size in plots. Default == 1.}
-
-\item{dotShape}{Optional. Numeric. Select ggplot2 pch shape. Default == 19.}
 
 \item{themeSet}{Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"}
 
@@ -65,4 +61,7 @@ A ggplot object.
 }
 \description{
 Plot Enrichment By Cluster
+}
+\examples{
+
 }

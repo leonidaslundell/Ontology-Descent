@@ -4,16 +4,14 @@
 \alias{relabelleR}
 \title{Internal Functions}
 \usage{
-relabelleR(ontoNet, ontoNames, target, filterTerms = c("molecular_function"))
+relabelleR(ontoNet, target, filterTerms = c("molecular_function"))
 }
 \arguments{
 \item{ontoNet}{igraph representation of ontology hierarchy from networkeR}
 
-\item{ontoNames}{ontology ID to ontology Terms}
-
 \item{target}{target ontology IDs to cluster}
 
-\item{ontoLength}{ontology ID lengths}
+\item{filterTerms}{terms to not use as a cluster name}
 }
 \value{
 
