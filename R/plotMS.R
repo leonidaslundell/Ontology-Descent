@@ -441,12 +441,12 @@ errorMessage <- function(type){
   if (type == "empty"){
     p <- ggplot2::ggplot(data = NULL,
                          ggplot2::aes(1, 1, label = "Please enter data and cluster before plotting results."))+
-      ggplot2::geom_text()+
+      ggplot2::geom_text(size = 5)+
       ggplot2::theme_void()
   } else if (type == "long"){
     p <- ggplot2::ggplot(data = NULL,
                          ggplot2::aes(1, 1, label = "Please use Plot by Cluster to avoid overplotting.\nThe pathway graph is restricted to data sets with\n50 Pathways and 10 Clusters or less."))+
-      ggplot2::geom_text()+
+      ggplot2::geom_text(size = 5)+
       ggplot2::theme_void()
   }
 
