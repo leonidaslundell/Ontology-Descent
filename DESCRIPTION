@@ -25,9 +25,17 @@ Imports:
     data.table,
     RColorBrewer,
     ggiraph,
+    leiden,
     ggsci,
     igraph,
-    shinyWidgets
+    shinyWidgets,
+    GO.db,
+    openxlsx,
+    org.Hs.eg.db,
+    org.Mm.eg.db,
+    reshape2,
+    config,
+    pkgload
 Depends: 
     R (>= 3.5.0)
 Suggests: 
