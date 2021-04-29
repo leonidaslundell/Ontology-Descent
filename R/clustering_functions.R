@@ -64,6 +64,7 @@ clustereR <- function(ontoNet,
     x <- ontoClust$names[ontoClust$membership == x]
 
     xSub <- igraph::induced_subgraph(ontoNet, x)
+    #directionality is good here...
     xMax <- igraph::centr_eigen(xSub)$vector
     xTerm <- igraph::V(ontoNet)$ontoTerm[match(x[which.max(xMax)],
                                                igraph::V(ontoNet)$name)]

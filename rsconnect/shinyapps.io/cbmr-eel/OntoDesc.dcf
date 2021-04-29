@@ -1,0 +1,13 @@
+name: OntoDesc
+title: OntoDesc
+username:
+account: cbmr-eel
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 4050994
+bundleId: 4535042
+url: https://cbmr-eel.shinyapps.io/OntoDesc/
+when: 1619699189.50367
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: .Rbuildignore|BenchmarksV2.Rmd alias|LICENSE.md|NAMESPACE|README.md|data/.DS_Store|vignettes/quickstart.Rmd
