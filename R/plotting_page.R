@@ -51,10 +51,7 @@ plotting_page_ui <- function(id)
         shinyWidgets::dropdownButton(
           h3("Text Options:"),
 
-          actionButton(inputId = ns("upDate2"), label = "Refresh Plot"),
-
           br(),
-
 
           selectInput(ns("fontFam"), label = "Font Family",
                       choices = c("Sans (Arial)" = "sans",
@@ -75,7 +72,13 @@ plotting_page_ui <- function(id)
 
           uiOutput(ns("lgTxtSize")),
 
-          circle = FALSE, status = "info", label = "Text Options", width = "300px",
+          br(),
+
+          actionButton(inputId = ns("upDate2"), label = "Refresh Plot"),
+
+          br(),
+
+          circle = FALSE, up = TRUE, status = "info", label = "Text Options", width = "300px",
           tooltip = tooltipOptions(title = "Click to modify text")
         ),
 
@@ -83,8 +86,6 @@ plotting_page_ui <- function(id)
 
         shinyWidgets::dropdownButton(
           h3("Download Options:"),
-
-          actionButton(inputId = ns("upDate3"), label = "Refresh Plot"),
 
           br(),
 
@@ -106,7 +107,13 @@ plotting_page_ui <- function(id)
                                   "jpeg", "bmp", "svg", "wmf"),
                       selected = "tiff", multiple = FALSE),
 
-          circle = FALSE, status = "info", label = "Download / Plot Size Options", width = "300px",
+          br(),
+
+          actionButton(inputId = ns("upDate3"), label = "Refresh Plot"),
+
+          br(),
+
+          circle = FALSE, up = TRUE, status = "info", label = "Download / Plot Size Options", width = "300px",
           tooltip = tooltipOptions(title = "Click to modify plot size"))
 
 
