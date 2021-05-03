@@ -41,6 +41,8 @@ exploring_page_ui <- function(id)
 exploring_page <- function(input, output, session, descent_data)
 {
   ns <- session$ns
+  output$netPlotOut <- NULL
+
   observeEvent(input$clusterButton,{
     # putting it here so that the delay is during the clustering rather than at the firtst page
     # ------------------ App virtualenv setup (Do not edit) ------------------- #
@@ -58,6 +60,15 @@ exploring_page <- function(input, output, session, descent_data)
                                  required = T)
     }
     # ------------------ App server logic (Edit anything below) --------------- #
+
+      if (length(descent_data$inputData$ontoID)==0){
+        shinyWidgets::sendSweetAlert(session = session,
+                                     title = "Clustering Error",
+                                     text = "You have not entered any data!",
+                                     type = "error")
+     }
+    req(descent_data$inputData)
+    output$netPlotOut <- renderPlot(plot(descent_data$inputData))
 
     results <- clustereR(ontoNet = descent_data$net,
                          method = "leiden",
@@ -83,6 +94,7 @@ exploring_page <- function(input, output, session, descent_data)
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0,0,0,0))
+      validate(need(input$clusterButton, ""))
       plot(results$plot,
            vertex.label = NA,
            vertex.label.cex = 0.5,
