@@ -5,7 +5,6 @@
 #' @return
 #' @export
 #'
-#' @examples
 reorderData <- function(data){
   exp <- as.data.frame(data)
   ord <- c("ontoID", "ontoTerm", "pValue", "enrichmentScore", "direction", "clusterNumber", "clusterTerm")
@@ -21,7 +20,6 @@ reorderData <- function(data){
 #' @return
 #' @export
 #'
-#' @examples
 themeIcon <- function(){
   nm <- c(
     sprintf("<img src='theme_bw.png' width=75px><div class='jhr'>%s</div></img>", "bw"),
@@ -41,8 +39,6 @@ themeIcon <- function(){
 #'
 #' @return character vector with shortened ontology terms
 #' @export
-#'
-#' @examples
 #'
 cutText <- function(text, cutoff){
   sub <- data.frame("word" = c("\\<regulation\\>", "\\<activity\\>", "\\<positive\\>",
@@ -104,8 +100,6 @@ cutText <- function(text, cutoff){
 #' @import patchwork
 #' @import ggiraph
 #' @export
-#'
-#' @examples
 #'
 clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, clusterNumber = NULL,
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
@@ -282,7 +276,6 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @import ggiraph
 #' @export
 #'
-#' @examples
 pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNumber = NULL,
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
                          plotEnrichment = FALSE,
@@ -438,7 +431,6 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
 #' @export
 #' @import ggplot2
 #'
-#' @examples
 errorMessage <- function(type){
   if (type == "empty"){
     p <- ggplot2::ggplot(data = NULL,
