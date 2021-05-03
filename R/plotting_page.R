@@ -51,6 +51,8 @@ plotting_page_ui <- function(id)
         shinyWidgets::dropdownButton(
           h3("Text Options:"),
 
+          br(),
+
           selectInput(ns("fontFam"), label = "Font Family",
                       choices = c("Sans (Arial)" = "sans",
                                   "Serif (Times New Roman)" = "serif",
@@ -70,9 +72,13 @@ plotting_page_ui <- function(id)
 
           uiOutput(ns("lgTxtSize")),
 
+          br(),
+
           actionButton(inputId = ns("upDate2"), label = "Refresh Plot"),
 
-          circle = FALSE, status = "info", label = "Text Options", width = "300px",
+          br(),
+
+          circle = FALSE, up = TRUE, status = "info", label = "Text Options", width = "300px",
           tooltip = tooltipOptions(title = "Click to modify text")
         ),
 
@@ -80,6 +86,8 @@ plotting_page_ui <- function(id)
 
         shinyWidgets::dropdownButton(
           h3("Download Options:"),
+
+          br(),
 
           numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
                        value = 15, step = .5),
@@ -99,15 +107,20 @@ plotting_page_ui <- function(id)
                                   "jpeg", "bmp", "svg", "wmf"),
                       selected = "tiff", multiple = FALSE),
 
-          circle = FALSE, status = "info", label = "Download Options", width = "300px",
+          br(),
+
+          actionButton(inputId = ns("upDate3"), label = "Refresh Plot"),
+
+          br(),
+
+          circle = FALSE, up = TRUE, status = "info", label = "Download / Plot Size Options", width = "300px",
           tooltip = tooltipOptions(title = "Click to modify plot size"))
 
 
         ),
 
       mainPanel(
-        textOutput(outputId = ns("warText")),
-
+        uiOutput(ns("emptyWar")),
         ggiraph::girafeOutput(outputId = ns("plotOut"), width = "100%", height = 750)
       )
     )
@@ -134,13 +147,28 @@ plotting_page <- function(input, output, session, descent_data)
     return(descent_data$inputData)
   })
 
+  ### Data NOT present and clustered ###
+  output$emptyPlot <- ggiraph::renderGirafe(ggiraph::girafe(ggobj = errorMessage("empty"),
+                                                            options = list(
+                                                              ggiraph::opts_toolbar(saveaspng = FALSE)
+                                                            )))
+  observe({
+    if (is.null(descent_data$inputData$clusterTerm)){
+      output$emptyWar <- renderUI({
+        ggiraph::girafeOutput(outputId = ns("emptyPlot"), width = "100%", height = 750)
+        })
+    } else if (!is.null(descent_data$inputData$clusterTerm)){
+      output$emptyWar <- NULL
+    }
+  })
+
   ### Render UI Based on Selected Options ###
 
   ### Update plotType Based on Data Size ###
   observe({
     req(reacVals$data())
     pn <- nrow(reacVals$data())
-    cn <- length(unique(reacVals$data()$clusterName))
+    cn <- length(unique(reacVals$data()$clusterTerm))
 
     if (pn <= 50 & cn <= 10) {
       updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway" = "pth"), selected = "clust")
@@ -180,16 +208,12 @@ plotting_page <- function(input, output, session, descent_data)
 
 
   ### Create Plot ###
-  reacVals$plotOut <- eventReactive(input$actPlot | input$upDate1 | input$upDate2,
+  reacVals$plotOut <- eventReactive(input$actPlot | input$upDate1 | input$upDate2 | input$upDate3,
                                     switch(input$plotType,
                                            "pth" = {
-                                             dat <- reactive(reacVals$data())
+                                             req(reacVals$data()$clusterTerm)
 
-                                             if (isTRUE(input$axisType)){
-                                               dotShape <- reactive(as.numeric(input$dotShape))
-                                             } else if (!isTRUE(input$axisType)){
-                                               dotShape <- reactive(19)
-                                             }
+                                             dat <- reactive(reacVals$data())
 
                                              pathwayGraph(ontoID = dat()$ontoID,
                                                           ontoTerm = cutText(dat()$ontoTerm, 52),
@@ -212,6 +236,8 @@ plotting_page <- function(input, output, session, descent_data)
                                            },
 
                                            "clust" = {
+                                             req(reacVals$data()$clusterTerm)
+
                                              dat <- reactive(reacVals$data())
 
                                              clusterGraph(ontoID = dat()$ontoID,
@@ -231,20 +257,22 @@ plotting_page <- function(input, output, session, descent_data)
                                                           fontFam = input$fontFam)
                                            },
 
-                                           "long" = {NULL}
+                                           "long" = {errorMessage("long")}
                                     )
   )
 
-  ### Display Plot - as ggiraph svg ###
+
   observeEvent(input$actPlot, {
-    h <- eventReactive(input$actPlot,{
+    req(reacVals$plotOut())
+
+    h <- eventReactive(input$actPlot | input$upDate1 | input$upDate2 | input$upDate3,{
       switch(input$plotUnit,
              "cm" = {input$plotHt * 0.393701},
              "in" = {input$plotHt},
              "mm" = {input$plotHt * 0.0393701})
     })
 
-    w <- eventReactive(input$actPlot,{
+    w <- eventReactive(input$actPlot | input$upDate1 | input$upDate2 | input$upDate3,{
       switch(input$plotUnit,
              "cm" = {input$plotWd * 0.393701},
              "in" = {input$plotWd},
@@ -255,24 +283,12 @@ plotting_page <- function(input, output, session, descent_data)
                                                             width_svg = w(),
                                                             height_svg = h(),
                                                             options = list(
-                                                              ggiraph::opts_hover(css = "fill:wheat;stroke:orange;r:5pt;")
+                                                              ggiraph::opts_selection(type = "single"),
+                                                              ggiraph::opts_hover(css = "fill:wheat;stroke:orange;"),
+                                                              ggiraph::opts_zoom(min = 1, max = 5),
+                                                              ggiraph::opts_toolbar(saveaspng = FALSE)
                                                             )))
   })
-
-  ### Create Warning Message ###
-  observeEvent(input$actPlot,
-               switch(input$plotType,
-                      "pth" = {output$warTest <- NULL},
-                      "clust" = {output$warTest <- NULL},
-                      "long" = {
-                        output$warText <- renderText(
-                          "Plotting enrichment by pathway is restricted to 50 or less pathways and 10 or less clusters.
-                          Please use plot By Cluster to visualize a larger number of pathways and clusters."
-                        )
-                      }
-               ))
-
-
 
   ### Download Plot ###
   reacVals$plotDwnld <- reactive(reacVals$plotOut())
