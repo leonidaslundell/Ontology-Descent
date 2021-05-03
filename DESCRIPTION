@@ -35,6 +35,7 @@ Imports:
     org.Mm.eg.db,
     reshape2,
     config,
+    shinycssloaders,
     golem,
     pkgload,
     reticulate
