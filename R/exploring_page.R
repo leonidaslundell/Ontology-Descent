@@ -34,13 +34,30 @@ exploring_page_ui <- function(id)
 #' @param session shiny parameter
 #' @param descent_data reactiveValues, contains gene ontology data
 #'
-#' @import shiny
+
+#' @import shiny leiden
 #' @importFrom sortable bucket_list
 #' @export
 exploring_page <- function(input, output, session, descent_data)
 {
   ns <- session$ns
   observeEvent(input$clusterButton,{
+    # putting it here so that the delay is during the clustering rather than at the firtst page
+    # ------------------ App virtualenv setup (Do not edit) ------------------- #
+    if (Sys.info()[['user']] == 'shiny'){
+      virtualenv_dir = Sys.getenv('VIRTUALENV_NAME')
+      python_path = Sys.getenv('PYTHON_PATH')
+
+      # Create virtual env and install dependencies
+      reticulate::virtualenv_create(envname = virtualenv_dir,
+                                    python = python_path)
+      reticulate::virtualenv_install(virtualenv_dir,
+                                     packages = c('leidenalg'),
+                                     ignore_installed=TRUE)
+      reticulate::use_virtualenv(virtualenv_dir,
+                                 required = T)
+    }
+    # ------------------ App server logic (Edit anything below) --------------- #
 
     results <- clustereR(ontoNet = descent_data$net,
                          method = "leiden",

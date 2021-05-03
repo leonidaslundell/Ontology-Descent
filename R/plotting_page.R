@@ -2,7 +2,7 @@
 #'
 #' @param id unique id for this module
 #'
-#' @import shiny ggiraph shinyWidgets xlsx
+#' @import shiny ggiraph shinyWidgets
 #' @export
 plotting_page_ui <- function(id)
 {
@@ -311,8 +311,8 @@ plotting_page <- function(input, output, session, descent_data)
   ### Download Data ###
   output$dataDwnld <- downloadHandler(
     filename = function() {"OntoDescResults.xlsx"},
-    content = function(file) {xlsx::write.xlsx(reorderData(reacVals$data()), file = file, sheetName = "OntoDesc",
-                                               row.names = FALSE, col.names = TRUE)}
+    content = function(file) {openxlsx::write.xlsx(reorderData(reacVals$data()), file = file,
+                                                   colNames = F, rowNames = F, borders = "rows", sheetName = "OntoDesc")}
   )
 
   ### Stop App on Session End ###

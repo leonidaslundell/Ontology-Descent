@@ -94,6 +94,7 @@ cutText <- function(text, cutoff){
 #' @param axTxtSize Optional. A numeric value setting font size for the axis text. Defualt == 7.
 #' @param axTitleSize Optional. A numeric value setting font size for the axis title. Default = 9.
 #' @param fontFam Optional. A character string to select the text font family for the plot. One of "serif", "sans" or "mono". Default == "sans".
+#' @param colorManual Optional. A character vector defining colors from the clustereR.
 #'
 #' @return A ggplot object.
 #' @import ggplot2
@@ -271,6 +272,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @param lgTxtSize Optional. A numeric value setting font size for the axis text. Defualt == 7.
 #' @param lgTitleSize Optional. A numeric value setting font size for the axis text. Defualt == 9.
 #' @param fontFam Optional. A character string to select the text font family for the plot. One of "serif", "sans" or "mono". Default == "sans".
+#' @param colorManual Optional. A character vector defining colors from the clustereR.
 #'
 #' @return A ggplot object.
 #' @import ggplot2

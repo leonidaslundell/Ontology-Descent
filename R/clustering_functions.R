@@ -49,7 +49,7 @@ clustereR <- function(ontoNet,
 
   ontoClustCommunity <- switch(method,
                                fast_greedy = igraph::cluster_fast_greedy(igraph::as.undirected(ontoNetSubgraph))$membership,
-                               leading_eigen = igraph::cluster_leading_eigen(igraph::s.undirected(ontoNetSubgraph))$membership,
+                               leading_eigen = igraph::cluster_leading_eigen(igraph::as.undirected(ontoNetSubgraph))$membership,
                                louvain = igraph::cluster_louvain(igraph::as.undirected(ontoNetSubgraph))$membership,
                                leiden = leiden::leiden(igraph::as_adjacency_matrix(igraph::as.undirected(ontoNetSubgraph)),
                                                        resolution_parameter = .5),
@@ -64,6 +64,7 @@ clustereR <- function(ontoNet,
     x <- ontoClust$names[ontoClust$membership == x]
 
     xSub <- igraph::induced_subgraph(ontoNet, x)
+    #directionality is good here...
     xMax <- igraph::centr_eigen(xSub)$vector
     xTerm <- igraph::V(ontoNet)$ontoTerm[match(x[which.max(xMax)],
                                                igraph::V(ontoNet)$name)]

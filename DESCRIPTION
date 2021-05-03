@@ -1,5 +1,5 @@
 Package: ontologyDescent
-Title: What the Package Does (One Line, Title Case)
+Title: Summarize and Visualize Ontology Results
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "First",
@@ -25,9 +25,19 @@ Imports:
     data.table,
     RColorBrewer,
     ggiraph,
+    leiden,
     ggsci,
     igraph,
-    shinyWidgets
+    shinyWidgets,
+    GO.db,
+    openxlsx,
+    org.Hs.eg.db,
+    org.Mm.eg.db,
+    reshape2,
+    config,
+    golem,
+    pkgload,
+    reticulate
 Depends: 
     R (>= 3.5.0)
 Suggests: 
