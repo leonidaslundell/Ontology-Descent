@@ -68,6 +68,7 @@ exploring_page <- function(input, output, session, descent_data)
                                      type = "error")
      }
     req(descent_data$inputData)
+    output$netPlotOut <- renderPlot(plot(descent_data$inputData))
 
     results <- clustereR(ontoNet = descent_data$net,
                          method = "leiden",
