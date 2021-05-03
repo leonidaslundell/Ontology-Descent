@@ -19,9 +19,10 @@ knitr::opts_chunk$set(
 Quickstast for us. Will grow this into a proper vigete.
 
 ```{r}
-library(ontologyDescent)
-
-load(here::here("R/sysdata.rda"))
+# library(ontologyDescent)
+source("../R/clustering_functions.R")
+# load(here::here("R/sysdata.rda"))#this doesnt pass the check.
+load("../R/sysdata.rda")
 ```
 
 The data in dataClustereR.Rdata (net especially), are generated using networkeR but take a while to generate. Just loading them here instead.
@@ -39,7 +40,7 @@ If you are running this with new data, make sure that every ontology term provid
 ```{r}
 targets <- example_data$ontoID[1:50]
 #filter out any terms not found in the network.
-targets <- targets[targets %in% igraph::V(net)$name]
+targets <- targets[targets %in% igraph::V(mf_hsa)$name]
 
 results <- clustereR(mf_hsa, 
                      targets, 
