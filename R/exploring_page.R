@@ -15,8 +15,8 @@ exploring_page_ui <- function(id)
      column(4,
         actionButton(ns("clusterButton"),
                      label = "Cluster!"),
-        plotOutput(outputId = ns("netPlotOut"), height = 750,
-                   brush = ns("netSelect"))
+        shinycssloaders::withSpinner(plotOutput(outputId = ns("netPlotOut"), height = 750,
+                   brush = ns("netSelect")))
       ),
      column(2,
             uiOutput(ns("shown_groups")),
@@ -58,6 +58,10 @@ exploring_page <- function(input, output, session, descent_data)
 
     descent_data$clustered <- list(exists =  T)
 
+    descent_data$plot <- results$plot
+
+
+
 
 
     output$netPlotOut <- renderPlot({
@@ -68,6 +72,8 @@ exploring_page <- function(input, output, session, descent_data)
            vertex.border.cex = 0.000001,
            asp = 0,
            axes = F)
+    })
+
       output$shown_groups <- renderUI({
         checkboxGroupInput(ns("shown_groups"),
                            label = "Select groups to show",
@@ -79,7 +85,7 @@ exploring_page <- function(input, output, session, descent_data)
 
       })
 
-    })
+
 
   })
   observe(req(descent_data$inputData$clusterNumber,
@@ -134,4 +140,10 @@ exploring_page <- function(input, output, session, descent_data)
                                            "create new cluster"))
     }
   })
+
+  observeEvent(input$netSelect, {
+    print("Brush is working")
+  })
+
+
 }
