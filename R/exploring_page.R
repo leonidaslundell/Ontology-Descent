@@ -72,7 +72,7 @@ exploring_page <- function(input, output, session, descent_data)
                                      type = "error")
      }
     req(descent_data$inputData)
-    output$netPlotOut <- renderPlot(plot(descent_data$inputData))
+    output$netPlotOut <- renderPlot(plot())
 
     results <- clustereR(ontoNet = descent_data$net,
                          method = "leiden",
@@ -176,10 +176,10 @@ exploring_page <- function(input, output, session, descent_data)
                                            "create new cluster"))
     }
   })
-
-
-
-
-
-
+  observeEvent(input$move,{
+    shinyWidgets::sendSweetAlert(session = session,
+                                 title = "Clusters have been redefined",
+                                 text = "You have chosen to redefine clusters. Keep in mind that data are no longer objective and should be interpreted with caution",
+                                 type = "warning")
+  })
 }
