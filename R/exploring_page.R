@@ -16,7 +16,8 @@ exploring_page_ui <- function(id)
         actionButton(ns("clusterButton"),
                      label = "Cluster!"),
         shinycssloaders::withSpinner(plotOutput(outputId = ns("netPlotOut"), height = 750,
-                   brush = ns("netSelect")))
+                   brush = brushOpts(ns("netSelect"))))
+        ,tableOutput(ns("test"))
       ),
      column(2,
             uiOutput(ns("shown_groups")),
@@ -42,6 +43,9 @@ exploring_page <- function(input, output, session, descent_data)
 {
   ns <- session$ns
   output$netPlotOut <- NULL
+  results <- NA
+  y <- NA
+  networkPlot <- NA
 
   observeEvent(input$clusterButton,{
     # putting it here so that the delay is during the clustering rather than at the firtst page
@@ -73,6 +77,8 @@ exploring_page <- function(input, output, session, descent_data)
     results <- clustereR(ontoNet = descent_data$net,
                          method = "leiden",
                          target = descent_data$inputData$ontoID)
+    networkPlot<-results$plot
+
 
 
 
@@ -86,21 +92,27 @@ exploring_page <- function(input, output, session, descent_data)
 
     descent_data$clustered <- list(exists =  T)
 
-    descent_data$plot <- results$plot
-
-
-
-
-
     output$netPlotOut <- renderPlot({
       par(mar = c(0,0,0,0))
-      validate(need(input$clusterButton, ""))
-      plot(results$plot,
-           vertex.label = NA,
-           vertex.label.cex = 0.5,
-           vertex.border.cex = 0.000001,
-           asp = 0,
-           axes = F)
+      set.seed(42)
+      plot(networkPlot,
+           layout = layout_with_drl,
+             vertex.label = NA,
+             vertex.label.cex = 0.5,
+             vertex.border.cex = 0.000001,
+             asp = 0,
+             axes = F)
+    })
+
+    output$test <- renderTable({
+      set.seed(42)
+      V(networkPlot)$names <- names(V(networkPlot))
+      y <-
+        data.frame(V(networkPlot)$names, norm_coords(layout_with_drl(networkPlot)))
+      res <- brushedPoints(y, input$netSelect, "X1", "X2")
+      if (nrow(res) == 0)
+        return()
+      res
     })
 
       output$shown_groups <- renderUI({
@@ -110,12 +122,7 @@ exploring_page <- function(input, output, session, descent_data)
       })
         output$move <- renderUI ({
           actionButton(inputId = ns("move"), label = "Redefine clusters")
-
-
       })
-
-
-
   })
   observe(req(descent_data$inputData$clusterNumber,
               descent_data$inputData$clusterTerm))
@@ -170,9 +177,9 @@ exploring_page <- function(input, output, session, descent_data)
     }
   })
 
-  observeEvent(input$netSelect, {
-    print("Brush is working")
-  })
+
+
+
 
 
 }
