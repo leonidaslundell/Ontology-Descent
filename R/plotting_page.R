@@ -24,7 +24,7 @@ plotting_page_ui <- function(id)
 
         checkboxInput(inputId = ns("axisType"), label = "Plot enrichmentScore (replaces pValue)", value = FALSE),
 
-        actionButton(inputId = ns("actPlot"), label = "Show plot"),
+        actionButton(inputId = ns("actPlot"), label = "Show plot", width = 150),
 
         downloadButton(outputId = ns("dataDwnld"), label = "Download Data"),
 
@@ -43,21 +43,18 @@ plotting_page_ui <- function(id)
 
         uiOutput(ns("lgdPosition")),
 
-        br(),
-        br(),
-
-        div(style="display: inline-block;vertical-align:top; width: 250px;",
-            actionButton(inputId = ns("upDate1"), label = "Refresh Plot", width = 250)
+        div(style="display: inline-block;vertical-align:top; width: 150px;",
+            actionButton(inputId = ns("upDate1"), label = "Refresh Plot", width = 150)
         ),
 
-        div(style="display: inline-block;vertical-align:top; width: 250px;",
-            actionButton(inputId = ns("defReset"), label = "Default Settings", width = 250)
+        div(style="display: inline-block;vertical-align:top; width: 150px;",
+            actionButton(inputId = ns("defReset"), label = "Default Settings", width = 150)
         ),
 
         br(),
         br(),
 
-        div(style="display: inline-block;vertical-align:top; width: 250px;",
+        div(style="display: inline-block;vertical-align:top; width: 150px;",
             shinyWidgets::dropdownButton(
               h3("Text Options:"),
 
@@ -84,7 +81,7 @@ plotting_page_ui <- function(id)
 
               br(),
 
-              actionButton(inputId = ns("upDate2"), label = "Refresh Plot"),
+              actionButton(inputId = ns("upDate2"), label = "Refresh Plot", width = "100%"),
 
               br(),
 
@@ -93,7 +90,7 @@ plotting_page_ui <- function(id)
             ),
         ),
 
-        div(style="display: inline-block;vertical-align:top; width: 250px;",
+        div(style="display: inline-block;vertical-align:top; width: 150px;",
             shinyWidgets::dropdownButton(
               h3("Download Options:"),
 
@@ -119,7 +116,7 @@ plotting_page_ui <- function(id)
 
               br(),
 
-              actionButton(inputId = ns("upDate3"), label = "Refresh Plot"),
+              actionButton(inputId = ns("upDate3"), label = "Refresh Plot", width = "100%"),
 
               br(),
 
