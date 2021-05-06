@@ -16,7 +16,8 @@ exploring_page_ui <- function(id)
         actionButton(ns("clusterButton"),
                      label = "Cluster!"),
         shinycssloaders::withSpinner(plotOutput(outputId = ns("netPlotOut"), height = 750,
-                   brush = ns("netSelect")))
+                   brush = brushOpts(ns("netSelect"))))
+        ,tableOutput(ns("test"))
       ),
      column(2,
             uiOutput(ns("shown_groups")),
@@ -42,6 +43,10 @@ exploring_page <- function(input, output, session, descent_data)
 {
   ns <- session$ns
   output$netPlotOut <- NULL
+  results <- NA
+  y <- NA
+  networkPlot <- NA
+  res <- NA
 
   observeEvent(input$clusterButton,{
     # putting it here so that the delay is during the clustering rather than at the firtst page
@@ -68,11 +73,14 @@ exploring_page <- function(input, output, session, descent_data)
                                      type = "error")
      }
     req(descent_data$inputData)
-    output$netPlotOut <- renderPlot(plot(descent_data$inputData))
+    #add renderPlot for netPlotOut so the spinner will appear. Otherwise it doesn't appear until clusterR is done
+    output$netPlotOut <- renderPlot(plot())
 
     results <- clustereR(ontoNet = descent_data$net,
                          method = "leiden",
                          target = descent_data$inputData$ontoID)
+    networkPlot<-results$plot
+
 
 
 
@@ -86,22 +94,35 @@ exploring_page <- function(input, output, session, descent_data)
 
     descent_data$clustered <- list(exists =  T)
 
-    descent_data$plot <- results$plot
-
-
-
-
-
     output$netPlotOut <- renderPlot({
       par(mar = c(0,0,0,0))
-      validate(need(input$clusterButton, ""))
-      plot(results$plot,
-           vertex.label = NA,
-           vertex.label.cex = 0.5,
-           vertex.border.cex = 0.000001,
-           asp = 0,
-           axes = F)
+      set.seed(42)
+      plot(networkPlot,
+           #layout = layout_with_drl,
+             vertex.label = NA,
+             vertex.label.cex = 0.5,
+             vertex.border.cex = 0.000001,
+             asp = 0,
+             axes = F)
     })
+
+    output$test <- renderTable({
+      set.seed(42)
+
+      V(networkPlot)$names <- names(V(networkPlot))
+      y <-
+        data.frame(V(networkPlot)$names, norm_coords(layout_with_drl(networkPlot)))
+      colnames(y)[1]<-"ontoID"
+      y <- y %>%
+        dplyr::filter(ontoID %in% results$res$ontoID)
+      y <- dplyr::left_join(y, results$res, by = "ontoID") %>%
+        dplyr::select(ontoTerm, X1, X2, clusterTerm)
+      res <- brushedPoints(y, input$netSelect, "X1", "X2")
+      if (nrow(res) == 0)
+        return()
+      res
+    })
+
 
       output$shown_groups <- renderUI({
         checkboxGroupInput(ns("shown_groups"),
@@ -110,12 +131,7 @@ exploring_page <- function(input, output, session, descent_data)
       })
         output$move <- renderUI ({
           actionButton(inputId = ns("move"), label = "Redefine clusters")
-
-
       })
-
-
-
   })
   observe(req(descent_data$inputData$clusterNumber,
               descent_data$inputData$clusterTerm))
@@ -169,10 +185,14 @@ exploring_page <- function(input, output, session, descent_data)
                                            "create new cluster"))
     }
   })
-
-  observeEvent(input$netSelect, {
-    print("Brush is working")
+  observeEvent(input$move,{
+    shinyWidgets::sendSweetAlert(session = session,
+                                 title = "Clusters have been redefined",
+                                 text = "You have chosen to redefine clusters. Keep in mind that data are no longer objective and should be interpreted with caution",
+                                 type = "warning")
   })
-
+  observeEvent(input$netSelect, {
+    print(descent_data$input$ontoTerm)
+  })
 
 }
