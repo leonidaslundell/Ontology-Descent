@@ -223,6 +223,22 @@ plotting_page <- function(input, output, session, descent_data)
                    output$lgTxtSize <- NULL
                  }))
 
+  ### User Defined Clusters TRUE / FALSE ###
+  observe({
+    if (!is.null(descent_data$newOutput)){
+      reacVals$manualClusters <- reactive({
+        any(descent_data$newOutput$defaultClusterTerm != descent_data$newOutput$clusterTerm)
+      })
+
+      } else if (is.null(descent_data$inputData$defaultClusterTerm)){
+
+        reacVals$manualClusters <- reactive({
+          temp <- FALSE
+          return(temp)
+        })
+      }
+    print(reacVals$manualClusters())
+  })
 
   ### Create Plot ###
   reacVals$plotOut <- eventReactive(input$actPlot | input$upDate1 | input$upDate2 | input$upDate3,
@@ -238,6 +254,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           clusterNumber = dat()$clusterNumber,
                                                           clusterName = cutText(dat()$clusterTerm, 52),
                                                           enrichmentScore = dat()$enrichmentScore,
+                                                          manualClusters = reacVals$manualClusters(),
                                                           direction = dat()$direction,
                                                           colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
@@ -266,6 +283,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           direction = dat()$direction,
                                                           colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
+                                                          manualClusters = reacVals$manualClusters(),
                                                           dotSize = input$dotSize,
                                                           themeSet = input$themeSet,
                                                           nameSize = input$nameSize,

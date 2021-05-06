@@ -87,6 +87,7 @@ cutText <- function(text, cutoff){
 #' @param enrichmentScore Optional. A numeric vector of enrichment scores for each Gene Ontology.
 #' @param direction Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.
 #' @param plotEnrichment Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.
+#' @param manualClusters Optional. TRUE or FALSE. Were the cluster terms set manually or by default algorithm. Default == FALSE.
 #' @param dotSize Optional. Numeric. Dot size in plots. Default == 1.
 #' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"
 #' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"
@@ -109,7 +110,7 @@ cutText <- function(text, cutoff){
 #'
 clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, clusterNumber = NULL,
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
-                         plotEnrichment = FALSE,
+                         plotEnrichment = FALSE, manualClusters = FALSE,
                          dotSize = 1, themeSet = "minimal", colorSet = "IGV",
                          nameSize = 8, axTxtSize = 8, axTitleSize = 10, fontFam = "sans"){
 
@@ -193,6 +194,13 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
       ggplot2::scale_color_manual(values = col, name = "Cluster", guide = "none")
   }
 
+  ### Add Y-axis Label ###
+  if(!isTRUE(manualClusters)){
+    yLab <- "Prototypical Clusters"
+  } else if (isTRUE(manualClusters)){
+    yLab <- "User Defined Clusters"
+  }
+
   ### Create histogram counts to place next to dotplot ###
   q <- ggplot2::ggplot(plot, aes(y = clusterName, fill = clusterName)) +
     ggiraph::geom_bar_interactive(stat = "count", ggplot2::aes(tooltip = clusterName, data_id = clusterName), show.legend = FALSE)+
@@ -200,9 +208,8 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
     ggplot2::scale_x_continuous(expand = c(0,0),
                                 limits = c(0, ceiling(max(table(plot$clusterName)) * 1.1)),
                                 breaks = ceiling(seq(0, max(table(plot$clusterName)) * 1.1, length.out = 3)))+
-    ggplot2::scale_y_discrete(position = "right")+
-    ggplot2::xlab("Counts")+
-    ggplot2::ylab("Pathways")
+    ggplot2::scale_y_discrete(yLab, position = "right")+
+    ggplot2::xlab("Counts")
 
   ### Set Theme ###
   if (themeSet == "bw"){
@@ -235,7 +242,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
   q <- q + theme(text = ggplot2::element_text(family = fontFam),
                  axis.text.x = ggplot2::element_text(size = axTxtSize),
                  axis.title.x = ggplot2::element_text(size = axTitleSize),
-                 axis.title.y = ggplot2::element_blank(),
+                 axis.title.y.right = ggplot2::element_text(size = axTitleSize),
                  axis.text.y = ggplot2::element_blank(),
                  axis.ticks.y = ggplot2::element_blank())
 
@@ -262,6 +269,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @param enrichmentScore Optional. A numeric vector of enrichment scores for each Gene Ontology.
 #' @param direction Optional. A character vector containing values "Down" or "Up", indicating the direction of pathway enrichment for each Gene Ontology.
 #' @param plotEnrichment Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.
+#' @param manualClusters Optional. TRUE or FALSE. Were the cluster terms set manually or by default algorithm. Default == FALSE.
 #' @param dotSize Optional. Numeric. Dot size in plots. Default == 2.
 #' @param themeSet Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"
 #' @param colorSet Optional. A character string to select the color palette for the plot: one of  "Brewer", "AAAS", "D3", "Futurama", "IGV", "JAMA", "JCO", "Lancet", "LocusZoom", "NEJM", "NPG", "RickAndMorty", "Simpsons", "StarTrek", "Tron", "UChicago", or "UCSCGB". Default == "IGV"
@@ -285,7 +293,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @examples
 pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNumber = NULL,
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
-                         plotEnrichment = FALSE,
+                         plotEnrichment = FALSE, manualClusters = FALSE,
                          dotSize = 2, themeSet = "minimal", colorSet = "IGV", lgdPosition = "bottom",
                          nameSize = 7, axTxtSize = 7, axTitleSize = 9, lgTxtSize = 7, lgTitleSize = 9, fontFam = "sans"){
 
@@ -337,6 +345,13 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
     plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName))
   }
 
+  ### Add Legend Label ###
+  if(!isTRUE(manualClusters)){
+    legLab <- "Prototypical Clusters"
+  } else if (isTRUE(manualClusters)){
+    legLab <- "User Defined Clusters"
+  }
+
   ### Create ggplot Object ###
   if (!isTRUE(plotEnrichment)){
 
@@ -353,8 +368,8 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
       p <- ggplot2::ggplot(plot, ggplot2::aes(x = -log10(pValue), y = ontoTerm, fill = clusterName, color = clusterName))+
         ggiraph::geom_point_interactive(size = dotSize, ggplot2::aes(tooltip = clusterName, data_id = clusterName))+
         ggplot2::scale_x_continuous("-log10 P Value", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
-        ggplot2::scale_fill_manual(values = col, name = "Cluster")+
-        ggplot2::scale_color_manual(values = col, name = "Cluster")
+        ggplot2::scale_fill_manual(values = col, name = legLab)+
+        ggplot2::scale_color_manual(values = col, name = legLab)
 
     } else if (!is.null(direction)){
 
@@ -363,8 +378,8 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
       p <- ggplot2::ggplot(plot, ggplot2::aes(x = -log10(pValue), y = ontoTerm, fill = clusterName, color = clusterName, shape = direction))+
         ggiraph::geom_point_interactive(size = dotSize, ggplot2::aes(tooltip = clusterName, data_id = clusterName))+
         ggplot2::scale_shape_manual(values = c(25,24), name = "Direction")+
-        ggplot2::scale_fill_manual(values = col, name = "Cluster")+
-        ggplot2::scale_color_manual(values = col, name = "Cluster")+
+        ggplot2::scale_fill_manual(values = col, name = legLab)+
+        ggplot2::scale_color_manual(values = col, name = legLab)+
         ggplot2::scale_x_continuous("-log10 P Value", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))
     }
   } else if (isTRUE(plotEnrichment)){
@@ -380,8 +395,8 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
       ggplot2::geom_vline(xintercept = 0, lty = "dashed")+
       ggplot2::geom_point(size = dotSize)+
       ggplot2::scale_x_continuous("Enrichment Score", limits = xlim, breaks = seq(xlim[1], xlim[2], 1))+
-      ggplot2::scale_fill_manual(values = col, name = "Cluster")+
-      ggplot2::scale_color_manual(values = col, name = "Cluster")
+      ggplot2::scale_fill_manual(values = col, name = legLab)+
+      ggplot2::scale_color_manual(values = col, name = legLab)
   }
 
   ### Set Theme ###

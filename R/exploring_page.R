@@ -79,6 +79,7 @@ exploring_page <- function(input, output, session, descent_data)
     results <- clustereR(ontoNet = descent_data$net,
                          method = "leiden",
                          target = descent_data$inputData$ontoID)
+
     networkPlot<-results$plot
 
 
@@ -91,6 +92,9 @@ exploring_page <- function(input, output, session, descent_data)
                                                                "enrichmentScore"), with = F],
                                     results$res,
                                     by = "ontoID", order = F)
+
+    ### Save Default ###
+    rV$def <- reactive(results$res[,c("ontoID", "clusterNumber", "clusterTerm")])
 
     descent_data$clustered <- list(exists =  T)
 
@@ -193,6 +197,20 @@ exploring_page <- function(input, output, session, descent_data)
   })
   observeEvent(input$netSelect, {
     print(descent_data$input$ontoTerm)
+  })
+
+  ### Keep Default Clusters ###
+  rV <- reactiveValues()
+
+  observeEvent(input$move,{
+
+    tempData <- reactive({
+      temp <- rV$def()
+      colnames(temp)[2:3] <- c("defaultClusterNumber", "defaultClusterTerm")
+      return(temp)
+    })
+
+    descent_data$newOutput <- merge(descent_data$inputData, tempData(), by = "ontoID", order = FALSE)
   })
 
 }
