@@ -237,7 +237,6 @@ plotting_page <- function(input, output, session, descent_data)
           return(temp)
         })
       }
-    print(reacVals$manualClusters())
   })
 
   ### Create Plot ###
@@ -383,11 +382,28 @@ plotting_page <- function(input, output, session, descent_data)
     }
   )
 
+  ### User Defined Clusters Download ###
+  observe({
+    if (!isTRUE(reacVals$manualClusters())){
+      reacVals$dataDwnld <- reactive({
+        req(descent_data$inputData)
+        return(descent_data$inputData)
+        })
+
+    } else if (isTRUE(reacVals$manualClusters())){
+      reacVals$dataDwnld <- reactive({
+        req(descent_data$newOutput)
+        return(descent_data$newOutput)
+      })
+
+    }
+  })
+
   ### Download Data ###
   output$dataDwnld <- downloadHandler(
     filename = function() {"OntoDescResults.xlsx"},
-    content = function(file) {openxlsx::write.xlsx(reorderData(reacVals$data()), file = file,
-                                                   colNames = F, rowNames = F, borders = "rows", sheetName = "OntoDesc")}
+    content = function(file) {openxlsx::write.xlsx(reorderData(reacVals$dataDwnld()), file = file,
+                                                   colNames = T, rowNames = F, borders = "rows", sheetName = "OntoDesc")}
   )
 
   ### Stop App on Session End ###

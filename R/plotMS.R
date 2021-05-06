@@ -8,7 +8,9 @@
 #' @examples
 reorderData <- function(data){
   exp <- as.data.frame(data)
-  ord <- c("ontoID", "ontoTerm", "pValue", "enrichmentScore", "direction", "clusterNumber", "clusterTerm")
+  ord <- c("ontoID", "ontoTerm", "pValue", "enrichmentScore", "direction",
+           "clusterNumber", "clusterTerm", "defaultClusterNumber", "defaultClusterTerm")
+
   ord <- ord[ord %in% colnames(exp)]
 
   exp <- exp[,ord]
