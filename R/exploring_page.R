@@ -11,22 +11,26 @@ exploring_page_ui <- function(id)
 
     titlePanel("Cluster and explore"),
 
-    fluidRow(
-     column(4,
+    sidebarLayout(
+     sidebarPanel(
         actionButton(ns("clusterButton"),
                      label = "Cluster!"),
-        shinycssloaders::withSpinner(plotOutput(outputId = ns("netPlotOut"), height = 750,
-                   brush = brushOpts(ns("netSelect"))))
-        ,tableOutput(ns("test"))
-      ),
-     column(2,
-            uiOutput(ns("shown_groups")),
-            uiOutput(ns("move")))
-            ,
-     column(6,uiOutput(ns("sorting_boxes")))
-  )
-)
-  }
+        uiOutput(ns("shown_groups")), uiOutput(ns("move"))),
+     mainPanel(shinycssloaders::withSpinner(
+       plotOutput(
+         outputId = ns("netPlotOut"),
+         height = 750,
+         brush = brushOpts(ns("netSelect")),
+         hover = hoverOpts(ns("netHover"),
+                           delay = 0)
+       )
+     )
+     ,
+     uiOutput(ns("sorting_boxes"))
+     ,
+    tableOutput(ns("test"))
+     )))
+}
 
 #' Server for the clustering page
 #'
