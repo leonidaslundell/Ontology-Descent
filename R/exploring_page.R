@@ -98,7 +98,7 @@ exploring_page <- function(input, output, session, descent_data)
       par(mar = c(0,0,0,0))
       set.seed(42)
       plot(networkPlot,
-           #layout = layout_with_drl,
+           layout = layout_with_dh,
              vertex.label = NA,
              vertex.label.cex = 0.5,
              vertex.border.cex = 0.000001,
@@ -108,10 +108,9 @@ exploring_page <- function(input, output, session, descent_data)
 
     output$test <- renderTable({
       set.seed(42)
-
       V(networkPlot)$names <- names(V(networkPlot))
       y <-
-        data.frame(V(networkPlot)$names, norm_coords(layout_with_drl(networkPlot)))
+        data.frame(V(networkPlot)$names, norm_coords(layout_with_dh(networkPlot)))
       colnames(y)[1]<-"ontoID"
       y <- y %>%
         dplyr::filter(ontoID %in% results$res$ontoID)
@@ -192,7 +191,7 @@ exploring_page <- function(input, output, session, descent_data)
                                  type = "warning")
   })
   observeEvent(input$netSelect, {
-    print(descent_data$input$ontoTerm)
+    #print(descent_data$input$ontoTerm)
   })
 
 }
