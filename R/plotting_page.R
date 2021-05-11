@@ -24,7 +24,7 @@ plotting_page_ui <- function(id)
 
         checkboxInput(inputId = ns("axisType"), label = "Plot enrichmentScore (replaces pValue)", value = FALSE),
 
-        actionButton(inputId = ns("actPlot"), label = "Show plot"),
+        actionButton(inputId = ns("actPlot"), label = "Show plot", width = 150),
 
         downloadButton(outputId = ns("dataDwnld"), label = "Download Data"),
 
@@ -43,78 +43,92 @@ plotting_page_ui <- function(id)
 
         uiOutput(ns("lgdPosition")),
 
-        actionButton(inputId = ns("upDate1"), label = "Refresh Plot"),
+        div(style="display: inline-block;vertical-align:top; width: 150px;",
+            actionButton(inputId = ns("upDate1"), label = "Refresh Plot", width = 150)
+        ),
 
-        br(),
-        br(),
-
-        shinyWidgets::dropdownButton(
-          h3("Text Options:"),
-
-          br(),
-
-          selectInput(ns("fontFam"), label = "Font Family",
-                      choices = c("Sans (Arial)" = "sans",
-                                  "Serif (Times New Roman)" = "serif",
-                                  "Mono (Courier New)" = "mono"),
-                      selected = "sans", multiple = FALSE),
-
-          sliderInput(ns("axTitleSize"), label = "Axis title (size)",
-                      value = 9, min = 4, max = 48, step = 1),
-
-          sliderInput(ns("nameSize"), label = "Pathway Names (size)",
-                       value = 7, min = 4, max = 48, step = 1),
-
-          sliderInput(ns("axTxtSize"), label = "Axis text (size)",
-                       value = 7, min = 4, max = 48, step = 1),
-
-          uiOutput(ns("lgTitleSize")),
-
-          uiOutput(ns("lgTxtSize")),
-
-          br(),
-
-          actionButton(inputId = ns("upDate2"), label = "Refresh Plot"),
-
-          br(),
-
-          circle = FALSE, up = TRUE, status = "info", label = "Text Options", width = "300px",
-          tooltip = tooltipOptions(title = "Click to modify text")
+        div(style="display: inline-block;vertical-align:top; width: 150px;",
+            actionButton(inputId = ns("defReset"), label = "Default Settings", width = 150)
         ),
 
         br(),
+        br(),
 
-        shinyWidgets::dropdownButton(
-          h3("Download Options:"),
+        div(style="display: inline-block;vertical-align:top; width: 150px;",
+            shinyWidgets::dropdownButton(
+              h3("Text Options:"),
 
-          br(),
+              br(),
 
-          numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
-                       value = 15, step = .5),
+              selectInput(ns("fontFam"), label = "Font Family",
+                          choices = c("Sans (Arial)" = "sans",
+                                      "Serif (Times New Roman)" = "serif",
+                                      "Mono (Courier New)" = "mono"),
+                          selected = "sans", multiple = FALSE),
 
-          numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
-                       value = 15, step = .5),
+              sliderInput(ns("axTitleSize"), label = "Axis title (size)",
+                          value = 9, min = 4, max = 48, step = 1),
 
-          selectInput(inputId = ns("plotUnit"), label = "Size Units",
-                      choices = c("cm", "in", "mm"),
-                      selected = "cm", multiple = FALSE),
+              sliderInput(ns("nameSize"), label = "Pathway Names (size)",
+                          value = 7, min = 4, max = 48, step = 1),
 
-          numericInput(inputId = ns("dwnDPI"), label = "DPI", min = 75, max = 1000,
-                       value = 300, step = 25),
+              sliderInput(ns("axTxtSize"), label = "Axis text (size)",
+                          value = 7, min = 4, max = 48, step = 1),
 
-          selectInput(inputId = ns("fileType"), label = "File Type",
-                      choices = c("tiff", "png", "eps", "ps", "tex", "pdf",
-                                  "jpeg", "bmp", "svg", "wmf"),
-                      selected = "tiff", multiple = FALSE),
+              uiOutput(ns("lgTitleSize")),
 
-          br(),
+              uiOutput(ns("lgTxtSize")),
 
-          actionButton(inputId = ns("upDate3"), label = "Refresh Plot"),
+              br(),
 
-          br(),
+              actionButton(inputId = ns("upDate2"), label = "Refresh Plot", width = "100%"),
 
-          circle = FALSE, up = TRUE, status = "info", label = "Download / Plot Size Options", width = "300px",
-          tooltip = tooltipOptions(title = "Click to modify plot size"))
+              br(),
+
+              circle = FALSE, up = FALSE, right = FALSE, status = "info", label = "   Text Options   ", width = 250,
+              tooltip = tooltipOptions(title = "Click to modify text")
+            ),
+        ),
+
+        div(style="display: inline-block;vertical-align:top; width: 150px;",
+            shinyWidgets::dropdownButton(
+              h3("Download Options:"),
+
+              br(),
+
+              numericInput(inputId = ns("plotHt"), label = "Plot Height", min = 2, max = 50,
+                           value = 15, step = .5),
+
+              numericInput(inputId = ns("plotWd"), label = "Plot Width", min = 2, max = 50,
+                           value = 15, step = .5),
+
+              selectInput(inputId = ns("plotUnit"), label = "Size Units",
+                          choices = c("cm", "in", "mm"),
+                          selected = "cm", multiple = FALSE),
+
+              numericInput(inputId = ns("dwnDPI"), label = "DPI", min = 75, max = 1000,
+                           value = 300, step = 25),
+
+              selectInput(inputId = ns("fileType"), label = "File Type",
+                          choices = c("tiff", "png", "eps", "ps", "tex", "pdf",
+                                      "jpeg", "bmp", "svg", "wmf"),
+                          selected = "tiff", multiple = FALSE),
+
+              br(),
+
+              actionButton(inputId = ns("upDate3"), label = "Refresh Plot", width = "100%"),
+
+              br(),
+
+              downloadButton(outputId = ns("plotDwnld1"), label = "Download Plot"),
+
+              br(),
+
+              circle = FALSE, up = FALSE, right = FALSE, status = "info", label = "Download / Plot Size Options", width = 250,
+              tooltip = tooltipOptions(title = "Click to modify plot size"))
+            )
+
+
 
 
         ),
@@ -206,6 +220,21 @@ plotting_page <- function(input, output, session, descent_data)
                    output$lgTxtSize <- NULL
                  }))
 
+  ### User Defined Clusters TRUE / FALSE ###
+  observe({
+    if (!is.null(descent_data$newOutput)){
+      reacVals$manualClusters <- reactive({
+        any(descent_data$newOutput$defaultClusterTerm != descent_data$newOutput$clusterTerm)
+      })
+
+      } else if (is.null(descent_data$inputData$defaultClusterTerm)){
+
+        reacVals$manualClusters <- reactive({
+          temp <- FALSE
+          return(temp)
+        })
+      }
+  })
 
   ### Create Plot ###
   reacVals$plotOut <- eventReactive(input$actPlot | input$upDate1 | input$upDate2 | input$upDate3,
@@ -221,6 +250,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           clusterNumber = dat()$clusterNumber,
                                                           clusterName = cutText(dat()$clusterTerm, 52),
                                                           enrichmentScore = dat()$enrichmentScore,
+                                                          manualClusters = reacVals$manualClusters(),
                                                           direction = dat()$direction,
                                                           colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
@@ -249,6 +279,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           direction = dat()$direction,
                                                           colorManual = dat()$color,
                                                           plotEnrichment = input$axisType,
+                                                          manualClusters = reacVals$manualClusters(),
                                                           dotSize = input$dotSize,
                                                           themeSet = input$themeSet,
                                                           nameSize = input$nameSize,
@@ -262,7 +293,7 @@ plotting_page <- function(input, output, session, descent_data)
   )
 
 
-  observeEvent(input$actPlot, {
+  observeEvent(input$actPlot | input$upDate1 | input$upDate2 | input$upDate3, {
     req(reacVals$plotOut())
 
     h <- eventReactive(input$actPlot | input$upDate1 | input$upDate2 | input$upDate3,{
@@ -290,6 +321,38 @@ plotting_page <- function(input, output, session, descent_data)
                                                             )))
   })
 
+  ### Reset Options to Default ###
+  observeEvent(input$defReset, {
+    ### Theme
+    shinyWidgets::updatePickerInput(session, "themeSet", selected = "minimal")
+
+    ### Dot Size
+    updateSliderInput(session, "dotSize", value = 1)
+
+    ### Legend Pathway Plot
+    if(input$plotType == "pth"){
+      ### Position
+      updateSelectInput(session, "lgdPosition", selected = "bottom")
+      ### Title Font
+      updateSliderInput(session, "lgTitleSize", value = 9)
+      ### Text Font
+      updateSliderInput(session, "lgTxtSize", value = 7)
+    }
+
+    ### Text Options
+    updateSelectInput(session, "fontFam", selected = "sans")
+    updateSliderInput(session, "axTitleSize", value = 9)
+    updateSliderInput(session, "nameSize", value = 7)
+    updateSliderInput(session, "axTxtSize", value = 7)
+
+    ### Plot Size and Download Options
+    updateNumericInput(session, "plotHt", value = 15)
+    updateNumericInput(session, "plotWd", value = 15)
+    updateSelectInput(session, "plotUnit", selected = "cm")
+    updateNumericInput(session, "dwnDPI", value = 300)
+    updateSelectInput(session, "fileType", selected = "tiff")
+  })
+
   ### Download Plot ###
   reacVals$plotDwnld <- reactive(reacVals$plotOut())
   reacVals$plotUnit <- reactive(switch(input$plotUnit, "cm" = "cm", "in" = "in", "mm" = "mm"))
@@ -307,12 +370,37 @@ plotting_page <- function(input, output, session, descent_data)
     }
   )
 
+  output$plotDwnld1 <- downloadHandler(
+    filename = function() {paste("plot", reacVals$fileType(), sep = ".")},
+    content = function(file) {
+      ggplot2::ggsave(file, plot = reacVals$plotOut(), device = reacVals$fileType(),
+                      width = reacVals$plotWd(), height = reacVals$plotHt(),
+                      units = reacVals$plotUnit(), dpi = reacVals$plotDPI())
+    }
+  )
+
+  ### User Defined Clusters Download ###
+  observe({
+    if (!isTRUE(reacVals$manualClusters())){
+      reacVals$dataDwnld <- reactive({
+        req(descent_data$inputData)
+        return(descent_data$inputData)
+        })
+
+    } else if (isTRUE(reacVals$manualClusters())){
+      reacVals$dataDwnld <- reactive({
+        req(descent_data$newOutput)
+        return(descent_data$newOutput)
+      })
+
+    }
+  })
 
   ### Download Data ###
   output$dataDwnld <- downloadHandler(
     filename = function() {"OntoDescResults.xlsx"},
-    content = function(file) {openxlsx::write.xlsx(reorderData(reacVals$data()), file = file,
-                                                   colNames = F, rowNames = F, borders = "rows", sheetName = "OntoDesc")}
+    content = function(file) {openxlsx::write.xlsx(reorderData(reacVals$dataDwnld()), file = file,
+                                                   colNames = T, rowNames = F, borders = "rows", sheetName = "OntoDesc")}
   )
 
   ### Stop App on Session End ###
