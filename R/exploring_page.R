@@ -40,24 +40,46 @@ exploring_page_ui <- function(id)
 #' @export
 exploring_page <- function(input, output, session, descent_data)
 {
+
   ns <- session$ns
   output$netPlotOut <- NULL
 
-  observeEvent(input$clusterButton,{
+  observeEvent(input$clusterButton, {
     # putting it here so that the delay is during the clustering rather than at the firtst page
     # ------------------ App virtualenv setup (Do not edit) ------------------- #
     if (Sys.info()[['user']] == 'shiny'){
+
       virtualenv_dir = Sys.getenv('VIRTUALENV_NAME')
       python_path = Sys.getenv('PYTHON_PATH')
 
-      # Create virtual env and install dependencies
-      reticulate::virtualenv_create(envname = virtualenv_dir,
-                                    python = python_path)
-      reticulate::virtualenv_install(virtualenv_dir,
-                                     packages = c('leidenalg'),
-                                     ignore_installed=TRUE)
-      reticulate::use_virtualenv(virtualenv_dir,
-                                 required = T)
+      if(any(reticulate::virtualenv_list() == virtualenv_dir)){
+        print("using existing version")
+        reticulate::use_virtualenv(virtualenv_dir,
+                                   required = T)
+      }else{
+        print("creating new version")
+        reticulate::virtualenv_create(envname = virtualenv_dir,
+                                      python = python_path)
+        reticulate::virtualenv_install(virtualenv_dir,
+                                       packages = c('leidenalg', 'python-igraph', 'numpy'),
+                                       ignore_installed=TRUE)
+        reticulate::use_virtualenv(virtualenv_dir,
+                                   required = T)
+      }
+
+    }else{
+
+      CONDA_NAME <- Sys.getenv("CONDA_NAME")
+
+      if(any(reticulate::conda_list()$name == CONDA_NAME)){
+        print("running old")
+        reticulate::use_condaenv(CONDA_NAME, required = T)
+      }else{
+        reticulate::conda_create(CONDA_NAME)
+        reticulate::conda_install(CONDA_NAME, packages = c("leidenalg", "python-igraph", "numpy"))
+        reticulate::use_condaenv(CONDA_NAME, required = T)
+      }
+
     }
     # ------------------ App server logic (Edit anything below) --------------- #
 
@@ -70,9 +92,15 @@ exploring_page <- function(input, output, session, descent_data)
     req(descent_data$inputData)
     output$netPlotOut <- renderPlot(plot(descent_data$inputData))
 
+    print("packages available")
+    print(paste0("leiden ", reticulate::py_module_available("leidenalg")))
+    print(paste0("igraph ", reticulate::py_module_available("igraph")))
+
+    print("running ontodesc")
     results <- clustereR(ontoNet = descent_data$net,
                          method = "leiden",
                          target = descent_data$inputData$ontoID)
+    print("done with ontodesc")
 
 
 
