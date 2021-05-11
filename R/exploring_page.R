@@ -11,21 +11,26 @@ exploring_page_ui <- function(id)
 
     titlePanel("Cluster and explore"),
 
-    fluidRow(
-     column(4,
+    sidebarLayout(
+     sidebarPanel(
         actionButton(ns("clusterButton"),
                      label = "Cluster!"),
-        shinycssloaders::withSpinner(plotOutput(outputId = ns("netPlotOut"), height = 750,
-                   brush = ns("netSelect")))
-      ),
-     column(2,
-            uiOutput(ns("shown_groups")),
-            uiOutput(ns("move")))
-            ,
-     column(6,uiOutput(ns("sorting_boxes")))
-  )
-)
-  }
+        uiOutput(ns("shown_groups")), uiOutput(ns("move"))),
+     mainPanel(shinycssloaders::withSpinner(
+       plotOutput(
+         outputId = ns("netPlotOut"),
+         height = 750,
+         brush = brushOpts(ns("netSelect")),
+         hover = hoverOpts(ns("netHover"),
+                           delay = 0)
+       )
+     )
+     ,
+     uiOutput(ns("sorting_boxes"))
+     ,
+    tableOutput(ns("test"))
+     )))
+}
 
 #' Server for the clustering page
 #'
@@ -42,9 +47,12 @@ exploring_page <- function(input, output, session, descent_data)
 {
 
   ns <- session$ns
+  #netPlotOut is defined as NULL here to keep the spinner from appearing until
+  #submit button is pressed
   output$netPlotOut <- NULL
 
   observeEvent(input$clusterButton, {
+
     # putting it here so that the delay is during the clustering rather than at the firtst page
     # ------------------ App virtualenv setup (Do not edit) ------------------- #
     if (Sys.info()[['user']] == 'shiny'){
@@ -82,7 +90,7 @@ exploring_page <- function(input, output, session, descent_data)
 
     }
     # ------------------ App server logic (Edit anything below) --------------- #
-
+  #Add sweetalert for pressing Submit before reading in data
       if (length(descent_data$inputData$ontoID)==0){
         shinyWidgets::sendSweetAlert(session = session,
                                      title = "Clustering Error",
@@ -90,7 +98,10 @@ exploring_page <- function(input, output, session, descent_data)
                                      type = "error")
      }
     req(descent_data$inputData)
-    output$netPlotOut <- renderPlot(plot(descent_data$inputData))
+
+    #add renderPlot  so the spinner will appear.
+    #Otherwise it doesn't appear until clusterR is done
+    output$netPlotOut <- renderPlot(plot())
 
     print("packages available")
     print(paste0("leiden ", reticulate::py_module_available("leidenalg")))
@@ -102,7 +113,7 @@ exploring_page <- function(input, output, session, descent_data)
                          target = descent_data$inputData$ontoID)
     print("done with ontodesc")
 
-
+    networkPlot<-results$plot
 
     descent_data$inputData <- merge(descent_data$inputData[,colnames(descent_data$inputData) %in%
                                                              c("ontoID",
@@ -112,24 +123,43 @@ exploring_page <- function(input, output, session, descent_data)
                                     results$res,
                                     by = "ontoID", order = F)
 
+    ### Save Default ###
+    rV$def <- reactive(results$res[,c("ontoID", "clusterNumber", "clusterTerm")])
+
     descent_data$clustered <- list(exists =  T)
-
-    descent_data$plot <- results$plot
-
-
-
-
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0,0,0,0))
-      validate(need(input$clusterButton, ""))
-      plot(results$plot,
-           vertex.label = NA,
-           vertex.label.cex = 0.5,
-           vertex.border.cex = 0.000001,
-           asp = 0,
-           axes = F)
+      set.seed(42)
+      plot(networkPlot,
+           layout = layout.auto,
+             vertex.label = NA,
+             vertex.label.cex = 0.5,
+             vertex.border.cex = 0.000001,
+             asp = 0,
+             axes = F)
     })
+
+    output$test <- renderTable({
+      set.seed(42)
+      y <-
+        data.frame(names(V(networkPlot)), norm_coords(layout.auto(networkPlot)))
+      colnames(y)[1] <- "ontoID"
+      y <- y %>%
+        dplyr::filter(ontoID %in% results$res$ontoID)
+      y <- dplyr::left_join(y, results$res, by = "ontoID") %>%
+        dplyr::select(ontoTerm, X1, X2, clusterTerm)
+      res <- brushedPoints(y, input$netSelect, "X1", "X2")
+      if (nrow(res) == 0)
+        return()
+      updateCheckboxGroupInput(
+        session = session,
+        inputId = "shown_groups",
+        selected = res$clusterTerm
+      )
+      res
+    })
+
 
       output$shown_groups <- renderUI({
         checkboxGroupInput(ns("shown_groups"),
@@ -138,12 +168,7 @@ exploring_page <- function(input, output, session, descent_data)
       })
         output$move <- renderUI ({
           actionButton(inputId = ns("move"), label = "Redefine clusters")
-
-
       })
-
-
-
   })
   observe(req(descent_data$inputData$clusterNumber,
               descent_data$inputData$clusterTerm))
@@ -197,10 +222,26 @@ exploring_page <- function(input, output, session, descent_data)
                                            "create new cluster"))
     }
   })
-
-  observeEvent(input$netSelect, {
-    print("Brush is working")
+  observeEvent(input$move,{
+    shinyWidgets::sendSweetAlert(session = session,
+                                 title = "Clusters have been redefined",
+                                 text = "You have chosen to redefine clusters. Keep in mind that data are no longer objective and should be interpreted with caution",
+                                 type = "warning")
   })
 
+
+  ### Keep Default Clusters ###
+  rV <- reactiveValues()
+
+  observeEvent(input$move,{
+
+    tempData <- reactive({
+      temp <- rV$def()
+      colnames(temp)[2:3] <- c("defaultClusterNumber", "defaultClusterTerm")
+      return(temp)
+    })
+
+    descent_data$newOutput <- merge(descent_data$inputData, tempData(), by = "ontoID", order = FALSE)
+  })
 
 }
