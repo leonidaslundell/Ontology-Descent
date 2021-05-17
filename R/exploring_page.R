@@ -98,22 +98,30 @@ exploring_page <- function(input, output, session, descent_data)
                                      type = "error")
      }
     req(descent_data$inputData)
+    if(!class(results) == "list"){
+      results <- gsub(".*\\: ", "", results)
 
-    #add renderPlot  so the spinner will appear.
-    #Otherwise it doesn't appear until clusterR is done
-    output$netPlotOut <- renderPlot(plot())
+      if(length(results)<5){
+        shinyWidgets::sendSweetAlert(session = session,
+                                     title = "Input error",
+                                     text = paste0("Ontology IDs do not match network.\nMissing IDs: ",
+                                                   paste0(results, collapse = " ")),
+                                     type = "error")
+      }else{
+        shinyWidgets::sendSweetAlert(session = session,
+                                     title = "Input error",
+                                     text = "Have you selected the correct ontology?",
+                                     type = "error")
+      }
 
-    print("packages available")
-    print(paste0("leiden ", reticulate::py_module_available("leidenalg")))
-    print(paste0("igraph ", reticulate::py_module_available("igraph")))
+    }
+    req(class(results) == "list")
 
-    print("running ontodesc")
     results <- clustereR(ontoNet = descent_data$net,
                          method = "leiden",
                          target = descent_data$inputData$ontoID)
-    print("done with ontodesc")
 
-    networkPlot<-results$plot
+    networkPlot <- results$plot
 
     descent_data$inputData <- merge(descent_data$inputData[,colnames(descent_data$inputData) %in%
                                                              c("ontoID",
