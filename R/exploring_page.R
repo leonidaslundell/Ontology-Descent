@@ -27,8 +27,7 @@ exploring_page_ui <- function(id)
      )
      ,
      uiOutput(ns("sorting_boxes"))
-     ,
-    tableOutput(ns("test"))
+
      )))
 }
 
@@ -140,7 +139,7 @@ exploring_page <- function(input, output, session, descent_data)
              axes = F)
     })
 
-    output$test <- renderTable({
+observeEvent(input$netSelect,{
       set.seed(42)
       y <-
         data.frame(names(V(networkPlot)), norm_coords(layout.auto(networkPlot)))
@@ -156,9 +155,9 @@ exploring_page <- function(input, output, session, descent_data)
         session = session,
         inputId = "shown_groups",
         selected = res$clusterTerm
-      )
-      res
-    })
+      )})
+
+
 
 
       output$shown_groups <- renderUI({
