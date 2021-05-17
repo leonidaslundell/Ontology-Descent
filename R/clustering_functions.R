@@ -1,4 +1,4 @@
-#' Internal Functions
+#' relabelleR
 #'
 #' @param ontoNet igraph representation of ontology hierarchy from networkeR
 #' @param target target ontology IDs to cluster
@@ -33,10 +33,25 @@ relabelleR <- function(ontoNet,
   }
 }
 
+#' clustereR
+#'
+#' @param ontoNet igraph representation of ontology hierarchy from networkeR
+#' @param target target ontology IDs to cluster
+#' @param method clustering method (leiden default)
+#' @param filterTerms terms to not use as a cluster name
+#' @import igraph data.table leiden
+#' @return
+#' @export
+
 clustereR <- function(ontoNet,
                       target,
-                      method = "louvain",
+                      method = "leiden",
                       filterTerms = c("molecular_function")){
+
+  if(!all(target %in% V(ontoNet)$name)){
+    target <- target[!target %in% V(ontoNet)$name]
+    return(paste0("These ontology IDs were not found in the provided ontology network: ", target))
+  }
 
   #############
   #network based clustering
@@ -45,6 +60,22 @@ clustereR <- function(ontoNet,
 
   connectedSubgraph <- connectedSubgraph$res
   connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
+
+  #all_shortest_paths does not find distances between disconnected components
+  #(even if they are connected on the disconnected component)
+  while(!all(target %in% connectedSubgraph)){
+    missingSubgraph <- igraph::all_shortest_paths(ontoNet,
+                                                  from = target[!target %in% connectedSubgraph],
+                                                  to = target[!target %in% connectedSubgraph],
+                                                  mode = "all")
+
+    missingSubgraph <- missingSubgraph$res
+    missingSubgraph <- unique(names(unlist(missingSubgraph)))
+
+    connectedSubgraph <- c(missingSubgraph,
+                           connectedSubgraph)
+  }
+
   ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
 
   ontoClustCommunity <- switch(method,
@@ -125,6 +156,15 @@ clustereR <- function(ontoNet,
   return(list(res = ontoClust, plot = ontoNetSubgraph, community = ontoClustCommunity))
 }
 
+#' networkeR
+#'
+#' @param ont Select ontology type to generate a network. One of c("CC", "BP", "MF","All","Reactome")
+#' @param target Select species to filter our terms without any genes.
+#' @import igraph data.table leiden
+#' @return ontoNet
+#' @export
+#'
+#'
 networkeR <- function(ont = "MF", species = "HSA"){
 
   if(!any(ont %in% c("CC", "BP", "MF","All","Reactome"))){
@@ -141,12 +181,12 @@ networkeR <- function(ont = "MF", species = "HSA"){
   }else{
 
     flatNet <- switch(ont,
-                      MF = as.list(GOMFCHILDREN),
-                      BP = as.list(GOBPCHILDREN),
-                      CC = as.list(GOCCCHILDREN),
-                      all = c(as.list(GOCCCHILDREN),
-                              as.list(GOMFCHILDREN),
-                              as.list(GOBPCHILDREN)))
+                      MF = as.list(GO.db::GOMFCHILDREN),
+                      BP = as.list(GO.db::GOBPCHILDREN),
+                      CC = as.list(GO.db::GOCCCHILDREN),
+                      All = c(as.list(GO.db::GOCCCHILDREN),
+                              as.list(GO.db::GOMFCHILDREN),
+                              as.list(GO.db::GOBPCHILDREN)))
 
     allNodes <- unique(c(names(flatNet), unlist(flatNet)))
     flatNet <- flatNet[!is.na(flatNet)]
