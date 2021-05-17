@@ -16,19 +16,21 @@ exploring_page_ui <- function(id)
         actionButton(ns("clusterButton"),
                      label = "Cluster!"),
         uiOutput(ns("shown_groups")), uiOutput(ns("move"))),
-     mainPanel(shinycssloaders::withSpinner(
+     mainPanel(div(
+       style = "position:relative",
+       shinycssloaders::withSpinner(
        plotOutput(
          outputId = ns("netPlotOut"),
          height = 750,
          brush = brushOpts(ns("netSelect")),
          hover = hoverOpts(ns("netHover"),
-                           delay = 0)
+                           delay = 100,
+                           delayType = "debounce")
        )
-     )
-     ,
+     ),
+     uiOutput(ns("hover"))),
      uiOutput(ns("sorting_boxes"))
-     ,
-    tableOutput(ns("test"))
+
      )))
 }
 
@@ -148,7 +150,7 @@ exploring_page <- function(input, output, session, descent_data)
              axes = F)
     })
 
-    output$test <- renderTable({
+observeEvent(input$netSelect,{
       set.seed(42)
       y <-
         data.frame(names(V(networkPlot)), norm_coords(layout.auto(networkPlot)))
@@ -164,9 +166,32 @@ exploring_page <- function(input, output, session, descent_data)
         session = session,
         inputId = "shown_groups",
         selected = res$clusterTerm
-      )
-      res
-    })
+      )})
+output$hover<-renderUI({
+  set.seed(42)
+  y <-
+    data.frame(names(V(networkPlot)), norm_coords(layout.auto(networkPlot)))
+  colnames(y)[1] <- "ontoID"
+  y <- y %>%
+    dplyr::filter(ontoID %in% results$res$ontoID)
+  y <- dplyr::left_join(y, results$res, by = "ontoID") %>%
+    dplyr::select(ontoTerm, X1, X2, clusterTerm)
+  res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2")
+  if (nrow(res) == 0)
+    return()
+
+  style <- paste0("position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
+                  "left:", res$X1 + 2, "px; top:", res$X2 + 2, "px;")
+
+  wellPanel(
+    style = style,
+    p(HTML(paste0(res$ontoTerm)))
+  )
+
+}
+)
+
+
 
 
       output$shown_groups <- renderUI({
