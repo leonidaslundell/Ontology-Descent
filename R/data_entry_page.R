@@ -49,7 +49,11 @@ data_entry_page_ui <- function(id)
         selectInput(
           inputId = ns("datatype"),
           label = "Select data type",
-          choices = c("GO Biological Processes", "GO Cellular Component", "GO Molecular Function", "Reactome"),
+          choices = c("GO Biological Processes",
+                      "GO Cellular Component",
+                      "GO Molecular Function",
+                      "GO ALL",
+                      "Reactome"),
           multiple = F,
           selected = "GO BP"
         ),
@@ -170,6 +174,13 @@ data_entry_page <- function(input, output, session, descent_data)
                             descent_data$net <- mf_hsa
                           }else{
                             descent_data$net <- mf_mmu
+                          }
+                        },
+                        `GO ALL` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- all_hsa
+                          }else{
+                            descent_data$net <- all_mmu
                           }
                         },
                         `Reactome` = {
