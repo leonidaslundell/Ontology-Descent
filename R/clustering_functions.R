@@ -39,6 +39,7 @@ relabelleR <- function(ontoNet,
 #' @param target target ontology IDs to cluster
 #' @param method clustering method (leiden default)
 #' @param filterTerms terms to not use as a cluster name
+#' @param forceCluster ontological IDs to force into separate cluster
 #' @import igraph data.table leiden
 #' @return
 #' @export
@@ -46,7 +47,8 @@ relabelleR <- function(ontoNet,
 clustereR <- function(ontoNet,
                       target,
                       method = "leiden",
-                      filterTerms = c("molecular_function")){
+                      filterTerms = c("molecular_function"),
+                      forceCluster = NULL){
 
   if(!all(target %in% V(ontoNet)$name)){
     target <- target[!target %in% V(ontoNet)$name]
@@ -82,11 +84,18 @@ clustereR <- function(ontoNet,
                                fast_greedy = igraph::cluster_fast_greedy(igraph::as.undirected(ontoNetSubgraph))$membership,
                                leading_eigen = igraph::cluster_leading_eigen(igraph::as.undirected(ontoNetSubgraph))$membership,
                                louvain = igraph::cluster_louvain(igraph::as.undirected(ontoNetSubgraph))$membership,
-                               leiden = leiden::leiden(igraph::as_adjacency_matrix(igraph::as.undirected(ontoNetSubgraph)),
-                                                       resolution_parameter = .5),
+                               leiden = {
+                                 leiden::leiden(igraph::as_adjacency_matrix(igraph::as.undirected(ontoNetSubgraph)),
+                                                resolution_parameter = .5, seed = 42)
+                               },
                                walktrap = igraph::cluster_walktrap(igraph::as.undirected(ontoNetSubgraph))$membership)
 
-  ontoClust <- data.frame(membership = ontoClustCommunity, names = igraph::V(ontoNetSubgraph)$name)
+  ontoClust <- data.table(membership = ontoClustCommunity, names = igraph::V(ontoNetSubgraph)$name)
+
+  if(!is.null(forceCluster)){
+    membershipMax <- max(ontoClust$membership) +1
+    ontoClust[names %in% forceCluster, membership:=membershipMax]
+  }
 
   #############
   #eigen centrality quantifies connected connecteness...
@@ -96,6 +105,7 @@ clustereR <- function(ontoNet,
 
     xSub <- igraph::induced_subgraph(ontoNet, x)
     #directionality is good here...
+    set.seed(42)
     xMax <- igraph::centr_eigen(xSub)$vector
     xTerm <- igraph::V(ontoNet)$ontoTerm[match(x[which.max(xMax)],
                                                igraph::V(ontoNet)$name)]
@@ -119,7 +129,7 @@ clustereR <- function(ontoNet,
                           clusterTerm = clusterTerm[as.character(ontoClust$membership)],
                           ontoID = ontoClust$names,
                           ontoTerm = igraph::V(ontoNet)$ontoTerm[match(ontoClust$names,
-                                                               igraph::V(ontoNet)$name)])
+                                                                       igraph::V(ontoNet)$name)])
 
   #############
   #prepare network plot
@@ -155,6 +165,7 @@ clustereR <- function(ontoNet,
 
   return(list(res = ontoClust, plot = ontoNetSubgraph, community = ontoClustCommunity))
 }
+
 
 #' networkeR
 #'
