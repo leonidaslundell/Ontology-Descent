@@ -100,6 +100,11 @@ exploring_page <- function(input, output, session, descent_data)
                                      type = "error")
      }
     req(descent_data$inputData)
+
+    results <- clustereR(ontoNet = descent_data$net,
+                         method = "leiden",
+                         target = descent_data$inputData$ontoID)
+
     if(!class(results) == "list"){
       results <- gsub(".*\\: ", "", results)
 
@@ -119,12 +124,7 @@ exploring_page <- function(input, output, session, descent_data)
     }
     req(class(results) == "list")
 
-    results <- clustereR(ontoNet = descent_data$net,
-                         method = "leiden",
-                         target = descent_data$inputData$ontoID)
-
     networkPlot <- results$plot
-
     descent_data$inputData <- merge(descent_data$inputData[,colnames(descent_data$inputData) %in%
                                                              c("ontoID",
                                                                "direction",
