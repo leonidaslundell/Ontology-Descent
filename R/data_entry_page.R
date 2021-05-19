@@ -184,7 +184,11 @@ data_entry_page <- function(input, output, session, descent_data)
                           }
                         },
                         `Reactome` = {
-                          showNotification("Not implemented yet")
+                          if(input$species == "Human"){
+                            descent_data$net <- react_hsa
+                          }else{
+                            descent_data$net <- react_mmu
+                          }
                         }
                         )
                })
