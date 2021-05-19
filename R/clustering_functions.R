@@ -1,38 +1,3 @@
-#' relabelleR
-#'
-#' @param ontoNet igraph representation of ontology hierarchy from networkeR
-#' @param target target ontology IDs to cluster
-#' @param filterTerms terms to not use as a cluster name
-#' @import igraph data.table leiden
-#' @return
-#' @export
-#'
-
-relabelleR <- function(ontoNet,
-                       target,
-                       filterTerms = c("molecular_function")){
-
-  #############
-  #just return the centralest from the cluster
-  connectedSubgraph <- igraph::all_shortest_paths(ontoNet, from = target, to = target, mode = "all")
-
-  connectedSubgraph <- connectedSubgraph$res
-  connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
-  ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
-
-  xMax <- igraph::centr_eigen(ontoNetSubgraph)$vector
-  xTerm <- igraph::V(ontoNet)$ontoTerm[match(igraph::V(ontoNetSubgraph)$name[which.max(xMax)], igraph::V(ontoNet)$name)]
-
-  if(any(xTerm %in% filterTerms)){
-    xMax <- xMax[-which.max(xMax)]
-    xTerm <- igraph::V(ontoNet)$ontoTerm[match(x[which.max(xMax)],
-                                               igraph::V(ontoNet)$name)]
-    return(xTerm)
-  }else{
-    return(xTerm)
-  }
-}
-
 #' clustereR
 #'
 #' @param ontoNet igraph representation of ontology hierarchy from networkeR
@@ -48,7 +13,8 @@ clustereR <- function(ontoNet,
                       target,
                       method = "leiden",
                       filterTerms = c("molecular_function"),
-                      forceCluster = NULL){
+                      forceCluster = NULL,
+                      seed = 42){
 
   if(!all(target %in% V(ontoNet)$name)){
     target <- target[!target %in% V(ontoNet)$name]
@@ -86,7 +52,7 @@ clustereR <- function(ontoNet,
                                louvain = igraph::cluster_louvain(igraph::as.undirected(ontoNetSubgraph))$membership,
                                leiden = {
                                  leiden::leiden(igraph::as_adjacency_matrix(igraph::as.undirected(ontoNetSubgraph)),
-                                                resolution_parameter = .5, seed = 42)
+                                                resolution_parameter = .5, seed = seed)
                                },
                                walktrap = igraph::cluster_walktrap(igraph::as.undirected(ontoNetSubgraph))$membership)
 
@@ -105,7 +71,7 @@ clustereR <- function(ontoNet,
 
     xSub <- igraph::induced_subgraph(ontoNet, x)
     #directionality is good here...
-    set.seed(42)
+    set.seed(seed)
     xMax <- igraph::centr_eigen(xSub)$vector
     xTerm <- igraph::V(ontoNet)$ontoTerm[match(x[which.max(xMax)],
                                                igraph::V(ontoNet)$name)]
@@ -134,8 +100,9 @@ clustereR <- function(ontoNet,
   #############
   #prepare network plot
 
+  set.seed(seed)
   cols <- ggsci::pal_igv()(max(ontoClust$clusterNumber))
-  set.seed(42)
+  set.seed(seed)
   cols <- sample(cols, max(ontoClust$clusterNumber), replace = F)
   cols <- cols[ontoClust$clusterNumber]
   ontoClust$color <- cols
@@ -160,6 +127,11 @@ clustereR <- function(ontoNet,
 
   igraph::E(ontoNetSubgraph)$arrow.size <- 0
 
+  #make the layout "permament"
+
+  set.seed(seed)
+  ontoNetSubgraph <- add_layout_(ontoNetSubgraph, nicely(), component_wise())
+
   #remove the "stepping stones"
   ontoClust <- ontoClust[ontoClust$ontoID %in% target,]
 
@@ -174,8 +146,7 @@ clustereR <- function(ontoNet,
 #' @import igraph data.table leiden
 #' @return ontoNet
 #' @export
-#'
-#'
+
 networkeR <- function(ont = "MF", species = "HSA"){
 
   if(!any(ont %in% c("CC", "BP", "MF","All","Reactome"))){
@@ -187,7 +158,6 @@ networkeR <- function(ont = "MF", species = "HSA"){
     flatNet <- data.table::fread("https://reactome.org/download/current/ReactomePathwaysRelation.txt", header = F)
     flatNet <- flatNet[grep(species, V1)]
     colnames(flatNet) <- c("from", "to")
-    flatNet
 
   }else{
 
@@ -229,42 +199,19 @@ networkeR <- function(ont = "MF", species = "HSA"){
 
   #############
   #add the names as a graph attribute
-  ontoNames <- as.list(GO.db::GOTERM)
-  ontoNames <- sapply(ontoNames, Term)
+  if(ont != "Reactome"){
+    ontoNames <- as.list(GO.db::GOTERM)
+    ontoNames <- sapply(ontoNames, Term)
 
-  igraph::V(graphNet)$ontoTerm <- ontoNames[igraph::V(graphNet)$name]
+    igraph::V(graphNet)$ontoTerm <- ontoNames[igraph::V(graphNet)$name]
+  }else{
+    ontoNames <- data.table::fread("https://reactome.org/download/current/ReactomePathways.txt", header = F)
+    ontoNames <- ontoNames[grep(species, V1)]
+    ontoNames <- structure(ontoNames$V2, names = ontoNames$V1)
+
+    igraph::V(graphNet)$ontoTerm <- ontoNames[igraph::V(graphNet)$name]
+  }
 
   return(graphNet)
 }
-
-sampleR <- function(ontoHclust,
-                    maxClusterSize = 300,
-                    n = 50,
-                    minClusters = 75,
-                    maxClusters = 1250){
-
-  x <- NULL
-
-  for(n in 1:n){
-
-    #cut at a random height
-    treeCut <- cutree(ontoHclust,
-                      k = sample(minClusters:maxClusters,1))
-
-    #take a random branch
-    treeCutSample <- names(treeCut[treeCut == sample(unique(treeCut), 1)])
-
-    #from a branch, take a random amount
-    treeCutSample <- treeCutSample[sample(1:length(treeCutSample),
-                                          sample(1:length(treeCutSample), 1))]
-    x[[n]] <- treeCutSample
-  }
-
-  #this generates some gigantic trees some times since the low k numbers give you very big clusters.
-  #removing clusters with more than 250 GO terms (so arbitrary)
-
-  x[sapply(x, length)<maxClusterSize]
-
-}
-
 

@@ -13,7 +13,8 @@ exploring_page_ui <- function(id) {
         actionButton(ns("clusterButton"),
                      label = "Cluster!"
         ),
-        uiOutput(ns("shown_groups")), uiOutput(ns("move"))
+        uiOutput(ns("shown_groups")),
+        uiOutput(ns("move"))
       ),
       mainPanel(
         div(
@@ -50,6 +51,7 @@ exploring_page_ui <- function(id) {
 #' @export
 exploring_page <- function(input, output, session, descent_data) {
   ns <- session$ns
+
   # netPlotOut is defined as NULL here to keep the spinner from appearing until
   # submit button is pressed
   output$netPlotOut <- NULL
@@ -97,8 +99,8 @@ exploring_page <- function(input, output, session, descent_data) {
 
     # Check if it has been clustered previously, if yes reset the sortable
 
-    if (descent_data$clustered) {
-
+    if (!exists("descent_data$clustered$exists")) {
+      descent_data$clustered$exists <- F
     }
 
     # Add sweetalert for pressing Submit before reading in data
@@ -112,12 +114,15 @@ exploring_page <- function(input, output, session, descent_data) {
     }
     req(descent_data$inputData)
 
+    # run the ontodesc
     results <- clustereR(
       ontoNet = descent_data$net,
       method = "leiden",
-      target = descent_data$inputData$ontoID
+      target = descent_data$inputData$ontoID,
+      seed = 42
     )
 
+    # checks for whether the GOid are wrong, or whether the ontology is incorrect.
     if (!class(results) == "list") {
       results <- gsub(".*\\: ", "", results)
 
@@ -141,8 +146,10 @@ exploring_page <- function(input, output, session, descent_data) {
       }
     }
     req(class(results) == "list")
+    descent_data$clustered$exists <- T
 
-    networkPlot <- results$plot
+    # merge the ontodesc with the input data
+    descent_data$networkPlot <- results$plot
     descent_data$inputData <- merge(descent_data$inputData[, colnames(descent_data$inputData) %in%
                                                              c(
                                                                "ontoID",
@@ -154,16 +161,26 @@ exploring_page <- function(input, output, session, descent_data) {
                                     by = "ontoID", order = F
     )
 
-    ### Save Default ###
+    # Save Default
+    rV <- reactiveValues()
     rV$def <- reactive(results$res[, c("ontoID", "clusterNumber", "clusterTerm")])
 
-    descent_data$clustered <- list(exists = T)
+    # Keep Default Clusters when things have been moved
+    observeEvent(input$move, {
+      tempData <- reactive({
+        temp <- rV$def()
+        colnames(temp)[2:3] <- c("defaultClusterNumber", "defaultClusterTerm")
+        return(temp)
+      })
+
+      descent_data$newOutput <- merge(descent_data$inputData, tempData(), by = "ontoID", order = FALSE)
+    })
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0, 0, 0, 0))
       set.seed(42)
-      plot(networkPlot,
-           layout = layout.auto,
+      plot(descent_data$networkPlot,
+           # layout = norm_coords(layout_nicely(descent_data$networkPlot)),
            vertex.label = NA,
            vertex.label.cex = 0.5,
            vertex.border.cex = 0.000001,
@@ -173,8 +190,7 @@ exploring_page <- function(input, output, session, descent_data) {
     })
 
     observeEvent(input$netSelect, {
-      set.seed(42)
-      y <- data.frame(names(V(networkPlot)), norm_coords(layout.auto(networkPlot)))
+      y <- data.frame(names(V(descent_data$networkPlot)), norm_coords(layout_nicely(descent_data$networkPlot)))
       colnames(y)[1] <- "ontoID"
       y <- y %>%
         dplyr::filter(ontoID %in% results$res$ontoID)
@@ -190,13 +206,12 @@ exploring_page <- function(input, output, session, descent_data) {
         selected = res$clusterTerm
       )
     })
+
     output$hover <- renderUI({
-      set.seed(42)
-      y <-
-        data.frame(names(V(networkPlot)), norm_coords(layout.auto(networkPlot)))
+      y <- data.frame(names(V(descent_data$networkPlot)), norm_coords(layout_nicely(descent_data$networkPlot)))
       colnames(y)[1] <- "ontoID"
-      y <- y %>%
-        dplyr::filter(ontoID %in% results$res$ontoID)
+      # y <- y %>%
+      #   dplyr::filter(ontoID %in% results$res$ontoID)
       y <- dplyr::left_join(y, results$res, by = "ontoID") %>%
         dplyr::select(ontoTerm, X1, X2, clusterTerm)
       res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2")
@@ -215,9 +230,6 @@ exploring_page <- function(input, output, session, descent_data) {
       )
     })
 
-
-
-
     output$shown_groups <- renderUI({
       checkboxGroupInput(ns("shown_groups"),
                          label = "Select groups to show",
@@ -228,6 +240,7 @@ exploring_page <- function(input, output, session, descent_data) {
       actionButton(inputId = ns("move"), label = "Redefine clusters")
     })
   })
+
   observe(req(
     descent_data$inputData$clusterNumber,
     descent_data$inputData$clusterTerm
@@ -277,8 +290,18 @@ exploring_page <- function(input, output, session, descent_data) {
 
     if (any(input$shown_groups %in% "create new cluster")) {
       idx_in_cluster <- descent_data$inputData$ontoTerm %in% input[["create new cluster"]]
-      term <- relabelleR(descent_data$net, target = descent_data$inputData$ontoID[idx_in_cluster])
-      descent_data$inputData$clusterTerm[idx_in_cluster] <- term
+
+      results <- clustereR(
+        ontoNet = descent_data$net,
+        method = "leiden",
+        target = descent_data$inputData$ontoID,
+        forceCluster = descent_data$inputData$ontoID[idx_in_cluster],
+        seed = 42
+      )
+
+      descent_data$inputData <- results$res
+
+      descent_data$networkPlot <- results$plot
 
       updateCheckboxGroupInput(
         session = session,
@@ -290,26 +313,16 @@ exploring_page <- function(input, output, session, descent_data) {
       )
     }
   })
-  observeEvent(input$move, {
-    shinyWidgets::sendSweetAlert(
-      session = session,
-      title = "Clusters have been redefined",
-      text = "You have chosen to redefine clusters. Keep in mind that data are no longer objective and should be interpreted with caution",
-      type = "warning"
-    )
-  })
-
-
-  ### Keep Default Clusters ###
-  rV <- reactiveValues()
 
   observeEvent(input$move, {
-    tempData <- reactive({
-      temp <- rV$def()
-      colnames(temp)[2:3] <- c("defaultClusterNumber", "defaultClusterTerm")
-      return(temp)
-    })
-
-    descent_data$newOutput <- merge(descent_data$inputData, tempData(), by = "ontoID", order = FALSE)
+    # make sure to show it only once.
+    if (is.null(descent_data$newOutput)) {
+      shinyWidgets::sendSweetAlert(
+        session = session,
+        title = "Clusters have been redefined",
+        text = "You are manually redefing clusters. Please make sure to include suplemental data of your manually redefined clusters in any potential publication, and notice the changed axis label on the final plot (user defined clusters)",
+        type = "warning"
+      )
+    }
   })
 }
