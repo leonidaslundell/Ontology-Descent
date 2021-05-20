@@ -24,9 +24,7 @@ exploring_page_ui <- function(id) {
               outputId = ns("netPlotOut"),
               height = 750,
               brush = brushOpts(ns("netSelect")),
-              hover = hoverOpts(ns("netHover"),
-                                delay = 100,
-                                delayType = "debounce"
+              hover = hoverOpts(ns("netHover"), delay = 100, delayType ="debounce", nullOutside = F
               )
             )
           ),
@@ -218,10 +216,19 @@ exploring_page <- function(input, output, session, descent_data) {
       if (nrow(res) == 0) {
         return()
       }
+      # calculate point position INSIDE the image as percent of total dimensions
+      # from left (horizontal) and from top (vertical)
+      hover <- input$netHover
+      left_pct <- (hover$x - hover$domain$left) / (hover$domain$right - hover$domain$left)
+      top_pct <- (hover$domain$top - hover$y) / (hover$domain$top - hover$domain$bottom)
+
+      # calculate distance from left and bottom side of the picture in pixels
+      left_px <- hover$range$left + left_pct * (hover$range$right - hover$range$left)
+      top_px <- hover$range$top + top_pct * (hover$range$bottom - hover$range$top)
 
       style <- paste0(
         "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-        "left:", res$X1 + 2, "px; top:", res$X2 + 2, "px;"
+        "left:", left_px+5, "px; top:", top_px+5, "px;"
       )
 
       wellPanel(
