@@ -127,10 +127,14 @@ clustereR <- function(ontoNet,
 
   igraph::E(ontoNetSubgraph)$arrow.size <- 0
 
-  #make the layout "permament"
-
-  set.seed(seed)
-  ontoNetSubgraph <- add_layout_(ontoNetSubgraph, nicely(), component_wise())
+  #make the layout "permament". plot differently if its reactome since that network is different!
+  if(all(grepl("R-", igraph::V(ontoNetSubgraph)$name, fixed = T))){
+    set.seed(seed)
+    ontoNetSubgraph <- igraph::add_layout_(ontoNetSubgraph, igraph::with_fr())
+  }else{
+    set.seed(seed)
+    ontoNetSubgraph <- igraph::add_layout_(ontoNetSubgraph, igraph::nicely(), igraph::component_wise())
+  }
 
   #remove the "stepping stones"
   ontoClust <- ontoClust[ontoClust$ontoID %in% target,]
