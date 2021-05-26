@@ -14,6 +14,7 @@ pathwayGraph(
   direction = NULL,
   colorManual = NULL,
   plotEnrichment = FALSE,
+  manualClusters = FALSE,
   dotSize = 2,
   themeSet = "minimal",
   colorSet = "IGV",
@@ -44,6 +45,8 @@ pathwayGraph(
 \item{colorManual}{Optional. A character vector defining colors from the clustereR.}
 
 \item{plotEnrichment}{Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.}
+
+\item{manualClusters}{Optional. TRUE or FALSE. Were the cluster terms set manually or by default algorithm. Default == FALSE.}
 
 \item{dotSize}{Optional. Numeric. Dot size in plots. Default == 2.}
 

@@ -14,6 +14,7 @@ clusterGraph(
   direction = NULL,
   colorManual = NULL,
   plotEnrichment = FALSE,
+  manualClusters = FALSE,
   dotSize = 1,
   themeSet = "minimal",
   colorSet = "IGV",
@@ -42,6 +43,8 @@ clusterGraph(
 
 \item{plotEnrichment}{Optional. TRUE or FALSE. Whether to plot the enrichment score instead of p values. Default == FALSE.}
 
+\item{manualClusters}{Optional. TRUE or FALSE. Were the cluster terms set manually or by default algorithm. Default == FALSE.}
+
 \item{dotSize}{Optional. Numeric. Dot size in plots. Default == 1.}
 
 \item{themeSet}{Optional. A character string to select the visual theme of the plot: one of "bw", "classic", "grey", "minimal", "dark" or "linedraw". Default == "minimal"}
@@ -61,7 +64,4 @@ A ggplot object.
 }
 \description{
 Plot Enrichment By Cluster
-}
-\examples{
-
 }
