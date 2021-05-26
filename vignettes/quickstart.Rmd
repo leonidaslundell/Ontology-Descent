@@ -20,6 +20,7 @@ Quickstast for us. Will grow this into a proper vigete.
 
 ```{r}
 # library(ontologyDescent)
+library(igraph)
 source("../R/clustering_functions.R")
 # load(here::here("R/sysdata.rda"))#this doesnt pass the check.
 load("../R/sysdata.rda")
@@ -42,8 +43,8 @@ targets <- example_data$ontoID[1:50]
 #filter out any terms not found in the network.
 targets <- targets[targets %in% igraph::V(mf_hsa)$name]
 
-results <- clustereR(mf_hsa, 
-                     targets, 
+results <- clustereR(ontoNet = mf_hsa, 
+                     target = targets, 
                      filterTerms = c("RNA binding",
                                      "binding",
                                      "molecular_function",

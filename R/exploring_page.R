@@ -44,7 +44,7 @@ exploring_page_ui <- function(id) {
 #' @param descent_data reactiveValues, contains gene ontology data
 #'
 
-#' @import shiny leiden
+#' @import shiny leidenAlg
 #' @importFrom sortable bucket_list
 #' @export
 exploring_page <- function(input, output, session, descent_data) {
@@ -56,47 +56,7 @@ exploring_page <- function(input, output, session, descent_data) {
 
   observeEvent(input$clusterButton, {
 
-    # putting it here so that the delay is during the clustering rather than at the firtst page
-    # ------------------ App virtualenv setup (Do not edit) ------------------- #
-    if (Sys.info()[["user"]] == "shiny") {
-      virtualenv_dir <- Sys.getenv("VIRTUALENV_NAME")
-      python_path <- Sys.getenv("PYTHON_PATH")
-
-      if (any(reticulate::virtualenv_list() == virtualenv_dir)) {
-        print("using existing version")
-        reticulate::use_virtualenv(virtualenv_dir,
-                                   required = T
-        )
-      } else {
-        print("creating new version")
-        reticulate::virtualenv_create(
-          envname = virtualenv_dir,
-          python = python_path
-        )
-        reticulate::virtualenv_install(virtualenv_dir,
-                                       packages = c("leidenalg", "python-igraph", "numpy"),
-                                       ignore_installed = TRUE
-        )
-        reticulate::use_virtualenv(virtualenv_dir,
-                                   required = T
-        )
-      }
-    } else {
-      CONDA_NAME <- Sys.getenv("CONDA_NAME")
-
-      if (any(reticulate::conda_list()$name == CONDA_NAME)) {
-        print("running old")
-        reticulate::use_condaenv(CONDA_NAME, required = T)
-      } else {
-        reticulate::conda_create(CONDA_NAME)
-        reticulate::conda_install(CONDA_NAME, packages = c("leidenalg", "python-igraph", "numpy"))
-        reticulate::use_condaenv(CONDA_NAME, required = T)
-      }
-    }
-    # ------------------ App server logic (Edit anything below) --------------- #
-
     # Check if it has been clustered previously, if yes reset the sortable
-
     if (!exists("descent_data$clustered$exists")) {
       descent_data$clustered$exists <- F
     }

@@ -17,6 +17,3 @@ character vector with shortened ontology terms
 \description{
 Shorten Ontology Terms
 }
-\examples{
-
-}

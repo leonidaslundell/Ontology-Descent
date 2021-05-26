@@ -5,14 +5,15 @@
 #' @param method clustering method (leiden default)
 #' @param filterTerms terms to not use as a cluster name
 #' @param forceCluster ontological IDs to force into separate cluster
-#' @import igraph data.table leiden
+#' @param seed set seed for reproducibility
+#' @import igraph data.table leidenAlg
 #' @return
 #' @export
 
 clustereR <- function(ontoNet,
                       target,
                       method = "leiden",
-                      filterTerms = c("molecular_function"),
+                      filterTerms = c("molecular_function", "intracellular non-membrane-bounded organelle"),
                       forceCluster = NULL,
                       seed = 42){
 
@@ -51,15 +52,17 @@ clustereR <- function(ontoNet,
                                leading_eigen = igraph::cluster_leading_eigen(igraph::as.undirected(ontoNetSubgraph))$membership,
                                louvain = igraph::cluster_louvain(igraph::as.undirected(ontoNetSubgraph))$membership,
                                leiden = {
-                                 leiden::leiden(igraph::as_adjacency_matrix(igraph::as.undirected(ontoNetSubgraph)),
-                                                resolution_parameter = .5, seed = seed)
+                                 set.seed(seed)
+                                 leidenAlg::find_partition(igraph::as.undirected(ontoNetSubgraph),
+                                                           edge_weights = rep(1, ecount(ontoNetSubgraph)),
+                                                           resolution = .6) +1
                                },
                                walktrap = igraph::cluster_walktrap(igraph::as.undirected(ontoNetSubgraph))$membership)
 
-  ontoClust <- data.table(membership = ontoClustCommunity, names = igraph::V(ontoNetSubgraph)$name)
+  ontoClust <- data.table::data.table(membership = ontoClustCommunity, names = igraph::V(ontoNetSubgraph)$name)
 
   if(!is.null(forceCluster)){
-    membershipMax <- max(ontoClust$membership) +1
+    membershipMax <- max(ontoClust$membership) + 1
     ontoClust[names %in% forceCluster, membership:=membershipMax]
   }
 
@@ -127,10 +130,14 @@ clustereR <- function(ontoNet,
 
   igraph::E(ontoNetSubgraph)$arrow.size <- 0
 
-  #make the layout "permament"
-
-  set.seed(seed)
-  ontoNetSubgraph <- add_layout_(ontoNetSubgraph, nicely(), component_wise())
+  #make the layout "permament". plot differently if its reactome since that network is different!
+  if(all(grepl("R-", igraph::V(ontoNetSubgraph)$name, fixed = T))){
+    set.seed(seed)
+    ontoNetSubgraph <- igraph::add_layout_(ontoNetSubgraph, igraph::with_fr())
+  }else{
+    set.seed(seed)
+    ontoNetSubgraph <- igraph::add_layout_(ontoNetSubgraph, igraph::nicely(), igraph::component_wise())
+  }
 
   #remove the "stepping stones"
   ontoClust <- ontoClust[ontoClust$ontoID %in% target,]
@@ -142,8 +149,8 @@ clustereR <- function(ontoNet,
 #' networkeR
 #'
 #' @param ont Select ontology type to generate a network. One of c("CC", "BP", "MF","All","Reactome")
-#' @param target Select species to filter our terms without any genes.
-#' @import igraph data.table leiden
+#' @param species Select species to filter our terms without any genes.
+#' @import igraph data.table
 #' @return ontoNet
 #' @export
 
