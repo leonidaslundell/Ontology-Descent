@@ -127,20 +127,19 @@ exploring_page <- function(input, output, session, descent_data) {
 
     # Keep Default Clusters when things have been moved
     observeEvent(input$move, {
-      tempData <- reactive({
+      # tempData <- reactive({#is this really necessary?? its within a reactive enviroment already.
         temp <- rV$def()
         colnames(temp)[2:3] <- c("defaultClusterNumber", "defaultClusterTerm")
-        return(temp)
-      })
+        # return(temp)
+      # })
 
-      descent_data$newOutput <- merge(descent_data$inputData, tempData(), by = "ontoID", order = FALSE)
+      descent_data$newOutput <- merge(descent_data$inputData, temp, by = "ontoID", order = FALSE)
     })
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0, 0, 0, 0))
       set.seed(42)
       plot(descent_data$networkPlot,
-           # layout = norm_coords(layout_nicely(descent_data$networkPlot)),
            vertex.label = NA,
            vertex.label.cex = 0.5,
            vertex.border.cex = 0.000001,
