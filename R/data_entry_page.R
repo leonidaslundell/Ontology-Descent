@@ -134,12 +134,21 @@ data_entry_page <- function(input, output, session, descent_data)
     #check whether some GO terms are not in the provided ontoNet, so the user can double check input mistakes
     if(!all(descent_data$inputData$ontoID %in% V(descent_data$net)$name)){
       target <- descent_data$inputData$ontoID[!descent_data$inputData$ontoID %in% V(descent_data$net)$name]
-      error_message <- c("These ontology IDs were not found in the provided ontology network: ", paste0(target))
+      if(length(target)<50){
+       error_message <- c("These ontology IDs were not found in the provided ontology network: ", paste0(target))
       shinyWidgets::sendSweetAlert(session = session,
                                    title = "Input Error",
                                    text = error_message,
                                    type = "warning")
       descent_data$inputData<- descent_data$inputData[descent_data$inputData$ontoID %in% V(descent_data$net)$name]
+      }
+      else{shinyWidgets::sendSweetAlert(session = session,
+                                        title = "Input Error",
+                                        text = "you had more than 50 terms that could not be mapped. Please check you have entered the correct species or ontology class",
+                                        type = "warning")
+        descent_data$inputData<- descent_data$inputData[descent_data$inputData$ontoID %in% V(descent_data$net)$name]
+      }
+
 
 
 
