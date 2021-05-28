@@ -17,10 +17,6 @@ clustereR <- function(ontoNet,
                       forceCluster = NULL,
                       seed = 42){
 
-  if(!all(target %in% V(ontoNet)$name)){
-    target <- target[!target %in% V(ontoNet)$name]
-    return(paste0("These ontology IDs were not found in the provided ontology network: ", target))
-  }
 
   #############
   #network based clustering

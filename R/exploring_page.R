@@ -80,6 +80,7 @@ exploring_page <- function(input, output, session, descent_data) {
       seed = 42
     )
 
+
     # checks for whether the GOid are wrong, or whether the ontology is incorrect.
     if (!class(results) == "list") {
       results <- gsub(".*\\: ", "", results)
@@ -172,7 +173,7 @@ exploring_page <- function(input, output, session, descent_data) {
       #   dplyr::filter(ontoID %in% results$res$ontoID)
       y <- dplyr::left_join(y, results$res, by = "ontoID") %>%
         dplyr::select(ontoTerm, X1, X2, clusterTerm)
-      res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2")
+      res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
       if (nrow(res) == 0) {
         return()
       }

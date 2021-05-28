@@ -13,31 +13,9 @@ data_entry_page_ui <- function(id)
 
     fluidRow(
       column(
-        6,
-        textAreaInput(
-          ns("data_entry"),
-          h4("Paste in data, with headers in first row"),
-          placeholder = "Copy in data",
-          height = "100%",
-          rows = 10,
-          width = "100%",
-          resize = "both"
-        ),
-        actionButton(ns("Setting1"), label = "Submit!"),
-        actionButton(ns("dummy"), label = "Load dummy data (n = 300)"),
-        actionButton(ns("dummy_short"), label = "Load dummy data (n = 50)")
-      ),
-      column(
         4,
-        fileInput(
-          inputId = ns("file"),
-          label = "Upload a csv or xlsx file",
-          buttonLabel = "Upload",
-          multiple = F,
-          accept = c(".csv", ".xlsx")
-        ),
         helpText(
-          "Your entry file needs to have a first column named 'ontoID' (ex. GO:00010) and a second column called 'pValue' (ex. 3E-5). Beware of case in names! "
+          "Please set species and ontology terms before you load in data. Your entry file needs to have a first column named 'ontoID' (ex. GO:00010) and a second column called 'pValue' (ex. 3E-5). Beware of case in names! "
         ),
         selectInput(
           inputId = ns("species"),
@@ -57,9 +35,32 @@ data_entry_page_ui <- function(id)
           multiple = F,
           selected = "GO BP"
         ),
+        fileInput(
+          inputId = ns("file"),
+          label = "Upload a csv or xlsx file",
+          buttonLabel = "Upload",
+          multiple = F,
+          accept = c(".csv", ".xlsx")
+        ),
         img(src = "logo.png", heigth = 60, width = 100)
 
-      )
+      ),
+      column(
+        6,
+        textAreaInput(
+          ns("data_entry"),
+          h4("Paste in data, with headers in first row"),
+          placeholder = "Copy in data",
+          height = "100%",
+          rows = 10,
+          width = "100%",
+          resize = "both"
+        ),
+        actionButton(ns("Setting1"), label = "Submit!"),
+        actionButton(ns("dummy"), label = "Load dummy data (n = 300)"),
+        actionButton(ns("dummy_short"), label = "Load dummy data (n = 50)")
+      ),
+
     ),
     dataTableOutput(outputId = ns("GO_table"))
   )
@@ -110,7 +111,7 @@ data_entry_page <- function(input, output, session, descent_data)
         error_message <- c(error_message, imported_object$message)
       } else { # Properly read data
         imported_values <- imported_object
-        error_message <- c(error_message, validate_data(imported_values, input_data$type))
+        error_message <- c(error_message, validate_data(imported_values, input_data$type, descent_data$net))
       }
     }
 
@@ -129,6 +130,19 @@ data_entry_page <- function(input, output, session, descent_data)
 
       output$GO_table <- renderDataTable(imported_values)
       descent_data$inputData <- imported_values
+    }
+    #check whether some GO terms are not in the provided ontoNet, so the user can double check input mistakes
+    if(!all(descent_data$inputData$ontoID %in% V(descent_data$net)$name)){
+      target <- descent_data$inputData$ontoID[!descent_data$inputData$ontoID %in% V(descent_data$net)$name]
+      error_message <- c("These ontology IDs were not found in the provided ontology network: ", paste0(target))
+      shinyWidgets::sendSweetAlert(session = session,
+                                   title = "Input Error",
+                                   text = error_message,
+                                   type = "warning")
+      descent_data$inputData<- descent_data$inputData[descent_data$inputData$ontoID %in% V(descent_data$net)$name]
+
+
+
     }
   })
 
@@ -247,7 +261,7 @@ read_input <- function(x, type) {
 #' @param type character, type of input. Determines which tests to run and phrasing of errors
 #'
 #' @return string with error messages (length 0 if no errors occured)
-validate_data <- function(x, type) {
+validate_data <- function(x, type, ontoNet) {
   error_message <- character(0)
 
   # Less than two columns
@@ -274,4 +288,5 @@ validate_data <- function(x, type) {
     error_message <- c(error_message, "pValue column not recognized as numeric. Typically the decimal seperated needs to be changed from a period to a comma or vice versa.")
   }
   error_message
+
 }
