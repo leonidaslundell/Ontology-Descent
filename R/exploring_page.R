@@ -172,14 +172,6 @@ exploring_page <- function(input, output, session, descent_data) {
       y <- dplyr::left_join(y, results$res, by = "ontoID") %>%
         dplyr::select(ontoTerm, X1, X2, clusterTerm)
 
-<<<<<<< HEAD
-      res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
-      if (nrow(res)>0) {
-        style <- paste0(
-          "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-          "left:", res$X1 + 2, "px; top:", res$X2 + 2, "px;"
-        )
-=======
       hover <- input$netHover
       left_px <- hover$coords_css$x
       top_px <- hover$coords_css$y
@@ -187,14 +179,12 @@ exploring_page <- function(input, output, session, descent_data) {
         "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
         "left:", left_px, "px; top:", top_px, "px;"
       )
->>>>>>> f6fb73a0ee286e886c3735c4edcc2532fd4aef20
 
         wellPanel(
           style = style,
           p(HTML(paste0(res$ontoTerm)))
         )
-      }
-    })
+      })
 
     output$shown_groups <- renderUI({
       checkboxGroupInput(ns("shown_groups"),
