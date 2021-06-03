@@ -14,7 +14,8 @@ exploring_page_ui <- function(id) {
                      label = "Cluster!"
         ),
         uiOutput(ns("shown_groups")),
-        uiOutput(ns("move"))
+        uiOutput(ns("move")),
+        uiOutput(ns("defButton"))
       ),
       mainPanel(
         div(
@@ -50,6 +51,8 @@ exploring_page_ui <- function(id) {
 exploring_page <- function(input, output, session, descent_data) {
   ns <- session$ns
 
+  rV <- reactiveValues() # Reactive Values List (Mladen)
+
   # netPlotOut is defined as NULL here to keep the spinner from appearing until
   # submit button is pressed
   output$netPlotOut <- NULL
@@ -70,6 +73,7 @@ exploring_page <- function(input, output, session, descent_data) {
         type = "error"
       )
     }
+
     req(descent_data$inputData)
 
     # run the ontodesc
@@ -119,20 +123,9 @@ exploring_page <- function(input, output, session, descent_data) {
                                     by = "ontoID", order = F
     )
 
-    # Save Default
-    rV <- reactiveValues()
-    rV$def <- reactive(results$res[, c("ontoID", "clusterNumber", "clusterTerm")])
-
-    # Keep Default Clusters when things have been moved
-    observeEvent(input$move, {
-      tempData <- reactive({
-        temp <- rV$def()
-        colnames(temp)[2:3] <- c("defaultClusterNumber", "defaultClusterTerm")
-        return(temp)
-      })
-
-      descent_data$newOutput <- merge(descent_data$inputData, tempData(), by = "ontoID", order = FALSE)
-    })
+    # Save Default Results (Mladen)
+    rV$def <- reactive(results$res)
+    rV$plot <- reactive(results$plot)
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0, 0, 0, 0))
@@ -199,6 +192,11 @@ exploring_page <- function(input, output, session, descent_data) {
     })
     output$move <- renderUI({
       actionButton(inputId = ns("move"), label = "Redefine clusters")
+    })
+
+    # Button for Reverting to Default Clusters (Mladen)
+    output$defButton <- renderUI({
+      actionButton(inputId = ns("defButton"), label = "Revert to Default Clusters")
     })
   })
 
@@ -286,4 +284,63 @@ exploring_page <- function(input, output, session, descent_data) {
       )
     }
   })
+
+  # Keep Default Clusters when things have been moved
+  observeEvent(input$move, {
+    req(rV$def())
+
+    tempData <- rV$def()[,c("ontoID", "clusterTerm", "clusterNumber")]
+    colnames(tempData)[2:3] <- c("defaultClusterTerm", "defaultClusterNumber")
+
+    descent_data$newOutput <- merge(descent_data$inputData, tempData, by = "ontoID", order = FALSE)
+  })
+
+  # Reset to Default Values
+  observeEvent(input$defButton, {
+    req(rV$def(), rV$plot())
+
+    # Reset Results to Default
+    descent_data$inputData <- merge(descent_data$inputData[, colnames(descent_data$inputData) %in%
+                                                             c(
+                                                               "ontoID",
+                                                               "direction",
+                                                               "pValue",
+                                                               "enrichmentScore"
+                                                             ), with = F],
+                                    rV$def(), by = "ontoID", order = F
+    )
+
+    # Reset Plot to Default
+    descent_data$networkPlot <- rV$plot()
+
+    output$netPlotOut <- renderPlot({
+      par(mar = c(0, 0, 0, 0))
+      set.seed(42)
+      plot(descent_data$networkPlot,
+           # layout = norm_coords(layout_nicely(descent_data$networkPlot)),
+           vertex.label = NA,
+           vertex.label.cex = 0.5,
+           vertex.border.cex = 0.000001,
+           asp = 0,
+           axes = F
+      )
+    })
+
+    # Reset Checkboxes to Default
+    updateCheckboxGroupInput(
+      session = session,
+      inputId = "shown_groups",
+      choices = c(
+        sort(unique(descent_data$inputData$clusterTerm)),
+        "create new cluster"
+      )
+    )
+
+    # Reset Dafult Saved Values
+    tempData <- rV$def()[,c("ontoID", "clusterTerm", "clusterNumber")]
+    colnames(tempData)[2:3] <- c("defaultClusterTerm", "defaultClusterNumber")
+
+    descent_data$newOutput <- merge(descent_data$inputData, tempData, by = "ontoID", order = FALSE)
+  })
+
 }
