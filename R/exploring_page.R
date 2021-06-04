@@ -84,6 +84,7 @@ exploring_page <- function(input, output, session, descent_data) {
       seed = 42
     )
 
+
     # checks for whether the GOid are wrong, or whether the ontology is incorrect.
     if (!class(results) == "list") {
       results <- gsub(".*\\: ", "", results)
@@ -123,15 +124,31 @@ exploring_page <- function(input, output, session, descent_data) {
                                     by = "ontoID", order = F
     )
 
+<<<<<<< HEAD
     # Save Default Results (Mladen)
     rV$def <- reactive(results$res)
     rV$plot <- reactive(results$plot)
+=======
+    # Save Default
+    rV <- reactiveValues()
+    rV$def <- reactive(results$res[, c("ontoID", "clusterNumber", "clusterTerm")])
+
+    # Keep Default Clusters when things have been moved
+    observeEvent(input$move, {
+      # tempData <- reactive({#is this really necessary?? its within a reactive enviroment already.
+        temp <- rV$def()
+        colnames(temp)[2:3] <- c("defaultClusterNumber", "defaultClusterTerm")
+        # return(temp)
+      # })
+
+      descent_data$newOutput <- merge(descent_data$inputData, temp, by = "ontoID", order = FALSE)
+    })
+>>>>>>> 12bb0f618c41f1c07c1a3eb70b19db00d3b8de60
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0, 0, 0, 0))
       set.seed(42)
       plot(descent_data$networkPlot,
-           # layout = norm_coords(layout_nicely(descent_data$networkPlot)),
            vertex.label = NA,
            vertex.label.cex = 0.5,
            vertex.border.cex = 0.000001,
@@ -165,11 +182,8 @@ exploring_page <- function(input, output, session, descent_data) {
       #   dplyr::filter(ontoID %in% results$res$ontoID)
       y <- dplyr::left_join(y, results$res, by = "ontoID") %>%
         dplyr::select(ontoTerm, X1, X2, clusterTerm)
-      res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2")
-      if (nrow(res) == 0) {
-        return()
-      }
-
+      res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
+      if (nrow(res)>0) {
       hover <- input$netHover
       left_px <- hover$coords_css$x
       top_px <- hover$coords_css$y
@@ -178,10 +192,11 @@ exploring_page <- function(input, output, session, descent_data) {
         "left:", left_px, "px; top:", top_px, "px;"
       )
 
-      wellPanel(
-        style = style,
-        p(HTML(paste0(res$ontoTerm)))
-      )
+        wellPanel(
+          style = style,
+          p(HTML(paste0(res$ontoTerm)))
+        )
+      }
     })
 
     output$shown_groups <- renderUI({
