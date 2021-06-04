@@ -124,26 +124,13 @@ exploring_page <- function(input, output, session, descent_data) {
                                     by = "ontoID", order = F
     )
 
-<<<<<<< HEAD
+
     # Save Default Results (Mladen)
     rV$def <- reactive(results$res)
     rV$plot <- reactive(results$plot)
-=======
-    # Save Default
-    rV <- reactiveValues()
-    rV$def <- reactive(results$res[, c("ontoID", "clusterNumber", "clusterTerm")])
 
-    # Keep Default Clusters when things have been moved
-    observeEvent(input$move, {
-      # tempData <- reactive({#is this really necessary?? its within a reactive enviroment already.
-        temp <- rV$def()
-        colnames(temp)[2:3] <- c("defaultClusterNumber", "defaultClusterTerm")
-        # return(temp)
-      # })
-
-      descent_data$newOutput <- merge(descent_data$inputData, temp, by = "ontoID", order = FALSE)
-    })
->>>>>>> 12bb0f618c41f1c07c1a3eb70b19db00d3b8de60
+    # Redefine Clusters (Warning Counter)
+    rV$warCount <- reactive(TRUE)
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0, 0, 0, 0))
@@ -290,13 +277,15 @@ exploring_page <- function(input, output, session, descent_data) {
 
   observeEvent(input$move, {
     # make sure to show it only once.
-    if (is.null(descent_data$newOutput)) {
+    if (isTRUE(rV$warCount())) {
       shinyWidgets::sendSweetAlert(
         session = session,
         title = "Clusters have been redefined",
         text = "You are manually redefing clusters. Please make sure to include suplemental data of your manually redefined clusters in any potential publication, and notice the changed axis label on the final plot (user defined clusters)",
         type = "warning"
       )
+
+      rV$warCount <- reactive(FALSE)
     }
   })
 
@@ -308,6 +297,8 @@ exploring_page <- function(input, output, session, descent_data) {
     colnames(tempData)[2:3] <- c("defaultClusterTerm", "defaultClusterNumber")
 
     descent_data$newOutput <- merge(descent_data$inputData, tempData, by = "ontoID", order = FALSE)
+
+    print(colnames(descent_data$inputData)) # Sanity Check (DELETE)
   })
 
   # Reset to Default Values
@@ -315,13 +306,10 @@ exploring_page <- function(input, output, session, descent_data) {
     req(rV$def(), rV$plot())
 
     # Reset Results to Default
-    descent_data$inputData <- merge(descent_data$inputData[, colnames(descent_data$inputData) %in%
-                                                             c(
-                                                               "ontoID",
-                                                               "direction",
-                                                               "pValue",
-                                                               "enrichmentScore"
-                                                             ), with = F],
+    descent_data$inputData <- merge(descent_data$inputData[,c("ontoID",
+                                                              "direction",
+                                                              "pValue",
+                                                              "enrichmentScore")],
                                     rV$def(), by = "ontoID", order = F
     )
 
@@ -356,6 +344,9 @@ exploring_page <- function(input, output, session, descent_data) {
     colnames(tempData)[2:3] <- c("defaultClusterTerm", "defaultClusterNumber")
 
     descent_data$newOutput <- merge(descent_data$inputData, tempData, by = "ontoID", order = FALSE)
+
+    # Reset Redefine Clusters Counter
+    rV$warCount <- reactive(TRUE)
   })
 
 }

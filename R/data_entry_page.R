@@ -33,7 +33,7 @@ data_entry_page_ui <- function(id)
                       "GO ALL",
                       "Reactome"),
           multiple = F,
-          selected = "GO BP"
+          selected = "GO Biological Processes"
         ),
         fileInput(
           inputId = ns("file"),
@@ -163,6 +163,8 @@ data_entry_page <- function(input, output, session, descent_data)
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref
                  )
+                 updateSelectInput(inputId = "species", selected = "Human")
+                 updateSelectInput(inputId = "datatype", selected = "GO Molecular Function")
                })
   #load dummy data short version (50 terms)
   observeEvent(input$dummy_short,
@@ -172,8 +174,10 @@ data_entry_page <- function(input, output, session, descent_data)
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref
                  )
+                 updateSelectInput(inputId = "species", selected = "Human")
+                 updateSelectInput(inputId = "datatype", selected = "GO Molecular Function")
                })
-  c("GO Biological Processes", "GO Cellular Component", "GO Molecular Function", "Reactome")
+
   #select network to cluster on
   observeEvent(input$datatype,
                {
