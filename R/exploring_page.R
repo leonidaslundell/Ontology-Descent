@@ -178,12 +178,6 @@ exploring_page <- function(input, output, session, descent_data) {
         dplyr::select(ontoTerm, X1, X2, clusterTerm)
       res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
       if (nrow(res)>0) {
-<<<<<<< HEAD
-        style <- paste0(
-          "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-          "left:", res$X1 + 2, "px; top:", res$X2 + 2, "px;"
-        )
-=======
       hover <- input$netHover
       left_px <- hover$coords_css$x
       top_px <- hover$coords_css$y
@@ -191,7 +185,6 @@ exploring_page <- function(input, output, session, descent_data) {
         "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
         "left:", left_px, "px; top:", top_px, "px;"
       )
->>>>>>> d6f4c2a8c137b5af68df12692de84435efb864e6
 
         wellPanel(
           style = style,
