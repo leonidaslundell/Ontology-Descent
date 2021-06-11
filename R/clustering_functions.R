@@ -6,6 +6,7 @@
 #' @param filterTerms terms to not use as a cluster name
 #' @param forceCluster ontological IDs to force into separate cluster
 #' @param seed set seed for reproducibility
+#' @param simplify collapse intermediate ontology terms into a cluster
 #' @import igraph data.table leidenAlg
 #' @return
 #' @export
@@ -15,6 +16,7 @@ clustereR <- function(ontoNet,
                       method = "leiden",
                       filterTerms = c("molecular_function", "intracellular non-membrane-bounded organelle"),
                       forceCluster = NULL,
+                      simplify = F,
                       seed = 42){
 
   if(!all(target %in% V(ontoNet)$name)){
@@ -30,8 +32,6 @@ clustereR <- function(ontoNet,
   connectedSubgraph <- connectedSubgraph$res
   connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
 
-  #all_shortest_paths does not find distances between disconnected components
-  #(even if they are connected on the disconnected component)
   while(!all(target %in% connectedSubgraph)){
     missingSubgraph <- igraph::all_shortest_paths(ontoNet,
                                                   from = target[!target %in% connectedSubgraph],
@@ -61,6 +61,7 @@ clustereR <- function(ontoNet,
 
   ontoClust <- data.table::data.table(membership = ontoClustCommunity, names = igraph::V(ontoNetSubgraph)$name)
 
+  #create a new cluster with all the nodes in forceCluster
   if(!is.null(forceCluster)){
     membershipMax <- max(ontoClust$membership) + 1
     ontoClust[names %in% forceCluster, membership:=membershipMax]
@@ -111,7 +112,7 @@ clustereR <- function(ontoNet,
   ontoClust$color <- cols
   ontoClust[!ontoClust$ontoID %in% target, "color"] <- "#808080"
 
-  #cluster name
+  #cluster name (instead of targeting a specific node, try to make a 2D space of nodes, and put the label in the center of that)
 
   ontoClust$nodeLabel <- ""
   ontoClust$nodeLabel[which(ontoClust$ontoTerm == ontoClust$clusterTerm)] <-
@@ -125,19 +126,50 @@ clustereR <- function(ontoNet,
                                                label.color = ontoClust$color,
                                                ontoTerm = ontoClust$ontoTerm,
                                                nodeLabel = ontoClust$nodeLabel)
+
   igraph::V(ontoNetSubgraph)$size <- 0
   igraph::V(ontoNetSubgraph)$size[igraph::V(ontoNetSubgraph)$name %in% target] <- 2
 
-  igraph::E(ontoNetSubgraph)$arrow.size <- 0
+  ontoNetSubgraph <- as.undirected(ontoNetSubgraph)
 
-  #make the layout "permament". plot differently if its reactome since that network is different!
-  if(all(grepl("R-", igraph::V(ontoNetSubgraph)$name, fixed = T))){
-    set.seed(seed)
-    ontoNetSubgraph <- igraph::add_layout_(ontoNetSubgraph, igraph::with_fr())
-  }else{
-    set.seed(seed)
-    ontoNetSubgraph <- igraph::add_layout_(ontoNetSubgraph, igraph::nicely(), igraph::component_wise())
+  #collapse stepping stones into one big cluster
+
+  if(simplify){
+    x <- leidenAlg::find_partition(as.undirected(ontoNetSubgraph),
+                                   edge_weights = rep(1, ecount(ontoNetSubgraph))) + 1
+    x <- list(membership = x, names = V(ontoNetSubgraph)$name)
+
+    x$membership[x$names %in% V(ontoNetSubgraph)$name[V(ontoNetSubgraph)$size>0]] <-
+      (max(x$membership) + 1):(sum(V(ontoNetSubgraph)$size>0) + max(x$membership))
+
+    ontoNetSubgraph <- contract.vertices(ontoNetSubgraph,
+                                    x$membership,
+                                    vertex.attr.comb = list(name = function(x) paste0(x, collapse = "_"),
+                                                            size = function(x) length(x),
+                                                            color = function(x) unique(x),
+                                                            clusterTerm = function(x) unique(x),
+                                                            label.color = function(x) unique(x),
+                                                            ontoTerm = function(x) paste0(x, collapse = " & "),
+                                                            nodeLabel = function(x) x[x != ""]))
+
+    #make the size proportional to the number of steping stones
+    V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$size>1] <- V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$size>1]/max(V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$size>1]) * 5
+
+    ontoNetSubgraph <- simplify(ontoNetSubgraph, remove.loops = T, remove.multiple = T)
+
   }
+
+  # if(all(grepl("R-", igraph::V(ontoNetSubgraph)$name, fixed = T))){
+  #   set.seed(seed)
+  #   ontoNetSubgraph <- igraph::add_layout_(ontoNetSubgraph, igraph::with_fr())
+  # }else{
+  #   set.seed(seed)
+  #   ontoNetSubgraph <- igraph::add_layout_(ontoNetSubgraph, igraph::nicely(), igraph::component_wise())
+  # }
+
+  #make the layout "permament"
+  set.seed(seed)
+  ontoNetSubgraph <- igraph::add_layout_(ontoNetSubgraph, igraph::nicely(), igraph::component_wise())
 
   #remove the "stepping stones"
   ontoClust <- ontoClust[ontoClust$ontoID %in% target,]
