@@ -10,9 +10,15 @@ exploring_page_ui <- function(id) {
     titlePanel("Cluster and explore"),
     sidebarLayout(
       sidebarPanel(
-        actionButton(ns("clusterButton"),
-                     label = "Cluster!"
-        ),
+        # splitLayout(cellWidths = c("25%","75%"),
+          actionButton(ns("clusterButton"),
+                       label = "Cluster!"
+          ),
+          prettySwitch(ns("simplifySwitch"),
+                        label = "Simplify network",
+                        # status = "primary",
+                        value = TRUE),
+        # ),
         uiOutput(ns("shown_groups")),
         uiOutput(ns("move"))
       ),
@@ -54,7 +60,7 @@ exploring_page <- function(input, output, session, descent_data) {
   # submit button is pressed
   output$netPlotOut <- NULL
 
-  observeEvent(input$clusterButton, {
+  observeEvent(input$clusterButton, {#incase we want reactivity with the simplify button  | input$simplifySwitch
 
     # Check if it has been clustered previously, if yes reset the sortable
     if (!exists("descent_data$clustered$exists")) {
@@ -77,7 +83,8 @@ exploring_page <- function(input, output, session, descent_data) {
       ontoNet = descent_data$net,
       method = "leiden",
       target = descent_data$inputData$ontoID,
-      seed = 42
+      seed = 42,
+      simplify = input$simplifySwitch
     )
 
     # checks for whether the GOid are wrong, or whether the ontology is incorrect.
@@ -140,7 +147,7 @@ exploring_page <- function(input, output, session, descent_data) {
       plot(descent_data$networkPlot,
            vertex.label = NA,
            vertex.label.cex = 0.5,
-           vertex.border.cex = 0.000001,
+           vertex.frame.color = NA,
            asp = 0,
            axes = F
       )
@@ -171,20 +178,19 @@ exploring_page <- function(input, output, session, descent_data) {
       #   dplyr::filter(ontoID %in% results$res$ontoID)
       y <- dplyr::left_join(y, results$res, by = "ontoID") %>%
         dplyr::select(ontoTerm, X1, X2, clusterTerm)
-
-      hover <- input$netHover
-      left_px <- hover$coords_css$x
-      top_px <- hover$coords_css$y
-      style <- paste0(
-        "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-        "left:", left_px, "px; top:", top_px, "px;"
-      )
+      res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
+      if (nrow(res)>0) {
+        style <- paste0(
+          "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
+          "left:", res$X1 + 2, "px; top:", res$X2 + 2, "px;"
+        )
 
         wellPanel(
           style = style,
           p(HTML(paste0(res$ontoTerm)))
         )
-      })
+      }
+    })
 
     output$shown_groups <- renderUI({
       checkboxGroupInput(ns("shown_groups"),
@@ -252,7 +258,8 @@ exploring_page <- function(input, output, session, descent_data) {
         method = "leiden",
         target = descent_data$inputData$ontoID,
         forceCluster = descent_data$inputData$ontoID[idx_in_cluster],
-        seed = 42
+        seed = 42,
+        simplify = input$simplifySwitch
       )
 
       descent_data$inputData <- results$res
