@@ -20,7 +20,8 @@ exploring_page_ui <- function(id) {
                         value = TRUE),
         # ),
         uiOutput(ns("shown_groups")),
-        uiOutput(ns("move"))
+        uiOutput(ns("move")),
+        uiOutput(ns("defButton"))
       ),
       mainPanel(
         div(
@@ -56,6 +57,8 @@ exploring_page_ui <- function(id) {
 exploring_page <- function(input, output, session, descent_data) {
   ns <- session$ns
 
+  rV <- reactiveValues() # Reactive Values List (Mladen)
+
   # netPlotOut is defined as NULL here to keep the spinner from appearing until
   # submit button is pressed
   output$netPlotOut <- NULL
@@ -76,6 +79,7 @@ exploring_page <- function(input, output, session, descent_data) {
         type = "error"
       )
     }
+
     req(descent_data$inputData)
 
     # run the ontodesc
@@ -86,6 +90,7 @@ exploring_page <- function(input, output, session, descent_data) {
       seed = 42,
       simplify = input$simplifySwitch
     )
+
 
     # checks for whether the GOid are wrong, or whether the ontology is incorrect.
     if (!class(results) == "list") {
@@ -126,20 +131,13 @@ exploring_page <- function(input, output, session, descent_data) {
                                     by = "ontoID", order = F
     )
 
-    # Save Default
-    rV <- reactiveValues()
-    rV$def <- reactive(results$res[, c("ontoID", "clusterNumber", "clusterTerm")])
 
-    # Keep Default Clusters when things have been moved
-    observeEvent(input$move, {
-      # tempData <- reactive({#is this really necessary?? its within a reactive enviroment already.
-        temp <- rV$def()
-        colnames(temp)[2:3] <- c("defaultClusterNumber", "defaultClusterTerm")
-        # return(temp)
-      # })
+    # Save Default Results (Mladen)
+    rV$def <- reactive(results$res)
+    rV$plot <- reactive(results$plot)
 
-      descent_data$newOutput <- merge(descent_data$inputData, temp, by = "ontoID", order = FALSE)
-    })
+    # Redefine Clusters (Warning Counter)
+    rV$warCount <- reactive(TRUE)
 
     output$netPlotOut <- renderPlot({
       par(mar = c(0, 0, 0, 0))
@@ -180,10 +178,20 @@ exploring_page <- function(input, output, session, descent_data) {
         dplyr::select(ontoTerm, X1, X2, clusterTerm)
       res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
       if (nrow(res)>0) {
+<<<<<<< HEAD
         style <- paste0(
           "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
           "left:", res$X1 + 2, "px; top:", res$X2 + 2, "px;"
         )
+=======
+      hover <- input$netHover
+      left_px <- hover$coords_css$x
+      top_px <- hover$coords_css$y
+      style <- paste0(
+        "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
+        "left:", left_px, "px; top:", top_px, "px;"
+      )
+>>>>>>> d6f4c2a8c137b5af68df12692de84435efb864e6
 
         wellPanel(
           style = style,
@@ -200,6 +208,11 @@ exploring_page <- function(input, output, session, descent_data) {
     })
     output$move <- renderUI({
       actionButton(inputId = ns("move"), label = "Redefine clusters")
+    })
+
+    # Button for Reverting to Default Clusters (Mladen)
+    output$defButton <- renderUI({
+      actionButton(inputId = ns("defButton"), label = "Revert to Default Clusters")
     })
   })
 
@@ -279,13 +292,76 @@ exploring_page <- function(input, output, session, descent_data) {
 
   observeEvent(input$move, {
     # make sure to show it only once.
-    if (is.null(descent_data$newOutput)) {
+    if (isTRUE(rV$warCount())) {
       shinyWidgets::sendSweetAlert(
         session = session,
         title = "Clusters have been redefined",
         text = "You are manually redefing clusters. Please make sure to include suplemental data of your manually redefined clusters in any potential publication, and notice the changed axis label on the final plot (user defined clusters)",
         type = "warning"
       )
+
+      rV$warCount <- reactive(FALSE)
     }
   })
+
+  # Keep Default Clusters when things have been moved
+  observeEvent(input$move, {
+    req(rV$def())
+
+    tempData <- rV$def()[,c("ontoID", "clusterTerm", "clusterNumber")]
+    colnames(tempData)[2:3] <- c("defaultClusterTerm", "defaultClusterNumber")
+
+    descent_data$newOutput <- merge(descent_data$inputData, tempData, by = "ontoID", order = FALSE)
+
+    print(colnames(descent_data$inputData)) # Sanity Check (DELETE)
+  })
+
+  # Reset to Default Values
+  observeEvent(input$defButton, {
+    req(rV$def(), rV$plot())
+
+    # Reset Results to Default
+    descent_data$inputData <- merge(descent_data$inputData[,c("ontoID",
+                                                              "direction",
+                                                              "pValue",
+                                                              "enrichmentScore")],
+                                    rV$def(), by = "ontoID", order = F
+    )
+
+    # Reset Plot to Default
+    descent_data$networkPlot <- rV$plot()
+
+    output$netPlotOut <- renderPlot({
+      par(mar = c(0, 0, 0, 0))
+      set.seed(42)
+      plot(descent_data$networkPlot,
+           # layout = norm_coords(layout_nicely(descent_data$networkPlot)),
+           vertex.label = NA,
+           vertex.label.cex = 0.5,
+           vertex.border.cex = 0.000001,
+           asp = 0,
+           axes = F
+      )
+    })
+
+    # Reset Checkboxes to Default
+    updateCheckboxGroupInput(
+      session = session,
+      inputId = "shown_groups",
+      choices = c(
+        sort(unique(descent_data$inputData$clusterTerm)),
+        "create new cluster"
+      )
+    )
+
+    # Reset Dafult Saved Values
+    tempData <- rV$def()[,c("ontoID", "clusterTerm", "clusterNumber")]
+    colnames(tempData)[2:3] <- c("defaultClusterTerm", "defaultClusterNumber")
+
+    descent_data$newOutput <- merge(descent_data$inputData, tempData, by = "ontoID", order = FALSE)
+
+    # Reset Redefine Clusters Counter
+    rV$warCount <- reactive(TRUE)
+  })
+
 }

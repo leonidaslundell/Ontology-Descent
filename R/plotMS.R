@@ -154,11 +154,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 
 
   ### Order Y-axis (Clusters) ###
-  if (!is.null(plot$clusterNumber)){
-    plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName[order(plot$clusterNumber)]))
-  } else if (is.null(plot$clusterNumber)){
-    plot$clusterName <- factor(plot$clusterName, levels = unique(plot$clusterName))
-  }
+  plot$clusterName <- factor(plot$clusterName, levels = names(sort(table(plot$clusterName))))
 
   ### Create ggplot Object ###
   if (!isTRUE(plotEnrichment)){
@@ -198,12 +194,13 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
   }
 
   ### Create histogram counts to place next to dotplot ###
+
   q <- ggplot2::ggplot(plot, aes(y = clusterName, fill = clusterName)) +
     ggiraph::geom_bar_interactive(stat = "count", ggplot2::aes(tooltip = clusterName, data_id = clusterName), show.legend = FALSE)+
     ggplot2::scale_fill_manual(values = col)+
     ggplot2::scale_x_continuous(expand = c(0,0),
-                                limits = c(0, ceiling(max(table(plot$clusterName)) * 1.1)),
-                                breaks = ceiling(seq(0, max(table(plot$clusterName)) * 1.1, length.out = 3)))+
+                                limits = c(0, ceiling(max(table(plot$clusterName))/5)*5),
+                                breaks = round(seq(0, ceiling(max(table(plot$clusterName))/5)*5, length.out = 3)))+
     ggplot2::scale_y_discrete(yLab, position = "right")+
     ggplot2::xlab("Counts")
 
