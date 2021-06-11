@@ -268,7 +268,15 @@ exploring_page <- function(input, output, session, descent_data) {
         simplify = input$simplifySwitch
       )
 
-      descent_data$inputData <- results$res
+      descent_data$inputData <- merge(descent_data$inputData[, colnames(descent_data$inputData) %in%
+                                                                                         c(
+                                                                                           "ontoID",
+                                                                                           "direction",
+                                                                                           "pValue",
+                                                                                           "enrichmentScore"
+                                                                                         ), with = F],
+                                                                results$res,
+                                                                by = "ontoID", order = F)
 
       descent_data$networkPlot <- results$plot
 
