@@ -159,7 +159,6 @@ data_entry_page <- function(input, output, session, descent_data)
   observeEvent(input$dummy,
                {
                  dummy_ref <- get_test_data()
-                 descent_data$net <- mf_hsa
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref
                  )
@@ -170,7 +169,6 @@ data_entry_page <- function(input, output, session, descent_data)
   observeEvent(input$dummy_short,
                {
                  dummy_ref <- get_test_data(size = "short")
-                 descent_data$net <- mf_hsa
                  shiny::updateTextAreaInput(inputId = "data_entry",
                                             value = dummy_ref
                  )
