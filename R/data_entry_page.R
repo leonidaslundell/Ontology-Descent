@@ -179,7 +179,7 @@ data_entry_page <- function(input, output, session, descent_data)
                })
 
   #select network to cluster on
-  observeEvent(input$datatype,
+  observeEvent(input$Setting1,
                {
                  switch(input$datatype,
                         `GO Biological Processes` = {
