@@ -60,12 +60,6 @@ plotting_page_ui <- function(id)
 
               br(),
 
-              selectInput(ns("fontFam"), label = "Font Family",
-                          choices = c("Sans (Arial)" = "sans",
-                                      "Serif (Times New Roman)" = "serif",
-                                      "Mono (Courier New)" = "mono"),
-                          selected = "sans", multiple = FALSE),
-
               sliderInput(ns("axTitleSize"), label = "Axis title (size)",
                           value = 9, min = 4, max = 48, step = 1),
 
@@ -261,8 +255,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           axTxtSize = input$axTxtSize,
                                                           axTitleSize = input$axTitleSize,
                                                           lgTxtSize = input$lgTxtSize,
-                                                          lgTitleSize = input$lgTitleSize,
-                                                          fontFam = input$fontFam)
+                                                          lgTitleSize = input$lgTitleSize)
                                            },
 
                                            "clust" = {
@@ -284,8 +277,7 @@ plotting_page <- function(input, output, session, descent_data)
                                                           themeSet = input$themeSet,
                                                           nameSize = input$nameSize,
                                                           axTxtSize = input$axTxtSize,
-                                                          axTitleSize = input$axTitleSize,
-                                                          fontFam = input$fontFam)
+                                                          axTitleSize = input$axTitleSize)
                                            },
 
                                            "long" = {errorMessage("long")}
@@ -340,7 +332,6 @@ plotting_page <- function(input, output, session, descent_data)
     }
 
     ### Text Options
-    updateSelectInput(session, "fontFam", selected = "sans")
     updateSliderInput(session, "axTitleSize", value = 9)
     updateSliderInput(session, "nameSize", value = 7)
     updateSliderInput(session, "axTxtSize", value = 7)

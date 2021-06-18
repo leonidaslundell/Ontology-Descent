@@ -92,7 +92,6 @@ cutText <- function(text, cutoff){
 #' @param nameSize Optional. A numeric value setting font size for cluster names. Default == 7.
 #' @param axTxtSize Optional. A numeric value setting font size for the axis text. Defualt == 7.
 #' @param axTitleSize Optional. A numeric value setting font size for the axis title. Default = 9.
-#' @param fontFam Optional. A character string to select the text font family for the plot. One of "serif", "sans" or "mono". Default == "sans".
 #' @param colorManual Optional. A character vector defining colors from the clustereR.
 #'
 #' @return A ggplot object.
@@ -108,7 +107,7 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
                          plotEnrichment = FALSE, manualClusters = FALSE,
                          dotSize = 1, themeSet = "minimal", colorSet = "IGV",
-                         nameSize = 8, axTxtSize = 8, axTitleSize = 10, fontFam = "sans"){
+                         nameSize = 8, axTxtSize = 8, axTitleSize = 10){
 
   ### Create plotting Data Frame ###
   plot <- data.frame(pValue, clusterName)
@@ -232,15 +231,13 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
   }
 
   ### Other Theme Options ###
-  q <- q + theme(text = ggplot2::element_text(family = fontFam),
-                 axis.text.x = ggplot2::element_text(size = axTxtSize),
+  q <- q + theme(axis.text.x = ggplot2::element_text(size = axTxtSize),
                  axis.title.x = ggplot2::element_text(size = axTitleSize),
                  axis.title.y.right = ggplot2::element_text(size = axTitleSize),
                  axis.text.y = ggplot2::element_blank(),
                  axis.ticks.y = ggplot2::element_blank())
 
-  p <- p + ggplot2::theme(text = ggplot2::element_text(family = fontFam),
-                          axis.text.y = ggplot2::element_text(size = nameSize),
+  p <- p + ggplot2::theme(axis.text.y = ggplot2::element_text(size = nameSize),
                           axis.text.x = ggplot2::element_text(size = axTxtSize),
                           axis.title.y = ggplot2::element_blank(),
                           axis.title.x = ggplot2::element_text(size = axTitleSize))+
@@ -272,7 +269,6 @@ clusterGraph <- function(clusterName, pValue, ontoID = NULL, ontoTerm = NULL, cl
 #' @param axTitleSize Optional. A numeric value setting font size for the axis title. Default == 9.
 #' @param lgTxtSize Optional. A numeric value setting font size for the axis text. Defualt == 7.
 #' @param lgTitleSize Optional. A numeric value setting font size for the axis text. Defualt == 9.
-#' @param fontFam Optional. A character string to select the text font family for the plot. One of "serif", "sans" or "mono". Default == "sans".
 #' @param colorManual Optional. A character vector defining colors from the clustereR.
 #'
 #' @return A ggplot object.
@@ -287,7 +283,7 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
                          enrichmentScore = NULL, direction = NULL, colorManual = NULL,
                          plotEnrichment = FALSE, manualClusters = FALSE,
                          dotSize = 2, themeSet = "minimal", colorSet = "IGV", lgdPosition = "bottom",
-                         nameSize = 7, axTxtSize = 7, axTitleSize = 9, lgTxtSize = 7, lgTitleSize = 9, fontFam = "sans"){
+                         nameSize = 7, axTxtSize = 7, axTitleSize = 9, lgTxtSize = 7, lgTitleSize = 9){
 
   ### Create plotting Data Frame ###
   plot <- data.frame(ontoTerm, pValue, clusterName)
@@ -415,8 +411,7 @@ pathwayGraph <- function(ontoTerm, pValue, clusterName, ontoID = NULL, clusterNu
     th <- lgTitleSize
   }
 
-  p <- p + ggplot2::theme(text = ggplot2::element_text(family = fontFam),
-                          legend.position = lgdPosition, legend.justification = "left",
+  p <- p + ggplot2::theme(legend.position = lgdPosition, legend.justification = "left",
                           legend.margin = ggplot2::margin(1, 1, 1, 0, unit = "pt"),
                           legend.spacing.x = ggplot2::unit(2, "pt"),
                           legend.spacing.y = ggplot2::unit(1, "pt"),
