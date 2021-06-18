@@ -313,8 +313,6 @@ exploring_page <- function(input, output, session, descent_data) {
     colnames(tempData)[2:3] <- c("defaultClusterTerm", "defaultClusterNumber")
 
     descent_data$newOutput <- merge(descent_data$inputData, tempData, by = "ontoID", order = FALSE)
-
-    print(colnames(descent_data$inputData)) # Sanity Check (DELETE)
   })
 
   # Reset to Default Values
