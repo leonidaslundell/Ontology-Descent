@@ -351,57 +351,6 @@ plotting_page <- function(input, output, session, descent_data)
     updateSelectInput(session, "plotUnit", selected = "cm")
     updateNumericInput(session, "dwnDPI", value = 300)
     updateSelectInput(session, "fileType", selected = "tiff")
-
-    ### Render Plot
-    req(reacVals$data()$clusterTerm)
-
-    dat <- reactive(reacVals$data())
-
-    reacVals$plotOut <- reactive(clusterGraph(ontoID = dat()$ontoID,
-                                              ontoTerm = cutText(dat()$ontoTerm, 52),
-                                              pValue = dat()$pValue,
-                                              clusterNumber = dat()$clusterNumber,
-                                              clusterName = cutText(dat()$clusterTerm, 52),
-                                              enrichmentScore = dat()$enrichmentScore,
-                                              direction = dat()$direction,
-                                              colorManual = dat()$color,
-                                              plotEnrichment = FALSE,
-                                              manualClusters = reacVals$manualClusters(),
-                                              dotSize = 1,
-                                              themeSet = "minimal",
-                                              nameSize = 7,
-                                              axTxtSize = 7,
-                                              axTitleSize = 9,
-                                              fontFam = "sans"))
-
-    output$plotOut <- ggiraph::renderGirafe(ggiraph::girafe(ggobj = reacVals$plotOut(),
-                                                            width_svg = 5.9,
-                                                            height_svg = 5.9,
-                                                            options = list(
-                                                              ggiraph::opts_selection(type = "single"),
-                                                              ggiraph::opts_hover(css = "fill:wheat;stroke:orange;"),
-                                                              ggiraph::opts_zoom(min = 1, max = 5),
-                                                              ggiraph::opts_toolbar(saveaspng = FALSE)
-                                                            )))
-
-    ### Plot Download ###
-    output$plotDwnld <- downloadHandler(
-      filename = function() {paste("plot", "tiff", sep = ".")},
-      content = function(file) {
-        ggplot2::ggsave(file, plot = reacVals$plotOut(), device = "tiff",
-                        width = 15, height = 15,
-                        units = "cm", dpi = 300)
-      }
-    )
-
-    output$plotDwnld1 <- downloadHandler(
-      filename = function() {paste("plot", "tiff", sep = ".")},
-      content = function(file) {
-        ggplot2::ggsave(file, plot = reacVals$plotOut(), device = "tiff",
-                        width = 15, height = 15,
-                        units = "cm", dpi = 300)
-      }
-    )
   })
 
   ### Download Plot ###
