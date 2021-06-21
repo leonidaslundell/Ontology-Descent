@@ -174,9 +174,20 @@ exploring_page <- function(input, output, session, descent_data) {
       colnames(y)[1] <- "ontoID"
       # y <- y %>%
       #   dplyr::filter(ontoID %in% results$res$ontoID)
-      y <- dplyr::left_join(y, results$res, by = "ontoID") %>%
-        dplyr::select(ontoTerm, X1, X2, clusterTerm)
-      res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
+      y <- dplyr::left_join(y, results$res, by = "ontoID")
+      go_terms <- stringr::str_split(y$ontoID, "\n")
+      for (i in 1:length(y$ontoTerm)){
+        go_categories <- as.data.frame(unlist(go_terms[i]))
+        colnames(go_categories)<-"go_categories"
+        go_categories <- dplyr::left_join(go_categories, results$res, by = c("go_categories"="ontoID"))
+        y$ontoTerm[i]<- stringr::str_c(go_categories$ontoTerm,  collapse = "<br/>")
+
+      }
+
+      y <- y %>% dplyr::select( ontoTerm, X1, X2, clusterTerm)
+            res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
+
+
       if (nrow(res)>0) {
       hover <- input$netHover
       left_px <- hover$coords_css$x
@@ -188,7 +199,7 @@ exploring_page <- function(input, output, session, descent_data) {
 
         wellPanel(
           style = style,
-          p(HTML(paste0(res$ontoTerm)))
+          p(HTML(res$ontoTerm))
         )
       }
     })
