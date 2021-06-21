@@ -28,6 +28,7 @@ clustereR <- function(ontoNet,
   connectedSubgraph <- connectedSubgraph$res
   connectedSubgraph <- unique(names(unlist(connectedSubgraph)))
 
+
   while(!all(target %in% connectedSubgraph)){
     missingSubgraph <- igraph::all_shortest_paths(ontoNet,
                                                   from = target[!target %in% connectedSubgraph],
@@ -36,12 +37,12 @@ clustereR <- function(ontoNet,
 
     missingSubgraph <- missingSubgraph$res
     missingSubgraph <- unique(names(unlist(missingSubgraph)))
-
     connectedSubgraph <- c(missingSubgraph,
                            connectedSubgraph)
   }
 
   ontoNetSubgraph <- igraph::induced_subgraph(ontoNet, connectedSubgraph)
+
 
   ontoClustCommunity <- switch(method,
                                fast_greedy = igraph::cluster_fast_greedy(igraph::as.undirected(ontoNetSubgraph))$membership,
@@ -106,6 +107,7 @@ clustereR <- function(ontoNet,
   cols <- sample(cols, max(ontoClust$clusterNumber), replace = F)
   cols <- cols[ontoClust$clusterNumber]
   ontoClust$color <- cols
+
   ontoClust[!ontoClust$ontoID %in% target, "color"] <- "#808080"
 
   #cluster name (instead of targeting a specific node, try to make a 2D space of nodes, and put the label in the center of that)
@@ -140,7 +142,7 @@ clustereR <- function(ontoNet,
 
     ontoNetSubgraph <- contract.vertices(ontoNetSubgraph,
                                     x$membership,
-                                    vertex.attr.comb = list(name = function(x) paste0(x, collapse = "_"),
+                                    vertex.attr.comb = list(name = function(x) paste0(x, collapse = "\n"),
                                                             size = function(x) length(x),
                                                             color = function(x) unique(x),
                                                             clusterTerm = function(x) unique(x),
@@ -152,6 +154,7 @@ clustereR <- function(ontoNet,
     V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$size>1] <- V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$size>1]/max(V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$size>1]) * 5
 
     ontoNetSubgraph <- simplify(ontoNetSubgraph, remove.loops = T, remove.multiple = T)
+
 
   }
 
@@ -168,7 +171,8 @@ clustereR <- function(ontoNet,
   ontoNetSubgraph <- igraph::add_layout_(ontoNetSubgraph, igraph::nicely(), igraph::component_wise())
 
   #remove the "stepping stones"
-  ontoClust <- ontoClust[ontoClust$ontoID %in% target,]
+  #ontoClust <- ontoClust[ontoClust$ontoID %in% target,]
+  #commented this bit out to keep stepping stones in hover plot
 
   return(list(res = ontoClust, plot = ontoNetSubgraph, community = ontoClustCommunity))
 }
