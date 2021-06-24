@@ -128,8 +128,7 @@ data_entry_page <- function(input, output, session, descent_data)
         imported_values$pValue <- as.numeric(gsub("\\,", "\\.", imported_values$pValue))
       }
 
-      output$GO_table <- renderDataTable(imported_values)
-      descent_data$inputData <- imported_values
+
     }
     #trigger loading of ontonet so data can be loaded against the right background
     switch(input$datatype,
@@ -170,26 +169,40 @@ data_entry_page <- function(input, output, session, descent_data)
            }
     )
     #check whether some GO terms are not in the provided ontoNet, so the user can double check input mistakes
-    if(!all(descent_data$inputData$ontoID %in% V(descent_data$net)$name)){
-      target <- descent_data$inputData$ontoID[!descent_data$inputData$ontoID %in% V(descent_data$net)$name]
-      if(length(target)<50){
+    if(!all(imported_values$ontoID %in% V(descent_data$net)$name)){
+      target <- imported_values$ontoID[!imported_values$ontoID %in% V(descent_data$net)$name]
+      if(length(target)==length(imported_values$ontoID)){
+        shinyWidgets::sendSweetAlert(session = session,
+                                     title = "Input Error",
+                                     text = "No ontology IDs could be mapped to the supplied network. Please select another network and re-upload your data",
+                                     type = "error")
+      }
+      else if(length(target)<50){
        error_message <- c("These ontology IDs were not found in the provided ontology network: ", paste0(target))
       shinyWidgets::sendSweetAlert(session = session,
                                    title = "Input Error",
                                    text = error_message,
                                    type = "warning")
-      descent_data$inputData<- descent_data$inputData[descent_data$inputData$ontoID %in% V(descent_data$net)$name]
+      imported_values<- imported_values[imported_values$ontoID %in% V(descent_data$net)$name]
+      output$GO_table <- renderDataTable(imported_values)
+      descent_data$inputData <- imported_values
       }
       else{shinyWidgets::sendSweetAlert(session = session,
                                         title = "Input Error",
                                         text = "you had more than 50 terms that could not be mapped. Please check you have entered the correct species or ontology class",
                                         type = "warning")
-        descent_data$inputData<- descent_data$inputData[descent_data$inputData$ontoID %in% V(descent_data$net)$name]
-      }
+        imported_values<- imported_values[imported_values$ontoID %in% V(descent_data$net)$name]
+        output$GO_table <- renderDataTable(imported_values)
+        descent_data$inputData <- imported_values
+        }
 
 
 
 
+    }
+    else{
+      output$GO_table <- renderDataTable(imported_values)
+      descent_data$inputData <- imported_values
     }
   })
 
@@ -215,7 +228,7 @@ data_entry_page <- function(input, output, session, descent_data)
                })
 
   #select network to cluster on
-  observeEvent(input$Setting1,
+  observeEvent(input$datatype,
                {
                  switch(input$datatype,
                         `GO Biological Processes` = {
