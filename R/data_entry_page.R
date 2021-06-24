@@ -208,10 +208,13 @@ data_entry_page <- function(input, output, session, descent_data)
 
       if(length(idsIn) > 1){
         descent_data$inputData<- input_data$checkData[input_data$checkData$ontoID %in% V(descent_data$net)$name]
+      } else if (length(idsIn) <= 1){
+        descent_data$inputData <- NULL
       }
-    } else if (all(input_data$checkData$ontoID %in% V(descent_data$net)$name)){
+
+      } else if (all(input_data$checkData$ontoID %in% V(descent_data$net)$name)){
       descent_data$inputData<- input_data$checkData
-    }
+      }
   })
 
   #load dummy data long (300 terms)
