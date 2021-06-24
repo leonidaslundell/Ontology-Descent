@@ -17,7 +17,6 @@ data_entry_page_ui <- function(id)
         helpText(
           "Please set species and ontology terms before you load in data. Your entry file needs to have a first column named 'ontoID' (ex. GO:00010) and a second column called 'pValue' (ex. 3E-5). Beware of case in names! "
         ),
-
         selectInput(
           inputId = ns("species"),
           label = "Select species",
@@ -57,7 +56,7 @@ data_entry_page_ui <- function(id)
           width = "100%",
           resize = "both"
         ),
-        actionButton(ns("submit"), label = "Submit!"),
+        actionButton(ns("Setting1"), label = "Submit!"),
         actionButton(ns("dummy"), label = "Load dummy data (n = 300)"),
         actionButton(ns("dummy_short"), label = "Load dummy data (n = 50)")
       ),
@@ -78,18 +77,17 @@ data_entry_page_ui <- function(id)
 #' @export
 data_entry_page <- function(input, output, session, descent_data)
 {
-
   input_data <- reactiveValues(read_now = 0)
 
   # Observe if file is uploaded
   observeEvent(input$file, {
-      input_data$x <- input$file$datapath
-      input_data$type <- tools::file_ext(input$file$datapath)
-      input_data$read_now <- input_data$read_now + 1 # To trigger loading of data
-    })
+    input_data$x <- input$file$datapath
+    input_data$type <- tools::file_ext(input$file$datapath)
+    input_data$read_now <- input_data$read_now + 1 # To trigger loading of data
+  })
 
   # Observe if text is submitted
-  observeEvent(input$submit, {
+  observeEvent(input$Setting1, {
     input_data$x <- input$data_entry
     input_data$type <- "text"
     input_data$read_now <- input_data$read_now + 1 # To trigger loading of data
@@ -130,13 +128,7 @@ data_entry_page <- function(input, output, session, descent_data)
         imported_values$pValue <- as.numeric(gsub("\\,", "\\.", imported_values$pValue))
       }
 
-      output$GO_table <- renderDataTable(imported_values)
 
-      ### MLADEN - FIX ###
-      # descent_data$inputData <- imported_values
-      # Save temporary data before check #
-      input_data$checkData <- imported_values
-      ### MLADEN - FIX ###
     }
     #trigger loading of ontonet so data can be loaded against the right background
     switch(input$datatype,
@@ -176,10 +168,9 @@ data_entry_page <- function(input, output, session, descent_data)
              }
            }
     )
-
     #check whether some GO terms are not in the provided ontoNet, so the user can double check input mistakes
+    input_data$checkData <- imported_values
     if(!all(input_data$checkData$ontoID %in% V(descent_data$net)$name)){
-      ### MLADEN - FIX ###
       idsIn <- input_data$checkData$ontoID[input_data$checkData$ontoID %in% V(descent_data$net)$name]
       idsOut <- input_data$checkData$ontoID[!input_data$checkData$ontoID %in% V(descent_data$net)$name]
 
@@ -199,7 +190,7 @@ data_entry_page <- function(input, output, session, descent_data)
                                      collapse = ""),
                                "More than 50 terms that could not be mapped. Please check you have entered the correct species or ontology class",
                                sep = "\n")
-        }
+      }
 
       shinyWidgets::sendSweetAlert(session = session,
                                    title = "Input Error",
@@ -208,13 +199,15 @@ data_entry_page <- function(input, output, session, descent_data)
 
       if(length(idsIn) > 1){
         descent_data$inputData<- input_data$checkData[input_data$checkData$ontoID %in% V(descent_data$net)$name]
-      } else if (length(idsIn) <= 1){
+        output$GO_table <- renderDataTable(descent_data$inputData)
+      }
+      else if (length(idsIn) <= 1){
         descent_data$inputData <- NULL
       }
-
-      } else if (all(input_data$checkData$ontoID %in% V(descent_data$net)$name)){
+    } else if (all(input_data$checkData$ontoID %in% V(descent_data$net)$name)){
       descent_data$inputData<- input_data$checkData
-      }
+      output$GO_table <- renderDataTable(descent_data$inputData)
+    }
   })
 
   #load dummy data long (300 terms)
@@ -227,7 +220,6 @@ data_entry_page <- function(input, output, session, descent_data)
                  updateSelectInput(inputId = "species", selected = "Human")
                  updateSelectInput(inputId = "datatype", selected = "GO Molecular Function")
                })
-
   #load dummy data short version (50 terms)
   observeEvent(input$dummy_short,
                {
@@ -240,9 +232,8 @@ data_entry_page <- function(input, output, session, descent_data)
                })
 
   #select network to cluster on
-  observeEvent(input$submit,
+  observeEvent(input$datatype,
                {
-                 print(input$file)
                  switch(input$datatype,
                         `GO Biological Processes` = {
                           if(input$species == "Human"){
@@ -279,7 +270,7 @@ data_entry_page <- function(input, output, session, descent_data)
                             descent_data$net <- react_mmu
                           }
                         }
-                        )
+                 )
                })
 
 

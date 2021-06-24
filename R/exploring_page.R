@@ -11,13 +11,13 @@ exploring_page_ui <- function(id) {
     sidebarLayout(
       sidebarPanel(
         # splitLayout(cellWidths = c("25%","75%"),
-          actionButton(ns("clusterButton"),
-                       label = "Cluster!"
-          ),
-          prettySwitch(ns("simplifySwitch"),
-                        label = "Simplify network",
-                        # status = "primary",
-                        value = TRUE),
+        actionButton(ns("clusterButton"),
+                     label = "Cluster!"
+        ),
+        prettySwitch(ns("simplifySwitch"),
+                     label = "Simplify network",
+                     # status = "primary",
+                     value = TRUE),
         # ),
         uiOutput(ns("shown_groups")),
         uiOutput(ns("move")),
@@ -170,32 +170,22 @@ exploring_page <- function(input, output, session, descent_data) {
     })
 
     output$hover <- renderUI({
-      y <- data.frame(names(V(descent_data$networkPlot)), norm_coords(layout_nicely(descent_data$networkPlot)))
-      colnames(y)[1] <- "ontoID"
-      # y <- y %>%
-      #   dplyr::filter(ontoID %in% results$res$ontoID)
-      y <- dplyr::left_join(y, results$res, by = "ontoID")
-      go_terms <- stringr::str_split(y$ontoID, "\n")
-      for (i in 1:length(y$ontoTerm)){
-        go_categories <- as.data.frame(unlist(go_terms[i]))
-        colnames(go_categories)<-"go_categories"
-        go_categories <- dplyr::left_join(go_categories, results$res, by = c("go_categories"="ontoID"))
-        y$ontoTerm[i]<- stringr::str_c(go_categories$ontoTerm,  collapse = "<br/>")
+      y <- data.frame(V(descent_data$networkPlot)$ontoTerm, norm_coords(layout_nicely(descent_data$networkPlot)))
 
-      }
-
-      y <- y %>% dplyr::select( ontoTerm, X1, X2, clusterTerm)
-            res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
+      colnames(y)[1] <- "ontoTerm"
+      y$ontoTerm <- stringr::str_replace_all(y$ontoTerm, "&", "</br>")
+      y <- y %>% dplyr::select( ontoTerm, X1, X2)
+      res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
 
 
       if (nrow(res)>0) {
-      hover <- input$netHover
-      left_px <- hover$coords_css$x
-      top_px <- hover$coords_css$y
-      style <- paste0(
-        "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
-        "left:", left_px, "px; top:", top_px, "px;"
-      )
+        hover <- input$netHover
+        left_px <- hover$coords_css$x
+        top_px <- hover$coords_css$y
+        style <- paste0(
+          "position:absolute; z-index:100; background-color: rgba(245, 245, 245, 0.85); ",
+          "left:", left_px, "px; top:", top_px, "px;"
+        )
 
         wellPanel(
           style = style,
@@ -280,14 +270,14 @@ exploring_page <- function(input, output, session, descent_data) {
       )
 
       descent_data$inputData <- merge(descent_data$inputData[, colnames(descent_data$inputData) %in%
-                                                                                         c(
-                                                                                           "ontoID",
-                                                                                           "direction",
-                                                                                           "pValue",
-                                                                                           "enrichmentScore"
-                                                                                         ), with = F],
-                                                                results$res,
-                                                                by = "ontoID", order = F)
+                                                               c(
+                                                                 "ontoID",
+                                                                 "direction",
+                                                                 "pValue",
+                                                                 "enrichmentScore"
+                                                               ), with = F],
+                                      results$res,
+                                      by = "ontoID", order = F)
 
       descent_data$networkPlot <- results$plot
 
@@ -330,10 +320,11 @@ exploring_page <- function(input, output, session, descent_data) {
   observeEvent(input$defButton, {
     req(rV$def(), rV$plot())
 
-    f <- intersect(c("ontoID", "direction", "pValue", "enrichmentScore"), colnames(descent_data$inputData))
-
     # Reset Results to Default
-    descent_data$inputData <- merge(descent_data$inputData[,..f],
+    descent_data$inputData <- merge(descent_data$inputData[,c("ontoID",
+                                                              "direction",
+                                                              "pValue",
+                                                              "enrichmentScore")],
                                     rV$def(), by = "ontoID", order = F
     )
 
