@@ -170,21 +170,11 @@ exploring_page <- function(input, output, session, descent_data) {
     })
 
     output$hover <- renderUI({
-      y <- data.frame(names(V(descent_data$networkPlot)), norm_coords(layout_nicely(descent_data$networkPlot)))
-      colnames(y)[1] <- "ontoID"
-      # y <- y %>%
-      #   dplyr::filter(ontoID %in% results$res$ontoID)
-      y <- dplyr::left_join(y, results$res, by = "ontoID")
-      go_terms <- stringr::str_split(y$ontoID, "\n")
-      for (i in 1:length(y$ontoTerm)){
-        go_categories <- as.data.frame(unlist(go_terms[i]))
-        colnames(go_categories)<-"go_categories"
-        go_categories <- dplyr::left_join(go_categories, results$res, by = c("go_categories"="ontoID"))
-        y$ontoTerm[i]<- stringr::str_c(go_categories$ontoTerm,  collapse = "<br/>")
+      y <- data.frame(V(descent_data$networkPlot)$ontoTerm, norm_coords(layout_nicely(descent_data$networkPlot)))
 
-      }
-
-      y <- y %>% dplyr::select( ontoTerm, X1, X2, clusterTerm)
+      colnames(y)[1] <- "ontoTerm"
+      y$ontoTerm <- stringr::str_replace_all(y$ontoTerm, "&", "</br>")
+      y <- y %>% dplyr::select( ontoTerm, X1, X2)
             res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
 
 
