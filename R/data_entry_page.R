@@ -169,40 +169,44 @@ data_entry_page <- function(input, output, session, descent_data)
            }
     )
     #check whether some GO terms are not in the provided ontoNet, so the user can double check input mistakes
-    if(!all(imported_values$ontoID %in% V(descent_data$net)$name)){
-      target <- imported_values$ontoID[!imported_values$ontoID %in% V(descent_data$net)$name]
-      if(length(target)==length(imported_values$ontoID)){
-        shinyWidgets::sendSweetAlert(session = session,
-                                     title = "Input Error",
-                                     text = "No ontology IDs could be mapped to the supplied network. Please select another network and re-upload your data",
-                                     type = "error")
+    input_data$checkData <- imported_values
+    if(!all(input_data$checkData$ontoID %in% V(descent_data$net)$name)){
+      idsIn <- input_data$checkData$ontoID[input_data$checkData$ontoID %in% V(descent_data$net)$name]
+      idsOut <- input_data$checkData$ontoID[!input_data$checkData$ontoID %in% V(descent_data$net)$name]
+
+      if(length(idsOut) < 50){
+        error_message <- paste(paste(length(idsIn), " ontology IDs mapped, and ",
+                                     length(idsOut), " ontology IDS not found in the provided network.",
+                                     collapse = ""),
+                               paste("These ontology IDs were not found in the provided ontology network: ",
+                                     paste0(idsOut, collapse = "; "),
+                                     sep = " "),
+                               sep = "\n")
+
+
+      } else {
+        error_message <- paste(paste(length(idsIn), " ontology IDs mapped, and ",
+                                     length(idsOut), " ontology IDS not found in the provided network.",
+                                     collapse = ""),
+                               "More than 50 terms that could not be mapped. Please check you have entered the correct species or ontology class",
+                               sep = "\n")
       }
-      else if(length(target)<50){
-       error_message <- c("These ontology IDs were not found in the provided ontology network: ", paste0(target))
+
       shinyWidgets::sendSweetAlert(session = session,
                                    title = "Input Error",
                                    text = error_message,
                                    type = "warning")
-      imported_values<- imported_values[imported_values$ontoID %in% V(descent_data$net)$name]
-      output$GO_table <- renderDataTable(imported_values)
-      descent_data$inputData <- imported_values
+
+      if(length(idsIn) > 1){
+        descent_data$inputData<- input_data$checkData[input_data$checkData$ontoID %in% V(descent_data$net)$name]
+        output$GO_table <- renderDataTable(descent_data$inputData)
       }
-      else{shinyWidgets::sendSweetAlert(session = session,
-                                        title = "Input Error",
-                                        text = "you had more than 50 terms that could not be mapped. Please check you have entered the correct species or ontology class",
-                                        type = "warning")
-        imported_values<- imported_values[imported_values$ontoID %in% V(descent_data$net)$name]
-        output$GO_table <- renderDataTable(imported_values)
-        descent_data$inputData <- imported_values
-        }
-
-
-
-
-    }
-    else{
-      output$GO_table <- renderDataTable(imported_values)
-      descent_data$inputData <- imported_values
+      else if (length(idsIn) <= 1){
+        descent_data$inputData <- NULL
+      }
+    } else if (all(input_data$checkData$ontoID %in% V(descent_data$net)$name)){
+      descent_data$inputData<- input_data$checkData
+      output$GO_table <- renderDataTable(descent_data$inputData)
     }
   })
 
