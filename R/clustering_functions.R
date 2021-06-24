@@ -112,18 +112,13 @@ clustereR <- function(ontoNet,
 
   #cluster name (instead of targeting a specific node, try to make a 2D space of nodes, and put the label in the center of that)
 
-  ontoClust$nodeLabel <- ""
-  ontoClust$nodeLabel[which(ontoClust$ontoTerm == ontoClust$clusterTerm)] <-
-    ontoClust$clusterTerm[which(ontoClust$ontoTerm == ontoClust$clusterTerm)]
-
   if(!all(igraph::V(ontoNetSubgraph)$name == ontoClust$ontoID)){stop("wrong order")}
 
   igraph::vertex_attr(ontoNetSubgraph) <- list(name = ontoClust$ontoID,
                                                color = ontoClust$color,
                                                clusterTerm = ontoClust$clusterTerm,
                                                label.color = ontoClust$color,
-                                               ontoTerm = ontoClust$ontoTerm,
-                                               nodeLabel = ontoClust$nodeLabel)
+                                               ontoTerm = ontoClust$ontoTerm)
 
   igraph::V(ontoNetSubgraph)$size <- 0
   igraph::V(ontoNetSubgraph)$size[igraph::V(ontoNetSubgraph)$name %in% target] <- 2
@@ -147,8 +142,7 @@ clustereR <- function(ontoNet,
                                                             color = function(x) unique(x),
                                                             clusterTerm = function(x) unique(x),
                                                             label.color = function(x) unique(x),
-                                                            ontoTerm = function(x) paste0(x, collapse = " & "),
-                                                            nodeLabel = function(x) x[x != ""]))
+                                                            ontoTerm = function(x) paste0(x, collapse = " & ")))
 
     #make the size proportional to the number of steping stones
     V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$size>1] <- V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$size>1]/max(V(ontoNetSubgraph)$size[V(ontoNetSubgraph)$size>1]) * 5
