@@ -330,11 +330,10 @@ exploring_page <- function(input, output, session, descent_data) {
   observeEvent(input$defButton, {
     req(rV$def(), rV$plot())
 
+    f <- intersect(c("ontoID", "direction", "pValue", "enrichmentScore"), colnames(descent_data$inputData))
+
     # Reset Results to Default
-    descent_data$inputData <- merge(descent_data$inputData[,c("ontoID",
-                                                              "direction",
-                                                              "pValue",
-                                                              "enrichmentScore")],
+    descent_data$inputData <- merge(descent_data$inputData[,..f],
                                     rV$def(), by = "ontoID", order = F
     )
 
