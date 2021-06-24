@@ -81,9 +81,18 @@ exploring_page <- function(input, output, session, descent_data) {
     }
 
     req(descent_data$inputData)
+    #check if all provided GO terms are found in the supplied ontoNet
+    if(!all(descent_data$inputData$ontoID %in% V(descent_data$net)$name)){
+      shinyWidgets::sendSweetAlert(
+        session = session,
+        title = "Clustering Error",
+        text = "Some of your GO terms could not be mapped to the supplied network. Did you change species/data type after loading data?",
+        type = "error")
+    }
 
     # run the ontodesc
-    results <- clustereR(
+    else{
+      results <- clustereR(
       ontoNet = descent_data$net,
       method = "leiden",
       target = descent_data$inputData$ontoID,
@@ -150,6 +159,7 @@ exploring_page <- function(input, output, session, descent_data) {
            axes = F
       )
     })
+    }
 
     observeEvent(input$netSelect, {
       y <- data.frame(names(V(descent_data$networkPlot)), norm_coords(layout_nicely(descent_data$networkPlot)))
