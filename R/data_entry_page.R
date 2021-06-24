@@ -131,6 +131,44 @@ data_entry_page <- function(input, output, session, descent_data)
       output$GO_table <- renderDataTable(imported_values)
       descent_data$inputData <- imported_values
     }
+    #trigger loading of ontonet so data can be loaded against the right background
+    switch(input$datatype,
+           `GO Biological Processes` = {
+             if(input$species == "Human"){
+               descent_data$net <- bp_hsa
+             }else{
+               descent_data$net <- bp_mmu
+             }
+           },
+           `GO Cellular Component` = {
+             if(input$species == "Human"){
+               descent_data$net <- cc_hsa
+             }else{
+               descent_data$net <- cc_mmu
+             }
+           },
+           `GO Molecular Function` = {
+             if(input$species == "Human"){
+               descent_data$net <- mf_hsa
+             }else{
+               descent_data$net <- mf_mmu
+             }
+           },
+           `GO ALL` = {
+             if(input$species == "Human"){
+               descent_data$net <- all_hsa
+             }else{
+               descent_data$net <- all_mmu
+             }
+           },
+           `Reactome` = {
+             if(input$species == "Human"){
+               descent_data$net <- react_hsa
+             }else{
+               descent_data$net <- react_mmu
+             }
+           }
+    )
     #check whether some GO terms are not in the provided ontoNet, so the user can double check input mistakes
     if(!all(descent_data$inputData$ontoID %in% V(descent_data$net)$name)){
       target <- descent_data$inputData$ontoID[!descent_data$inputData$ontoID %in% V(descent_data$net)$name]

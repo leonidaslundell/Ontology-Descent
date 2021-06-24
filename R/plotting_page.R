@@ -22,7 +22,7 @@ plotting_page_ui <- function(id)
 
         selectInput(inputId = ns("plotType"), label = "Plot Type:", choices = NULL, selected = NULL, multiple = FALSE),
 
-        checkboxInput(inputId = ns("axisType"), label = "Plot enrichmentScore (replaces pValue)", value = FALSE),
+        uiOutput(ns("axisType")),
 
         actionButton(inputId = ns("actPlot"), label = "Show plot", width = 150),
 
@@ -178,13 +178,23 @@ plotting_page <- function(input, output, session, descent_data)
     pn <- nrow(reacVals$data())
     cn <- length(unique(reacVals$data()$clusterTerm))
 
+
     if (pn <= 50 & cn <= 10) {
       updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway" = "pth"), selected = "clust")
 
     } else if (pn > 50 | cn > 10){
       updateSelectInput(session, "plotType", choices = c("By Cluster" = "clust", "By Pathway (Unavailable)" = "long"), selected = "clust")
     }
+
+    if ("enrichmentScore" %in% colnames(reacVals$data())){
+      output$axisType <- renderUI({
+        checkboxInput(inputId = ns("axisType"), label = "Plot enrichmentScore (replaces pValue)", value = FALSE)
+      })
+    } else {
+        output$axisType <- NULL
+      }
   })
+
 
   ### Plot Type Based Options - Dot Size / Dot Shape / Legend Position / Legend Text ###
   observe(switch(input$plotType,
