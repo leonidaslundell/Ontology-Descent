@@ -272,6 +272,48 @@ data_entry_page <- function(input, output, session, descent_data)
                         }
                         )
                })
+  #Ensure that it is registrered when species change
+  observeEvent(input$species,
+               {
+                 switch(input$datatype,
+                        `GO Biological Processes` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- bp_hsa
+                          }else{
+                            descent_data$net <- bp_mmu
+                          }
+                        },
+                        `GO Cellular Component` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- cc_hsa
+                          }else{
+                            descent_data$net <- cc_mmu
+                          }
+                        },
+                        `GO Molecular Function` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- mf_hsa
+                          }else{
+                            descent_data$net <- mf_mmu
+                          }
+                        },
+                        `GO ALL` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- all_hsa
+                          }else{
+                            descent_data$net <- all_mmu
+                          }
+                        },
+                        `Reactome` = {
+                          if(input$species == "Human"){
+                            descent_data$net <- react_hsa
+                          }else{
+                            descent_data$net <- react_mmu
+                          }
+                        }
+
+                 )
+               })
 
 
 }
