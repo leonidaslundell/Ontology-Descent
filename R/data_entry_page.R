@@ -56,7 +56,7 @@ data_entry_page_ui <- function(id)
           width = "100%",
           resize = "both"
         ),
-        actionButton(ns("Setting1"), label = "Submit!"),
+        actionButton(ns("submit"), label = "Submit!"),
         actionButton(ns("dummy"), label = "Load dummy data (n = 300)"),
         actionButton(ns("dummy_short"), label = "Load dummy data (n = 50)")
       ),
@@ -87,7 +87,7 @@ data_entry_page <- function(input, output, session, descent_data)
     })
 
   # Observe if text is submitted
-  observeEvent(input$Setting1, {
+  observeEvent(input$submit, {
     input_data$x <- input$data_entry
     input_data$type <- "text"
     input_data$read_now <- input_data$read_now + 1 # To trigger loading of data
@@ -215,8 +215,9 @@ data_entry_page <- function(input, output, session, descent_data)
                })
 
   #select network to cluster on
-  observeEvent(input$Setting1,
+  observeEvent(input$submit,
                {
+                 print(input$file)
                  switch(input$datatype,
                         `GO Biological Processes` = {
                           if(input$species == "Human"){
