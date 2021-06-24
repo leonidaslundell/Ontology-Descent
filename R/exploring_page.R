@@ -180,6 +180,8 @@ exploring_page <- function(input, output, session, descent_data) {
     })
 
     output$hover <- renderUI({
+      req(descent_data$networkPlot)
+
       y <- data.frame(V(descent_data$networkPlot)$ontoTerm, norm_coords(layout_nicely(descent_data$networkPlot)))
 
       colnames(y)[1] <- "ontoTerm"
