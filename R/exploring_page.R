@@ -321,10 +321,8 @@ exploring_page <- function(input, output, session, descent_data) {
     req(rV$def(), rV$plot())
 
     # Reset Results to Default
-    descent_data$inputData <- merge(descent_data$inputData[,c("ontoID",
-                                                              "direction",
-                                                              "pValue",
-                                                              "enrichmentScore")],
+    f <- intersect(c("ontoID", "direction", "pValue", "enrichmentScore"), colnames(descent_data$inputData))
+    descent_data$inputData <- merge(descent_data$inputData[,..f],
                                     rV$def(), by = "ontoID", order = F
     )
 
