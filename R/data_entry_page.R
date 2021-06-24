@@ -17,6 +17,7 @@ data_entry_page_ui <- function(id)
         helpText(
           "Please set species and ontology terms before you load in data. Your entry file needs to have a first column named 'ontoID' (ex. GO:00010) and a second column called 'pValue' (ex. 3E-5). Beware of case in names! "
         ),
+
         selectInput(
           inputId = ns("species"),
           label = "Select species",
@@ -77,6 +78,7 @@ data_entry_page_ui <- function(id)
 #' @export
 data_entry_page <- function(input, output, session, descent_data)
 {
+
   input_data <- reactiveValues(read_now = 0)
 
   # Observe if file is uploaded
@@ -129,7 +131,12 @@ data_entry_page <- function(input, output, session, descent_data)
       }
 
       output$GO_table <- renderDataTable(imported_values)
-      descent_data$inputData <- imported_values
+
+      ### MLADEN - FIX ###
+      # descent_data$inputData <- imported_values
+      # Save temporary data before check #
+      input_data$checkData <- imported_values
+      ### MLADEN - FIX ###
     }
     #trigger loading of ontonet so data can be loaded against the right background
     switch(input$datatype,
@@ -169,27 +176,41 @@ data_entry_page <- function(input, output, session, descent_data)
              }
            }
     )
+
     #check whether some GO terms are not in the provided ontoNet, so the user can double check input mistakes
-    if(!all(descent_data$inputData$ontoID %in% V(descent_data$net)$name)){
-      target <- descent_data$inputData$ontoID[!descent_data$inputData$ontoID %in% V(descent_data$net)$name]
-      if(length(target)<50){
-       error_message <- c("These ontology IDs were not found in the provided ontology network: ", paste0(target))
+    if(!all(input_data$checkData$ontoID %in% V(descent_data$net)$name)){
+      ### MLADEN - FIX ###
+      idsIn <- input_data$checkData$ontoID[input_data$checkData$ontoID %in% V(descent_data$net)$name]
+      idsOut <- input_data$checkData$ontoID[!input_data$checkData$ontoID %in% V(descent_data$net)$name]
+
+      if(length(idsOut) < 50){
+        error_message <- paste(paste(length(idsIn), " ontology IDs mapped, and ",
+                                     length(idsOut), " ontology IDS not found in the provided network.",
+                                     collapse = ""),
+                               paste("These ontology IDs were not found in the provided ontology network: ",
+                                     paste0(idsOut, collapse = "; "),
+                                     sep = " "),
+                               sep = "\n")
+
+
+      } else {
+        error_message <- paste(paste(length(idsIn), " ontology IDs mapped, and ",
+                                     length(idsOut), " ontology IDS not found in the provided network.",
+                                     collapse = ""),
+                               "More than 50 terms that could not be mapped. Please check you have entered the correct species or ontology class",
+                               sep = "\n")
+        }
+
       shinyWidgets::sendSweetAlert(session = session,
                                    title = "Input Error",
                                    text = error_message,
                                    type = "warning")
-      descent_data$inputData<- descent_data$inputData[descent_data$inputData$ontoID %in% V(descent_data$net)$name]
+
+      if(length(idsIn) > 1){
+        descent_data$inputData<- input_data$checkData[input_data$checkData$ontoID %in% V(descent_data$net)$name]
       }
-      else{shinyWidgets::sendSweetAlert(session = session,
-                                        title = "Input Error",
-                                        text = "you had more than 50 terms that could not be mapped. Please check you have entered the correct species or ontology class",
-                                        type = "warning")
-        descent_data$inputData<- descent_data$inputData[descent_data$inputData$ontoID %in% V(descent_data$net)$name]
-      }
-
-
-
-
+    } else if (all(input_data$checkData$ontoID %in% V(descent_data$net)$name)){
+      descent_data$inputData<- input_data$checkData
     }
   })
 
@@ -203,6 +224,7 @@ data_entry_page <- function(input, output, session, descent_data)
                  updateSelectInput(inputId = "species", selected = "Human")
                  updateSelectInput(inputId = "datatype", selected = "GO Molecular Function")
                })
+
   #load dummy data short version (50 terms)
   observeEvent(input$dummy_short,
                {
