@@ -175,8 +175,8 @@ exploring_page <- function(input, output, session, descent_data) {
       colnames(y)[1] <- "ontoTerm"
       y$ontoTerm <- stringr::str_replace_all(y$ontoTerm, "&", "</br>")
       y <- y %>% dplyr::select( ontoTerm, X1, X2)
-      res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
 
+      res <- nearPoints(y, input$netHover, xvar = "X1", yvar = "X2", maxpoints = 1)
 
       if (nrow(res)>0) {
         hover <- input$netHover
