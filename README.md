@@ -1,18 +1,12 @@
-# Ontology-Descent
+# Aim
 
-### Aim 
 
-* Launch a web wizard to cluster hierarchichal gene ontologies or pathways
-* Include a local R package (?)
-* Have a Bioarxiv manuscript with the web launch (and publish it eventually)
+It is fairly trivial to perform ontology enrichment analysis. Interpreting and presenting these is not. We have created a simple and intuitive shiny app that allows a subject matter expert to cluster and interpret large number of GO enrichment results. 
 
-### Collaboration principles
+# Approach
 
-To develop our skills and create something:
-  + Set (soft) deadlines to ourselves for completing the task
-  + Person doing the task decides their own timeline
+Clustering is performed on an undirected GO graph using the leiden algorith. Briefly, for a given number of GO terms, we initially find and retain all the all to all shortest paths, after witch we perform leiden clustering. Each given cluster is named by the GO term with the highest eigen centrality value. As it seems impropable that any single clustering approach will ever give clusters of satisfying accuracy for all situations, we have built tools that allow the researcher to redefine the clusters as they see fit.
 
-  + Responsiveness vs sticking to the plan
-  + Our communication vs proccess and tools
-  + Working software vs comprehensive documentation
+We also include bechmark comparisons to other clustering methods.
 
+You can access the package either by cloning and runing the repo, or at https://cbmr-eel.shinyapps.io/OntologyDescent/
